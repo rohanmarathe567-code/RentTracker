@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RentTracker.Data;
-using RentTracker.Models;
 using RentTracker.Services;
-using RentTracker.Api;
-using RentTracker.Api.Endpoints;
+using RentTracker.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 

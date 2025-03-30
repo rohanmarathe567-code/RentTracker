@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using RentTracker.Data;
 using RentTracker.Models;
 
-namespace RentTracker.Api.Endpoints;
+namespace RentTracker.Endpoints;
 
 public static class PropertiesController
 {
