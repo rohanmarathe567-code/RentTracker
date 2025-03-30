@@ -1,3 +1,6 @@
+[2025-03-30 14:03:29] - Renamed Api directory to RentTrackerBackend to better reflect its purpose and improve project clarity
+
+
 # Decision Log
 
 This file records architectural and implementation decisions using a list format.

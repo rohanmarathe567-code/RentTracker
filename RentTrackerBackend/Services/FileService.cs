@@ -1,7 +1,7 @@
-using RentTracker.Data;
-using RentTracker.Models;
+using RentTrackerBackend.Data;
+using RentTrackerBackend.Models;
 
-namespace RentTracker.Services;
+namespace RentTrackerBackend.Services;
 
 public class FileService
 {

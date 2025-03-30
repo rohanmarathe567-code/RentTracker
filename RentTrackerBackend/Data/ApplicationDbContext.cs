@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using RentTracker.Models;
+using RentTrackerBackend.Models;
 
-namespace RentTracker.Data;
+namespace RentTrackerBackend.Data;
 
 public class ApplicationDbContext : DbContext
 {

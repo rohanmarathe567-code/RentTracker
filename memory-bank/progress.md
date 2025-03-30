@@ -1,3 +1,6 @@
+[2025-03-30 14:01:38] - Renamed RentTracker.csproj to RentTrackerBackend.csproj and updated all references
+
+
 [2025-03-30 11:49:00] - Project Restructuring: Reorganized project files into dedicated Api directory, including new Endpoints directory structure. Commit: 4168915
 
 

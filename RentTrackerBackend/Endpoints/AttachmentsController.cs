@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using RentTracker.Data;
-using RentTracker.Services;
+using RentTrackerBackend.Data;
+using RentTrackerBackend.Services;
 
-namespace RentTracker.Endpoints;
+namespace RentTrackerBackend.Endpoints;
 
 public static class AttachmentsController
 {

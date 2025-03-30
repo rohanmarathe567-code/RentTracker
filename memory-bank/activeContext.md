@@ -1,3 +1,6 @@
+[2025-03-30 14:04:20] - Renamed Api directory to RentTrackerBackend for better project organization and clarity
+
+
 [2025-03-30 12:15:02] - Updated RentTracker.http baseUrl port from 7001 to 7000 to match the correct HTTP port
 
 

@@ -1,6 +1,6 @@
-using RentTracker.Data;
+using RentTrackerBackend.Data;
 
-namespace RentTracker.Endpoints;
+namespace RentTrackerBackend.Endpoints;
 
 public static class HealthController
 {

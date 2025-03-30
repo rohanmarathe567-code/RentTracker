@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using RentTracker.Data;
-using RentTracker.Models;
+using RentTrackerBackend.Data;
+using RentTrackerBackend.Models;
 
-namespace RentTracker.Endpoints;
+namespace RentTrackerBackend.Endpoints;
 
 public static class PropertiesController
 {

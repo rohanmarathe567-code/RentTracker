@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace RentTracker.Models;
+namespace RentTrackerBackend.Models;
 
 public class RentalProperty
 {
