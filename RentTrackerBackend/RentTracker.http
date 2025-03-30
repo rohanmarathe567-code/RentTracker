@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:5149
+@baseUrl = http://localhost:7000
 @propertyId = 00000000-0000-0000-0000-000000000001
 @paymentId = 00000000-0000-0000-0000-000000000002
 @attachmentId = 00000000-0000-0000-0000-000000000003
