@@ -2,14 +2,25 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
 }
 
 main {
     flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar {
     background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    flex: 1;
+    overflow-y: auto;
 }
 
 .top-row {
@@ -19,6 +30,7 @@ main {
     height: 3.5rem;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
 }
 
     .top-row ::deep a, .top-row ::deep .btn-link {
@@ -56,6 +68,7 @@ main {
         height: 100vh;
         position: sticky;
         top: 0;
+        flex-shrink: 0;
     }
 
     .top-row {
