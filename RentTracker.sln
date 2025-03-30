@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RentTracker", "RentTracker.csproj", "{FD6E1DA9-2E9F-4B0C-96D1-84239AC8C08F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RentTracker", "Api\RentTracker.csproj", "{FD6E1DA9-2E9F-4B0C-96D1-84239AC8C08F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
