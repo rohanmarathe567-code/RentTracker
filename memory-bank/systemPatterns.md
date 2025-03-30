@@ -1,3 +1,28 @@
+
+## Sequential GUID Generation Pattern
+### Overview
+- Implemented a custom GUID generation strategy that ensures:
+  1. Globally unique identifiers
+  2. Sortability across entities
+  3. Randomness to prevent predictability
+
+### Implementation Details
+- SequentialGuidGenerator uses:
+  * Timestamp-based generation
+  * Cryptographically secure random bytes
+  * Reversing timestamp bytes for proper sorting
+
+### Affected Models
+- RentalProperty
+- RentalPayment
+- Attachment
+
+### Benefits
+- Supports distributed systems
+- Maintains data integrity
+- Enables chronological sorting
+- Provides unique identifiers across all entities
+
 ## [2025-03-30] Nested Resource Endpoint Pattern for Payments
 
 ### Context

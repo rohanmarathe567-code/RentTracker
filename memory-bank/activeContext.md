@@ -1,3 +1,11 @@
+## HTTP Endpoints Update [2025-03-30]
+- Updated RentTracker.http and http-endpoints-plan.md to reflect current backend endpoint implementations
+- Key changes:
+  * Payments endpoints now include propertyId in URL
+  * Attachment upload endpoints are more specific
+  * Added health check endpoint
+  * Standardized base URL to http://localhost:5149
+
 ## Recent Changes
 
 ### Attachment Service Modifications
@@ -61,3 +69,8 @@
 [2025-03-30 16:10:56] - 
 
 [2025-03-30 18:10:35] - Confirmed existing console logging configuration in RentTrackerBackend
+
+[2025-03-30 20:52:20] - Recent Changes
+- Completed refactoring of attachment and payment handling systems
+- Introduced new SequentialGuidGenerator service
+- Updated related models and controllers

@@ -1,3 +1,40 @@
+
+## [2025-03-30] HTTP Endpoint GUID Updates
+- Updated RentTracker.http to use GUID-based identifiers
+- Added example GUIDs for properties, payments, and attachments
+- Maintained existing endpoint structure
+- Introduced variables for easier testing and demonstration
+
+Rationale:
+- Consistent with new GUID-based model implementation
+- Provides clear examples of GUID usage in API interactions
+- Supports testing and documentation of new ID format
+
+
+## [2025-03-30] Sequential GUID Implementation
+- Replaced integer-based primary keys with sequential GUIDs in RentalProperty, RentalPayment, and Attachment models
+- Created SequentialGuidGenerator to ensure sortable and random GUIDs
+- Updated foreign key relationships to use Guid type
+- Maintained existing navigation properties and relationships
+
+Rationale:
+- Provides globally unique identifiers
+- Enables sorting and tracking of entities
+- Maintains randomness to prevent predictability
+- Supports distributed systems and data integrity
+
+## [2025-03-30] HTTP Endpoint Structure Refinement
+- Decision: Modify endpoint structure to include more explicit property context
+- Rationale: Improve API clarity and enforce tighter relationship between payments/attachments and their parent properties
+- Implications:
+  * Payments and attachments now require propertyId in their URLs
+  * More granular access control and validation
+  * Improved data integrity and referential constraints
+- Technical Changes:
+  * Updated RentTracker.http test file
+  * Updated http-endpoints-plan.md documentation
+  * Refactored backend endpoint mappings
+
 ## [2025-03-30] Attachment Endpoint Modification
 
 - Removed DELETE endpoint for /api/attachments/{attachmentId}
@@ -50,3 +87,9 @@ Rationale: DELETE functionality for attachments is no longer required. Simplifie
 - Consider implementing file compression for large attachments
 
 Timestamp: 2025-03-30 19:33 AEDT
+
+[2025-03-30 20:52:20] - Refactored attachment and payment services
+- Updated multiple services, models, and endpoints related to attachments and payments
+- Added SequentialGuidGenerator for improved GUID generation
+- Committed changes to master branch
+- Modifications span across Controllers, Services, and Models
