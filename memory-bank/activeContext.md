@@ -1,3 +1,9 @@
+
+[2025-03-30 16:15:39] - Removed sample Weather page and sample-data directory from RentTrackerClient to clean up the project structure
+
+
+[2025-03-30 16:09:43] - Important Note: File deletion operations should be confirmed with the user before execution. This includes using commands like 'rm' or 'del' that permanently remove files.
+
 [2025-03-30 15:54:28] - Established PowerShell as the standard shell for running commands across the development environment
 
 
@@ -42,3 +48,5 @@ This file tracks the project's current status, including recent changes, current
 * Implementation priorities for planned features
 * Authentication and multi-tenancy design decisions
 * Docker configuration requirements
+
+[2025-03-30 16:10:56] - Updated command chaining pattern for Windows PowerShell environment - using semicolon (;) instead of && for command chaining.

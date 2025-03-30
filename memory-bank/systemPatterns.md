@@ -66,3 +66,5 @@ This file documents recurring patterns and standards used in the project.
 
 [2025-03-30 15:53:26] - Established PowerShell as the standard shell for running commands
 * Authentication testing (planned)
+
+[2025-03-30 16:10:47] - Command Chaining Pattern: On Windows PowerShell, commands must be chained using semicolon (;) instead of && for command chaining. Example: `cd ./some/path ; npm install` instead of `cd ./some/path && npm install`. This affects all command generation across the project.
