@@ -1,3 +1,12 @@
+
+## 2025-03-30: Frontend Architecture Update
+- Introduced Blazor WebAssembly as frontend framework
+- Implemented client-side rendering with .NET 8
+- Established pattern of WebAssembly client communicating with minimal API backend
+- Maintained separation of concerns between frontend and backend
+- Leveraged .NET ecosystem for full-stack development
+- Enabled rich, interactive client-side experiences
+
 # System Patterns
 
 This file documents recurring patterns and standards used in the project.

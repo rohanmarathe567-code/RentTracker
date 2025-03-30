@@ -4,7 +4,7 @@ A comprehensive rental property management system for tracking payments and mana
 
 ## Overview
 
-RentTracker is a modern property management solution built with ASP.NET Core that helps landlords efficiently manage their rental properties, track payments, and handle property-related documents. The system provides an intuitive API for property management operations while maintaining robust data storage and file handling capabilities.
+RentTracker is a modern property management solution built with ASP.NET Core and Blazor WebAssembly that helps landlords efficiently manage their rental properties, track payments, and handle property-related documents. The system provides an intuitive web application with a robust backend API for property management operations while maintaining secure data storage and file handling capabilities.
 
 ## Features
 
@@ -25,6 +25,10 @@ RentTracker is a modern property management solution built with ASP.NET Core tha
   - Comprehensive property information storage
   - Lease agreement tracking
   - Property manager contact details
+* Responsive Web Interface
+  - Modern, intuitive Blazor WebAssembly client
+  - Responsive design for desktop and mobile
+  - Real-time data updates
 
 ### Planned Features
 * Multi-tenancy Support with Authentication
@@ -46,25 +50,32 @@ RentTracker is a modern property management solution built with ASP.NET Core tha
 ```mermaid
 graph TD
     A[RentTracker] --> B[Backend]
-    A --> C[Database]
-    A --> D[File Storage]
+    A --> C[Frontend]
+    A --> D[Database]
+    A --> E[File Storage]
     
     B --> B1[ASP.NET Core]
     B --> B2[Minimal API]
     B --> B3[Entity Framework Core]
     
-    C --> C1[PostgreSQL]
-    C --> C2[EF Core Migrations]
+    C --> C1[Blazor WebAssembly]
+    C --> C2[.NET 8]
+    C --> C3[Razor Components]
     
-    D --> D1[File Service]
-    D --> D2[Secure Storage]
+    D --> D1[PostgreSQL]
+    D --> D2[EF Core Migrations]
+    
+    E --> E1[File Service]
+    E --> E2[Secure Storage]
 ```
 
 * **Backend Framework**: ASP.NET Core minimal API (.NET 6+)
+* **Frontend Framework**: Blazor WebAssembly (.NET 8)
 * **ORM**: Entity Framework Core
 * **Database**: PostgreSQL
-* **Architecture Pattern**: RESTful API
+* **Architecture Pattern**: RESTful API with WebAssembly Client
 * **File Management**: Custom FileService implementation
+* **UI Components**: Razor Components
 
 ### Core Models
 
@@ -195,7 +206,7 @@ sequenceDiagram
 ## Setup Guide
 
 ### Prerequisites
-- .NET 6+ SDK
+- .NET 8 SDK
 - PostgreSQL database server
 - Storage location for file uploads
 
@@ -207,7 +218,7 @@ git clone https://github.com/yourusername/RentTracker.git
 cd RentTracker
 ```
 
-2. Update database connection in `appsettings.json`:
+2. Update database connection in `RentTrackerBackend/appsettings.json`:
 ```json
 {
   "ConnectionStrings": {
@@ -218,15 +229,22 @@ cd RentTracker
 
 3. Run database migrations:
 ```bash
+cd RentTrackerBackend
 dotnet ef database update
 ```
 
-4. Run the application:
+4. Run the backend:
 ```bash
 dotnet run
 ```
 
-The API will be available at `https://localhost:5001`.
+5. Run the frontend:
+```bash
+cd ../RentTrackerClient
+dotnet run
+```
+
+The backend API will be available at `https://localhost:5001`, and the frontend at `https://localhost:5002`.
 
 ## Contributing
 
