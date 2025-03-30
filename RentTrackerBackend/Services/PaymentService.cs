@@ -13,7 +13,7 @@ public class PaymentService : IPaymentService
         _context = context;
     }
 
-    public async Task<bool> ValidatePropertyExistsAsync(int propertyId)
+    public async Task<bool> ValidatePropertyExistsAsync(Guid propertyId)
     {
         return await _context.RentalProperties.AnyAsync(p => p.Id == propertyId);
     }
@@ -37,7 +37,7 @@ public class PaymentService : IPaymentService
         return payment;
     }
 
-    public async Task<RentalPayment?> UpdatePaymentAsync(int id, RentalPayment updatedPayment)
+    public async Task<RentalPayment?> UpdatePaymentAsync(Guid id, RentalPayment updatedPayment)
     {
         var payment = await _context.RentalPayments.FindAsync(id);
         
@@ -67,7 +67,7 @@ public class PaymentService : IPaymentService
         return payment;
     }
 
-    public async Task<bool> DeletePaymentAsync(int id)
+    public async Task<bool> DeletePaymentAsync(Guid id)
     {
         var payment = await _context.RentalPayments.FindAsync(id);
         
@@ -82,7 +82,7 @@ public class PaymentService : IPaymentService
         return true;
     }
 
-    public async Task<RentalPayment?> GetPaymentByIdAsync(int id)
+    public async Task<RentalPayment?> GetPaymentByIdAsync(Guid id)
     {
         return await _context.RentalPayments
             .Include(p => p.RentalProperty)
@@ -90,7 +90,7 @@ public class PaymentService : IPaymentService
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
-    public async Task<IEnumerable<RentalPayment>> GetPaymentsByPropertyIdAsync(int propertyId)
+    public async Task<IEnumerable<RentalPayment>> GetPaymentsByPropertyIdAsync(Guid propertyId)
     {
         // Validate property exists
         if (!await ValidatePropertyExistsAsync(propertyId))

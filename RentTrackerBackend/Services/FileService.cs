@@ -1,5 +1,6 @@
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
+using System;
 
 namespace RentTrackerBackend.Services;
 
@@ -22,7 +23,7 @@ public class FileService
         }
     }
 
-    public async Task<Attachment> SaveFileAsync(IFormFile file, string? description = null, int? propertyId = null, int? paymentId = null)
+    public async Task<Attachment> SaveFileAsync(IFormFile file, string? description = null, Guid? propertyId = null, Guid? paymentId = null)
     {
         // Generate a unique filename to prevent collisions
         var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
@@ -53,7 +54,7 @@ public class FileService
         return attachment;
     }
 
-    public async Task<(Stream FileStream, string ContentType, string FileName)> GetFileAsync(int attachmentId)
+    public async Task<(Stream FileStream, string ContentType, string FileName)> GetFileAsync(Guid attachmentId)
     {
         var attachment = await _dbContext.Attachments.FindAsync(attachmentId);
         
@@ -73,7 +74,7 @@ public class FileService
         return (stream, attachment.ContentType ?? "application/octet-stream", attachment.FileName);
     }
 
-    public async Task DeleteFileAsync(int attachmentId)
+    public async Task DeleteFileAsync(Guid attachmentId)
     {
         var attachment = await _dbContext.Attachments.FindAsync(attachmentId);
         

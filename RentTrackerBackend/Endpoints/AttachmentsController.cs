@@ -4,6 +4,7 @@ using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Endpoints;
+using System;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -12,7 +13,7 @@ public static class AttachmentsController
     public static void MapAttachmentEndpoints(this WebApplication app)
     {
         // Property Attachments
-        app.MapGet("/api/properties/{propertyId}/attachments", async (int propertyId, ApplicationDbContext db) =>
+        app.MapGet("/api/properties/{propertyId}/attachments", async (Guid propertyId, ApplicationDbContext db) =>
         {
             var attachments = await db.Attachments
                 .Where(a => a.RentalPropertyId == propertyId)
@@ -21,10 +22,10 @@ public static class AttachmentsController
         });
 
         app.MapPost("/api/properties/{propertyId}/attachments", async (
-            int propertyId, 
-            IFormFile file, 
-            ApplicationDbContext db, 
-            IWebHostEnvironment env, 
+            Guid propertyId,
+            IFormFile file,
+            ApplicationDbContext db,
+            IWebHostEnvironment env,
             IAttachmentService attachmentService) =>
         {
             // Validate property exists
@@ -36,11 +37,11 @@ public static class AttachmentsController
             if (file == null || file.Length == 0)
                 return Results.BadRequest("No file uploaded.");
 
-            try 
+            try
             {
                 var attachment = await attachmentService.SaveAttachmentAsync(
-                    file, 
-                    RentalAttachmentType.Property, 
+                    file,
+                    RentalAttachmentType.Property,
                     propertyId);
 
                 return Results.Created($"/api/attachments/{attachment.Id}", attachment);
@@ -53,8 +54,8 @@ public static class AttachmentsController
 
         // Payment Attachments
         app.MapGet("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
-            int propertyId, 
-            int paymentId, 
+            Guid propertyId,
+            Guid paymentId,
             ApplicationDbContext db) =>
         {
             var attachments = await db.Attachments
@@ -64,11 +65,11 @@ public static class AttachmentsController
         });
 
         app.MapPost("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
-            int propertyId, 
-            int paymentId, 
-            IFormFile file, 
-            ApplicationDbContext db, 
-            IWebHostEnvironment env, 
+            Guid propertyId,
+            Guid paymentId,
+            IFormFile file,
+            ApplicationDbContext db,
+            IWebHostEnvironment env,
             IAttachmentService attachmentService) =>
         {
             // Validate payment exists and belongs to property
@@ -82,11 +83,11 @@ public static class AttachmentsController
             if (file == null || file.Length == 0)
                 return Results.BadRequest("No file uploaded.");
 
-            try 
+            try
             {
                 var attachment = await attachmentService.SaveAttachmentAsync(
-                    file, 
-                    RentalAttachmentType.Payment, 
+                    file,
+                    RentalAttachmentType.Payment,
                     paymentId);
 
                 return Results.Created($"/api/attachments/{attachment.Id}", attachment);
@@ -99,8 +100,8 @@ public static class AttachmentsController
 
         // Generic Attachment Endpoints
         app.MapGet("/api/attachments/{attachmentId}", async (
-            int attachmentId, 
-            ApplicationDbContext db, 
+            Guid attachmentId,
+            ApplicationDbContext db,
             IAttachmentService attachmentService) =>
         {
             var attachment = await db.Attachments.FindAsync(attachmentId);

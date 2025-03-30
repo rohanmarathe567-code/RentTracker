@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using RentTrackerBackend.Services;
 
 namespace RentTrackerBackend.Models;
 
 public class RentalProperty
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = SequentialGuidGenerator.NewSequentialGuid();
     
     [Required]
     [StringLength(200)]

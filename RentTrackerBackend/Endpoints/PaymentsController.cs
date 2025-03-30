@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Mvc;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
@@ -9,7 +10,7 @@ public static class PaymentsController
     public static void MapPaymentEndpoints(this WebApplication app)
     {
         // Get payments for a specific property
-        app.MapGet("/api/properties/{propertyId}/payments", async (int propertyId, IPaymentService paymentService) =>
+        app.MapGet("/api/properties/{propertyId}/payments", async (Guid propertyId, IPaymentService paymentService) =>
         {
             try
             {
@@ -27,7 +28,7 @@ public static class PaymentsController
         });
 
         // Get a specific payment by ID for a specific property
-        app.MapGet("/api/properties/{propertyId}/payments/{paymentId}", async (int propertyId, int paymentId, IPaymentService paymentService) =>
+        app.MapGet("/api/properties/{propertyId}/payments/{paymentId}", async (Guid propertyId, Guid paymentId, IPaymentService paymentService) =>
         {
             try
             {
@@ -48,7 +49,7 @@ public static class PaymentsController
         });
 
         // Update an existing payment for a specific property
-        app.MapPut("/api/properties/{propertyId}/payments/{paymentId}", async (int propertyId, int paymentId, RentalPayment updatedPayment, IPaymentService paymentService) =>
+        app.MapPut("/api/properties/{propertyId}/payments/{paymentId}", async (Guid propertyId, Guid paymentId, RentalPayment updatedPayment, IPaymentService paymentService) =>
         {
             try
             {
@@ -78,7 +79,7 @@ public static class PaymentsController
         });
 
         // Delete a payment for a specific property
-        app.MapDelete("/api/properties/{propertyId}/payments/{paymentId}", async (int propertyId, int paymentId, IPaymentService paymentService) =>
+        app.MapDelete("/api/properties/{propertyId}/payments/{paymentId}", async (Guid propertyId, Guid paymentId, IPaymentService paymentService) =>
         {
             try
             {

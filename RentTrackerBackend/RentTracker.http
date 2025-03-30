@@ -1,4 +1,11 @@
-@baseUrl = http://localhost:7000
+@baseUrl = http://localhost:5149
+@propertyId = 00000000-0000-0000-0000-000000000001
+@paymentId = 00000000-0000-0000-0000-000000000002
+@attachmentId = 00000000-0000-0000-0000-000000000003
+
+### Health Check ###
+GET {{baseUrl}}/api/health
+Accept: application/json
 
 ### Properties ###
 
@@ -9,7 +16,7 @@ Accept: application/json
 ###
 
 # Get property by ID
-GET {{baseUrl}}/api/properties/1
+GET {{baseUrl}}/api/properties/{{propertyId}}
 Accept: application/json
 
 ###
@@ -19,6 +26,7 @@ POST {{baseUrl}}/api/properties
 Content-Type: application/json
 
 {
+    "id": "{{propertyId}}",
     "address": "123 Sample Street",
     "suburb": "Sample Suburb",
     "state": "NSW",
@@ -34,7 +42,7 @@ Content-Type: application/json
 ###
 
 # Update property
-PUT {{baseUrl}}/api/properties/1
+PUT {{baseUrl}}/api/properties/{{propertyId}}
 Content-Type: application/json
 
 {
@@ -53,28 +61,29 @@ Content-Type: application/json
 ###
 
 # Delete property
-DELETE {{baseUrl}}/api/properties/1
+DELETE {{baseUrl}}/api/properties/{{propertyId}}
 
 ### Payments ###
 
-# Get payments for property
-GET {{baseUrl}}/api/properties/1/payments
+# Get payments for a specific property
+GET {{baseUrl}}/api/properties/{{propertyId}}/payments
 Accept: application/json
 
 ###
 
-# Get payment by ID
-GET {{baseUrl}}/api/payments/1
+# Get a specific payment by ID for a property
+GET {{baseUrl}}/api/properties/{{propertyId}}/payments/{{paymentId}}
 Accept: application/json
 
 ###
 
-# Create new payment
-POST {{baseUrl}}/api/payments
+# Create new payment for a property
+POST {{baseUrl}}/api/properties/{{propertyId}}/payments
 Content-Type: application/json
 
 {
-    "rentalPropertyId": 1,
+    "id": "{{paymentId}}",
+    "rentalPropertyId": "{{propertyId}}",
     "amount": 1100.00,
     "paymentDate": "2024-03-30T00:00:00Z",
     "paymentMethod": "Bank Transfer",
@@ -84,61 +93,59 @@ Content-Type: application/json
 
 ###
 
-# Update payment
-PUT {{baseUrl}}/api/payments/1
+# Update payment for a property
+PUT {{baseUrl}}/api/properties/{{propertyId}}/payments/{{paymentId}}
 Content-Type: application/json
 
 {
-    "amount": 1100.00,
+    "amount": 1200.00,
     "paymentDate": "2024-03-30T00:00:00Z",
-    "paymentMethod": "Bank Transfer",
+    "paymentMethod": "Credit Card",
     "paymentReference": "RENT-123456-UPDATE",
     "notes": "Updated rent payment for April 2024"
 }
 
 ###
 
-# Delete payment
-DELETE {{baseUrl}}/api/payments/1
+# Delete payment for a property
+DELETE {{baseUrl}}/api/properties/{{propertyId}}/payments/{{paymentId}}
 
 ### Attachments ###
 
-# Get attachment by ID
-GET {{baseUrl}}/api/attachments/1
-Accept: application/json
-
-###
-
 # Get property attachments
-GET {{baseUrl}}/api/properties/1/attachments
+GET {{baseUrl}}/api/properties/{{propertyId}}/attachments
 Accept: application/json
 
 ###
 
-# Get payment attachments
-GET {{baseUrl}}/api/payments/1/attachments
+# Get payment attachments for a specific property
+GET {{baseUrl}}/api/properties/{{propertyId}}/payments/{{paymentId}}/attachments
 Accept: application/json
 
 ###
 
-# Download attachment
-GET {{baseUrl}}/api/attachments/1/download
+# Get attachment by ID
+GET {{baseUrl}}/api/attachments/{{attachmentId}}
+Accept: application/json
 
 ###
 
-# Note: The following requests require multipart/form-data and should be tested using Postman or curl
+# Note: Attachment uploads require multipart/form-data
+# Use Postman or curl for these requests
 
 # Upload property attachment (Curl example)
-# curl -X POST {{baseUrl}}/api/properties/1/attachments \
+# curl -X POST {{baseUrl}}/api/properties/{{propertyId}}/attachments \
 #   -F "file=@/path/to/file.pdf" \
-#   -F "description=Sample lease document"
+#   -F "description=Sample lease document" \
+#   -F "id={{attachmentId}}"
 
 # Upload payment attachment (Curl example)
-# curl -X POST {{baseUrl}}/api/payments/1/attachments \
+# curl -X POST {{baseUrl}}/api/properties/{{propertyId}}/payments/{{paymentId}}/attachments \
 #   -F "file=@/path/to/receipt.pdf" \
-#   -F "description=Rent receipt"
+#   -F "description=Rent receipt" \
+#   -F "id={{attachmentId}}"
 
 ###
 
 # Delete attachment
-DELETE {{baseUrl}}/api/attachments/1
+DELETE {{baseUrl}}/api/attachments/{{attachmentId}}

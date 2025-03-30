@@ -30,9 +30,9 @@ public class AttachmentService : IAttachmentService
     }
 
     public async Task<Attachment> SaveAttachmentAsync(
-        IFormFile file, 
-        RentalAttachmentType attachmentType, 
-        int parentId)
+        IFormFile file,
+        RentalAttachmentType attachmentType,
+        Guid parentId)
     {
         // Validate file
         ValidateFile(file);

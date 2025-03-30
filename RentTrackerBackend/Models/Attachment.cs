@@ -1,12 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using RentTrackerBackend.Services;
 
 namespace RentTrackerBackend.Models;
 
 public class Attachment
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = SequentialGuidGenerator.NewSequentialGuid();
     
     [StringLength(255)]
     [Required]
@@ -26,9 +27,9 @@ public class Attachment
     public DateTime UploadDate { get; set; } = DateTime.UtcNow;
     
     // Can be associated with either a property or a payment
-    public int? RentalPropertyId { get; set; }
+    public Guid? RentalPropertyId { get; set; }
     
-    public int? RentalPaymentId { get; set; }
+    public Guid? RentalPaymentId { get; set; }
     
     // Navigation properties
     [ForeignKey("RentalPropertyId")]

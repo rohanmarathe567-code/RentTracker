@@ -1,15 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using RentTrackerBackend.Services;
 
 namespace RentTrackerBackend.Models;
 
 public class RentalPayment
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = SequentialGuidGenerator.NewSequentialGuid();
     
     [Required]
-    public int RentalPropertyId { get; set; }
+    public Guid RentalPropertyId { get; set; }
     
     [Required]
     [Column(TypeName = "decimal(18,2)")]
