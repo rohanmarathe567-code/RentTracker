@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using RentTrackerBackend.Data;
+using Microsoft.AspNetCore.Mvc;
 using RentTrackerBackend.Models;
+using RentTrackerBackend.Services;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -8,58 +8,96 @@ public static class PaymentsController
 {
     public static void MapPaymentEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/properties/{propertyId}/payments", async (int propertyId, ApplicationDbContext db) =>
-            await db.RentalPayments
-                .Where(p => p.RentalPropertyId == propertyId)
-                .OrderByDescending(p => p.PaymentDate)
-                .ToListAsync());
-
-        app.MapGet("/api/payments/{id}", async (int id, ApplicationDbContext db) =>
-            await db.RentalPayments.FindAsync(id) is { } payment
-                ? Results.Ok(payment)
-                : Results.NotFound());
-
-        app.MapPost("/api/payments", async (RentalPayment payment, ApplicationDbContext db) =>
+        // Get payments for a specific property
+        app.MapGet("/api/properties/{propertyId}/payments", async (int propertyId, IPaymentService paymentService) =>
         {
-            payment.CreatedAt = DateTime.UtcNow;
-            payment.UpdatedAt = DateTime.UtcNow;
-            
-            db.RentalPayments.Add(payment);
-            await db.SaveChangesAsync();
-            
-            return Results.Created($"/api/payments/{payment.Id}", payment);
+            try
+            {
+                var payments = await paymentService.GetPaymentsByPropertyIdAsync(propertyId);
+                return Results.Ok(payments);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
+            }
         });
 
-        app.MapPut("/api/payments/{id}", async (int id, RentalPayment updatedPayment, ApplicationDbContext db) =>
+        // Get a specific payment by ID for a specific property
+        app.MapGet("/api/properties/{propertyId}/payments/{paymentId}", async (int propertyId, int paymentId, IPaymentService paymentService) =>
         {
-            var payment = await db.RentalPayments.FindAsync(id);
-            
-            if (payment == null)
-                return Results.NotFound();
-            
-            payment.Amount = updatedPayment.Amount;
-            payment.PaymentDate = updatedPayment.PaymentDate;
-            payment.PaymentMethod = updatedPayment.PaymentMethod;
-            payment.PaymentReference = updatedPayment.PaymentReference;
-            payment.Notes = updatedPayment.Notes;
-            payment.UpdatedAt = DateTime.UtcNow;
-            
-            await db.SaveChangesAsync();
-            
-            return Results.NoContent();
+            try
+            {
+                var payment = await paymentService.GetPaymentByIdAsync(paymentId);
+                
+                // Additional validation to ensure payment belongs to the specified property
+                if (payment == null || payment.RentalPropertyId != propertyId)
+                {
+                    return Results.NotFound($"Payment with ID {paymentId} not found for property {propertyId}");
+                }
+                
+                return Results.Ok(payment);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
+            }
         });
 
-        app.MapDelete("/api/payments/{id}", async (int id, ApplicationDbContext db) =>
+        // Update an existing payment for a specific property
+        app.MapPut("/api/properties/{propertyId}/payments/{paymentId}", async (int propertyId, int paymentId, RentalPayment updatedPayment, IPaymentService paymentService) =>
         {
-            var payment = await db.RentalPayments.FindAsync(id);
-            
-            if (payment == null)
-                return Results.NotFound();
-            
-            db.RentalPayments.Remove(payment);
-            await db.SaveChangesAsync();
-            
-            return Results.NoContent();
+            try
+            {
+                // Validate that the payment belongs to the specified property
+                var existingPayment = await paymentService.GetPaymentByIdAsync(paymentId);
+                if (existingPayment == null || existingPayment.RentalPropertyId != propertyId)
+                {
+                    return Results.NotFound($"Payment with ID {paymentId} not found for property {propertyId}");
+                }
+
+                // Ensure the updated payment is for the correct property
+                updatedPayment.RentalPropertyId = propertyId;
+
+                var payment = await paymentService.UpdatePaymentAsync(paymentId, updatedPayment);
+                return payment != null
+                    ? Results.NoContent()
+                    : Results.NotFound($"Payment with ID {paymentId} not found");
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
+            }
+        });
+
+        // Delete a payment for a specific property
+        app.MapDelete("/api/properties/{propertyId}/payments/{paymentId}", async (int propertyId, int paymentId, IPaymentService paymentService) =>
+        {
+            try
+            {
+                // Validate that the payment belongs to the specified property
+                var existingPayment = await paymentService.GetPaymentByIdAsync(paymentId);
+                if (existingPayment == null || existingPayment.RentalPropertyId != propertyId)
+                {
+                    return Results.NotFound($"Payment with ID {paymentId} not found for property {propertyId}");
+                }
+
+                var deleted = await paymentService.DeletePaymentAsync(paymentId);
+                return deleted
+                    ? Results.NoContent()
+                    : Results.NotFound($"Payment with ID {paymentId} not found");
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
+            }
         });
     }
 }

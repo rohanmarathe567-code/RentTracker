@@ -43,8 +43,10 @@ try
         options.UseNpgsql(connectionString);
     });
 
-    // Register FileService
+    // Register FileService and Services
     builder.Services.AddScoped<FileService>();
+    builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+    builder.Services.AddScoped<IPaymentService, PaymentService>();
 
     var app = builder.Build();
 
@@ -72,11 +74,12 @@ try
     app.MapAttachmentEndpoints();
 
     // Create uploads directory if it doesn't exist
-    var uploadsDir = Path.Combine(app.Environment.ContentRootPath, "uploads");
-    if (!Directory.Exists(uploadsDir))
-    {
-        Directory.CreateDirectory(uploadsDir);
-    }
+    var uploadsDir = Path.Combine(AppContext.BaseDirectory, "uploads");
+    Directory.CreateDirectory(uploadsDir);
+    
+    // Create subdirectories for different attachment types
+    Directory.CreateDirectory(Path.Combine(uploadsDir, "property"));
+    Directory.CreateDirectory(Path.Combine(uploadsDir, "payment"));
 
     app.Run();
 }

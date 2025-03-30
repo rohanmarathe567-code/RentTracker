@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentTrackerBackend.Data;
+using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
+using RentTrackerBackend.Endpoints;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -8,79 +11,111 @@ public static class AttachmentsController
 {
     public static void MapAttachmentEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/attachments/{id}", async (int id, ApplicationDbContext db) =>
-            await db.Attachments.FindAsync(id) is { } attachment
-                ? Results.Ok(attachment)
-                : Results.NotFound());
-
+        // Property Attachments
         app.MapGet("/api/properties/{propertyId}/attachments", async (int propertyId, ApplicationDbContext db) =>
-            await db.Attachments
-                .Where(a => a.RentalPropertyId == propertyId)
-                .OrderByDescending(a => a.UploadDate)
-                .ToListAsync());
-
-        app.MapGet("/api/payments/{paymentId}/attachments", async (int paymentId, ApplicationDbContext db) =>
-            await db.Attachments
-                .Where(a => a.RentalPaymentId == paymentId)
-                .OrderByDescending(a => a.UploadDate)
-                .ToListAsync());
-
-        app.MapPost("/api/properties/{propertyId}/attachments", async (int propertyId, HttpRequest request, FileService fileService, ApplicationDbContext db) =>
         {
+            var attachments = await db.Attachments
+                .Where(a => a.RentalPropertyId == propertyId)
+                .ToListAsync();
+            return Results.Ok(attachments);
+        });
+
+        app.MapPost("/api/properties/{propertyId}/attachments", async (
+            int propertyId, 
+            IFormFile file, 
+            ApplicationDbContext db, 
+            IWebHostEnvironment env, 
+            IAttachmentService attachmentService) =>
+        {
+            // Validate property exists
             var property = await db.RentalProperties.FindAsync(propertyId);
             if (property == null)
-                return Results.NotFound("Property not found");
+                return Results.NotFound($"Property with ID {propertyId} not found.");
 
-            if (!request.HasFormContentType || request.Form.Files.Count == 0)
-                return Results.BadRequest("No files were uploaded");
+            // Validate file
+            if (file == null || file.Length == 0)
+                return Results.BadRequest("No file uploaded.");
 
-            var file = request.Form.Files[0];
-            var description = request.Form["description"].ToString();
+            try 
+            {
+                var attachment = await attachmentService.SaveAttachmentAsync(
+                    file, 
+                    RentalAttachmentType.Property, 
+                    propertyId);
 
-            var attachment = await fileService.SaveFileAsync(file, description, propertyId, null);
-            return Results.Created($"/api/attachments/{attachment.Id}", attachment);
+                return Results.Created($"/api/attachments/{attachment.Id}", attachment);
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest($"File upload failed: {ex.Message}");
+            }
         });
 
-        app.MapPost("/api/payments/{paymentId}/attachments", async (int paymentId, HttpRequest request, FileService fileService, ApplicationDbContext db) =>
+        // Payment Attachments
+        app.MapGet("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
+            int propertyId, 
+            int paymentId, 
+            ApplicationDbContext db) =>
         {
-            var payment = await db.RentalPayments.FindAsync(paymentId);
+            var attachments = await db.Attachments
+                .Where(a => a.RentalPaymentId == paymentId)
+                .ToListAsync();
+            return Results.Ok(attachments);
+        });
+
+        app.MapPost("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
+            int propertyId, 
+            int paymentId, 
+            IFormFile file, 
+            ApplicationDbContext db, 
+            IWebHostEnvironment env, 
+            IAttachmentService attachmentService) =>
+        {
+            // Validate payment exists and belongs to property
+            var payment = await db.RentalPayments
+                .FirstOrDefaultAsync(p => p.Id == paymentId && p.RentalPropertyId == propertyId);
+            
             if (payment == null)
-                return Results.NotFound("Payment not found");
+                return Results.NotFound($"Payment with ID {paymentId} for Property {propertyId} not found.");
 
-            if (!request.HasFormContentType || request.Form.Files.Count == 0)
-                return Results.BadRequest("No files were uploaded");
+            // Validate file
+            if (file == null || file.Length == 0)
+                return Results.BadRequest("No file uploaded.");
 
-            var file = request.Form.Files[0];
-            var description = request.Form["description"].ToString();
-
-            var attachment = await fileService.SaveFileAsync(file, description, null, paymentId);
-            return Results.Created($"/api/attachments/{attachment.Id}", attachment);
-        });
-
-        app.MapGet("/api/attachments/{id}/download", async (int id, FileService fileService) =>
-        {
-            try
+            try 
             {
-                var (fileStream, contentType, fileName) = await fileService.GetFileAsync(id);
-                return Results.File(fileStream, contentType, fileName);
+                var attachment = await attachmentService.SaveAttachmentAsync(
+                    file, 
+                    RentalAttachmentType.Payment, 
+                    paymentId);
+
+                return Results.Created($"/api/attachments/{attachment.Id}", attachment);
             }
-            catch (FileNotFoundException)
+            catch (Exception ex)
             {
-                return Results.NotFound("File not found");
+                return Results.BadRequest($"File upload failed: {ex.Message}");
             }
         });
 
-        app.MapDelete("/api/attachments/{id}", async (int id, FileService fileService) =>
+        // Generic Attachment Endpoints
+        app.MapGet("/api/attachments/{attachmentId}", async (
+            int attachmentId, 
+            ApplicationDbContext db, 
+            IAttachmentService attachmentService) =>
         {
-            try
-            {
-                await fileService.DeleteFileAsync(id);
-                return Results.NoContent();
-            }
-            catch (FileNotFoundException)
-            {
-                return Results.NotFound("Attachment not found");
-            }
+            var attachment = await db.Attachments.FindAsync(attachmentId);
+            
+            if (attachment == null)
+                return Results.NotFound($"Attachment with ID {attachmentId} not found.");
+
+            return Results.Ok(attachment);
         });
     }
+}
+
+// Enum to specify attachment type
+public enum RentalAttachmentType
+{
+    Property,
+    Payment
 }

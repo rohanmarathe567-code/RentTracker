@@ -1,3 +1,33 @@
+## [2025-03-30] Nested Resource Endpoint Pattern for Payments
+
+### Context
+Implemented a nested resource endpoint pattern for payments within properties, following RESTful API design principles.
+
+### Pattern Description
+- Endpoint Structure: `/api/properties/{propertyId}/payments/{paymentId}`
+- Supports operations: GET, PUT, DELETE
+- Provides context-specific access to payment resources
+
+### Key Characteristics
+- Hierarchical resource representation
+- Explicit property-payment relationship
+- Enhanced security through context-based validation
+
+### Implementation Details
+- Validates payment belongs to specified property before allowing operations
+- Maintains existing service layer methods
+- Provides intuitive API navigation
+
+### Benefits
+- Improved API readability
+- Stronger data integrity
+- More precise resource management
+
+### Example
+```
+GET /api/properties/123/payments/456
+- Retrieves payment 456 specifically for property 123
+```
 
 ## 2025-03-30: Frontend Architecture Update
 - Introduced Blazor WebAssembly as frontend framework

@@ -1,3 +1,27 @@
+## Recent Changes
+
+### Attachment Service Modifications
+- Removed attachment deletion functionality
+- Simplified attachment endpoint and service implementation
+- Focused on upload and retrieval of attachments
+## Current Focus: Payment Endpoint Refinement
+
+### Recent Changes
+- Implemented nested resource endpoints for payments
+- Added property-specific payment operations
+- Enhanced API endpoint validation
+
+### Open Questions
+- How will client-side code adapt to the new nested endpoint structure?
+- What additional validation might be needed in the service layer?
+
+### Next Steps
+- Update API documentation
+- Review client-side API interaction methods
+- Consider adding comprehensive integration tests
+
+### Timestamp
+[2025-03-30 19:46:00 UTC+11]
 
 ## Recent Changes (2025-03-30)
 - Updated README.md to include RentTrackerClient details
