@@ -1,3 +1,6 @@
+[2025-03-30 15:12:34] - Fixed build error by removing duplicate NavMenu components. Removed NavMenu files from Layout directory and updated MainLayout.razor to use RentTrackerClient.Shared.NavMenu component.
+
+
 [2025-03-30 14:01:38] - Renamed RentTracker.csproj to RentTrackerBackend.csproj and updated all references
 
 

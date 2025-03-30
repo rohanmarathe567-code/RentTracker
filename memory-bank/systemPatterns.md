@@ -55,4 +55,14 @@ This file documents recurring patterns and standards used in the project.
 * Database testing with in-memory provider
 * API endpoint testing
 * File operation testing
+
+
+## Development Environment Patterns
+
+### Command Line Interface
+* PowerShell as the standard shell for running commands
+* Consistent command execution across development team
+* Standardized terminal usage in development workflow
+
+[2025-03-30 15:53:26] - Established PowerShell as the standard shell for running commands
 * Authentication testing (planned)

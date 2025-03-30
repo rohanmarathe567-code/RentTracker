@@ -1,19 +1,25 @@
+### IDE and Editor Files ###
 *.swp
 *.*~
-project.lock.json
 .DS_Store
 *.pyc
-nupkg/
 
 # Visual Studio Code
 .vscode/*
 !.vscode/settings.json
-
-# Rider
-.idea/
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # Visual Studio
 .vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
 
 # Fleet
 .fleet/
@@ -21,13 +27,8 @@ nupkg/
 # Code Rush
 .cr/
 
-# User-specific files
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# Build results
+### Build and Dependencies ###
+# .NET Build results
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -42,6 +43,54 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
+
+# NuGet
+project.lock.json
+nupkg/
+*.nuget.props
+*.nuget.targets
+project.assets.json
+
+### Blazor Client Specific ###
+# Compiled output
+**/wwwroot/dist/
+**/wwwroot/lib/
+**/wwwroot/css/app.min.css
+*.css.map
+*.js.map
+
+# Service workers
+**/wwwroot/service-worker.js
+**/wwwroot/service-worker.published.js
+
+# PWA assets
+**/wwwroot/icon-*.png
+**/wwwroot/manifest.json
+
+### Environment and Local Files ###
+# Environment files
+*.Development.json
+*.Production.json
+*.Local.json
+appsettings.*.json
+!appsettings.json
+
+# Local database files
 renttracker.db
 /renttracker.db*
+*.db-shm
+*.db-wal
+
+# Local configuration
 .rooignore
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+### Temporary Files ###
+[Tt]emp/
+*.tmp
+*.bak
+*.cache

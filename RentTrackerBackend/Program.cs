@@ -5,6 +5,17 @@ using RentTrackerBackend.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5112")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 // Add services to the container.
@@ -28,6 +39,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.MapOpenApi();
 }
+
+app.UseCors();
 
 using (var scope = app.Services.CreateScope())
 {

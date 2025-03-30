@@ -1,3 +1,6 @@
+[2025-03-30 15:58:56] - Added wwwroot/lib/ to .gitignore to exclude client-side library files from version control. These files will be managed by package managers and can be restored as needed.
+
+
 [2025-03-30 14:03:29] - Renamed Api directory to RentTrackerBackend to better reflect its purpose and improve project clarity
 
 

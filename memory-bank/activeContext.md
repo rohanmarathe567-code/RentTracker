@@ -1,3 +1,10 @@
+[2025-03-30 15:54:28] - Established PowerShell as the standard shell for running commands across the development environment
+
+
+[2025-03-30 15:28:51] - Updated RentTrackerClient Program.cs baseAddress port from 5000 to 7000 to match the correct HTTP endpoint port
+
+
+
 [2025-03-30 14:04:20] - Renamed Api directory to RentTrackerBackend for better project organization and clarity
 
 
