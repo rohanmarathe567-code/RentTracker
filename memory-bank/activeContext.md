@@ -1,3 +1,12 @@
+[2025-03-30 12:15:02] - Updated RentTracker.http baseUrl port from 7001 to 7000 to match the correct HTTP port
+
+
+[2025-03-30 12:14:29] - Updated RentTracker.http baseUrl from https://localhost:7001 to http://localhost:7001 since HTTPS is not configured in Program.cs for development
+
+
+[2025-03-30 12:02:44] - Updated RentTracker.http baseUrl from https://localhost:7149 to https://localhost:7001 to match the configured HTTPS port in launchSettings.json
+
+
 [2025-03-30 11:49:10] - Project Structure Update: Completed major restructuring of the project. All API-related files moved to dedicated Api directory with proper organization including Models, Data, Services, and new Endpoints directory.
 
 

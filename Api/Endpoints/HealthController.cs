@@ -23,7 +23,7 @@ public static class HealthController
                     {
                         { "Status", "Unhealthy" },
                         { "Database", "Disconnected" }
-                    }
+                    }!
                 );
             }
         });

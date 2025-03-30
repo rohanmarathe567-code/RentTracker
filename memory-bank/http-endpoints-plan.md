@@ -1,20 +1,30 @@
-@baseUrl = http://localhost:7000
+# HTTP Endpoints Update Plan
 
-### Properties ###
+## Overview
+Update the RentTracker.http file to include comprehensive sample requests for all endpoints, organized by resource type.
 
-# Get all properties
+## Base Structure
+```
+@baseUrl = http://localhost:5149
+```
+
+## Properties Endpoints
+
+### GET Requests
+1. Get all properties
+```http
 GET {{baseUrl}}/api/properties
 Accept: application/json
+```
 
-###
-
-# Get property by ID
+2. Get property by ID
+```http
 GET {{baseUrl}}/api/properties/1
 Accept: application/json
+```
 
-###
-
-# Create new property
+### POST Request
+```http
 POST {{baseUrl}}/api/properties
 Content-Type: application/json
 
@@ -30,10 +40,10 @@ Content-Type: application/json
     "propertyManager": "John Smith",
     "propertyManagerContact": "john.smith@example.com"
 }
+```
 
-###
-
-# Update property
+### PUT Request
+```http
 PUT {{baseUrl}}/api/properties/1
 Content-Type: application/json
 
@@ -49,27 +59,30 @@ Content-Type: application/json
     "propertyManager": "Jane Doe",
     "propertyManagerContact": "jane.doe@example.com"
 }
+```
 
-###
-
-# Delete property
+### DELETE Request
+```http
 DELETE {{baseUrl}}/api/properties/1
+```
 
-### Payments ###
+## Payments Endpoints
 
-# Get payments for property
+### GET Requests
+1. Get payments for property
+```http
 GET {{baseUrl}}/api/properties/1/payments
 Accept: application/json
+```
 
-###
-
-# Get payment by ID
+2. Get payment by ID
+```http
 GET {{baseUrl}}/api/payments/1
 Accept: application/json
+```
 
-###
-
-# Create new payment
+### POST Request
+```http
 POST {{baseUrl}}/api/payments
 Content-Type: application/json
 
@@ -81,10 +94,10 @@ Content-Type: application/json
     "paymentReference": "RENT-123456",
     "notes": "Rent payment for April 2024"
 }
+```
 
-###
-
-# Update payment
+### PUT Request
+```http
 PUT {{baseUrl}}/api/payments/1
 Content-Type: application/json
 
@@ -95,50 +108,56 @@ Content-Type: application/json
     "paymentReference": "RENT-123456-UPDATE",
     "notes": "Updated rent payment for April 2024"
 }
+```
 
-###
-
-# Delete payment
+### DELETE Request
+```http
 DELETE {{baseUrl}}/api/payments/1
+```
 
-### Attachments ###
+## Attachments Endpoints
 
-# Get attachment by ID
+### GET Requests
+1. Get attachment by ID
+```http
 GET {{baseUrl}}/api/attachments/1
 Accept: application/json
+```
 
-###
-
-# Get property attachments
+2. Get property attachments
+```http
 GET {{baseUrl}}/api/properties/1/attachments
 Accept: application/json
+```
 
-###
-
-# Get payment attachments
+3. Get payment attachments
+```http
 GET {{baseUrl}}/api/payments/1/attachments
 Accept: application/json
+```
 
-###
-
-# Download attachment
+4. Download attachment
+```http
 GET {{baseUrl}}/api/attachments/1/download
+```
 
-###
+### POST Requests
+Note: These requests require multipart/form-data which needs to be tested through a client like Postman or using curl.
 
-# Note: The following requests require multipart/form-data and should be tested using Postman or curl
+1. Upload property attachment:
+```bash
+curl -X POST {{baseUrl}}/api/properties/1/attachments \
+  -F "file=@/path/to/file.pdf" \
+  -F "description=Sample lease document"
+```
 
-# Upload property attachment (Curl example)
-# curl -X POST {{baseUrl}}/api/properties/1/attachments \
-#   -F "file=@/path/to/file.pdf" \
-#   -F "description=Sample lease document"
+2. Upload payment attachment:
+```bash
+curl -X POST {{baseUrl}}/api/payments/1/attachments \
+  -F "file=@/path/to/receipt.pdf" \
+  -F "description=Rent receipt"
+```
 
-# Upload payment attachment (Curl example)
-# curl -X POST {{baseUrl}}/api/payments/1/attachments \
-#   -F "file=@/path/to/receipt.pdf" \
-#   -F "description=Rent receipt"
-
-###
-
-# Delete attachment
+### DELETE Request
+```http
 DELETE {{baseUrl}}/api/attachments/1
