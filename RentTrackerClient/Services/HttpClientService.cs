@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace RentTrackerClient.Services;
 
@@ -8,11 +9,13 @@ public abstract class HttpClientService
     protected readonly HttpClient _httpClient;
     protected readonly string _baseUrl;
     protected readonly JsonSerializerOptions _jsonOptions;
+    protected readonly ILogger _logger;
 
-    protected HttpClientService(HttpClient httpClient, string baseUrl)
+    protected HttpClientService(HttpClient httpClient, string baseUrl, ILogger logger)
     {
         _httpClient = httpClient;
         _baseUrl = baseUrl.TrimEnd('/');
+        _logger = logger;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
@@ -21,35 +24,168 @@ public abstract class HttpClientService
 
     protected async Task<T?> GetAsync<T>(string endpoint)
     {
-        var response = await _httpClient.GetAsync($"{_baseUrl}/{endpoint}");
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<T>(_jsonOptions);
+        try
+        {
+            var fullUrl = $"{_baseUrl}/{endpoint}";
+            _logger.LogDebug($"GET Request: {fullUrl}");
+
+            var startTime = DateTime.UtcNow;
+            var response = await _httpClient.GetAsync(fullUrl);
+            var duration = DateTime.UtcNow - startTime;
+
+            _logger.LogInformation($"GET Request to {fullUrl} completed in {duration.TotalMilliseconds}ms. Status: {response.StatusCode}");
+
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogDebug($"Raw Response Content: {responseContent}");
+
+            try
+            {
+                var result = await response.Content.ReadFromJsonAsync<T>(_jsonOptions);
+                _logger.LogDebug($"GET Request Result: {JsonSerializer.Serialize(result)}");
+                return result;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, $"JSON Deserialization Error. Raw Content: {responseContent}");
+                throw new InvalidOperationException($"Failed to deserialize JSON. Raw content: {responseContent}", ex);
+            }
+            // Removed redundant return statement
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, $"HTTP GET request failed for endpoint: {endpoint}");
+            throw;
+        }
     }
 
     protected async Task<List<T>> GetListAsync<T>(string endpoint)
     {
-        var response = await _httpClient.GetAsync($"{_baseUrl}/{endpoint}");
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions) ?? new List<T>();
+        try
+        {
+            var fullUrl = $"{_baseUrl}/{endpoint}";
+            _logger.LogDebug($"GET List Request: {fullUrl}");
+
+            var startTime = DateTime.UtcNow;
+            var response = await _httpClient.GetAsync(fullUrl);
+            var duration = DateTime.UtcNow - startTime;
+
+            _logger.LogInformation($"GET List Request to {fullUrl} completed in {duration.TotalMilliseconds}ms. Status: {response.StatusCode}");
+
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogDebug($"Raw List Response Content: {responseContent}");
+
+            try
+            {
+                var result = await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions) ?? new List<T>();
+                _logger.LogDebug($"GET List Request Result: {result.Count} items");
+                return result;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, $"JSON List Deserialization Error. Raw Content: {responseContent}");
+                throw new InvalidOperationException($"Failed to deserialize JSON list. Raw content: {responseContent}", ex);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, $"HTTP GET list request failed for endpoint: {endpoint}");
+            throw;
+        }
     }
 
     protected async Task<T?> PostAsync<T>(string endpoint, object data)
     {
-        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/{endpoint}", data, _jsonOptions);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<T>(_jsonOptions);
+        try
+        {
+            var fullUrl = $"{_baseUrl}/{endpoint}";
+            _logger.LogDebug($"POST Request: {fullUrl}. Data: {JsonSerializer.Serialize(data)}");
+
+            var startTime = DateTime.UtcNow;
+            var response = await _httpClient.PostAsJsonAsync(fullUrl, data, _jsonOptions);
+            var duration = DateTime.UtcNow - startTime;
+
+            _logger.LogInformation($"POST Request to {fullUrl} completed in {duration.TotalMilliseconds}ms. Status: {response.StatusCode}");
+
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogDebug($"Raw POST Response Content: {responseContent}");
+
+            try
+            {
+                var result = await response.Content.ReadFromJsonAsync<T>(_jsonOptions);
+                _logger.LogDebug($"POST Request Result: {JsonSerializer.Serialize(result)}");
+                return result;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, $"JSON POST Deserialization Error. Raw Content: {responseContent}");
+                throw new InvalidOperationException($"Failed to deserialize JSON. Raw content: {responseContent}", ex);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, $"HTTP POST request failed for endpoint: {endpoint}");
+            throw;
+        }
     }
 
     protected async Task<T?> PutAsync<T>(string endpoint, object data)
     {
-        var response = await _httpClient.PutAsJsonAsync($"{_baseUrl}/{endpoint}", data, _jsonOptions);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<T>(_jsonOptions);
+        try
+        {
+            var fullUrl = $"{_baseUrl}/{endpoint}";
+            _logger.LogDebug($"PUT Request: {fullUrl}. Data: {JsonSerializer.Serialize(data)}");
+
+            var startTime = DateTime.UtcNow;
+            var response = await _httpClient.PutAsJsonAsync(fullUrl, data, _jsonOptions);
+            var duration = DateTime.UtcNow - startTime;
+
+            _logger.LogInformation($"PUT Request to {fullUrl} completed in {duration.TotalMilliseconds}ms. Status: {response.StatusCode}");
+
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogDebug($"Raw PUT Response Content: {responseContent}");
+
+            try
+            {
+                var result = await response.Content.ReadFromJsonAsync<T>(_jsonOptions);
+                _logger.LogDebug($"PUT Request Result: {JsonSerializer.Serialize(result)}");
+                return result;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, $"JSON PUT Deserialization Error. Raw Content: {responseContent}");
+                throw new InvalidOperationException($"Failed to deserialize JSON. Raw content: {responseContent}", ex);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, $"HTTP PUT request failed for endpoint: {endpoint}");
+            throw;
+        }
     }
 
     protected async Task DeleteAsync(string endpoint)
     {
-        var response = await _httpClient.DeleteAsync($"{_baseUrl}/{endpoint}");
-        response.EnsureSuccessStatusCode();
+        try
+        {
+            var fullUrl = $"{_baseUrl}/{endpoint}";
+            _logger.LogDebug($"DELETE Request: {fullUrl}");
+
+            var startTime = DateTime.UtcNow;
+            var response = await _httpClient.DeleteAsync(fullUrl);
+            var duration = DateTime.UtcNow - startTime;
+
+            _logger.LogInformation($"DELETE Request to {fullUrl} completed in {duration.TotalMilliseconds}ms. Status: {response.StatusCode}");
+
+            response.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, $"HTTP DELETE request failed for endpoint: {endpoint}");
+            throw;
+        }
     }
 }

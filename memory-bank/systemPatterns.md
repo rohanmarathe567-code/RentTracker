@@ -32,6 +32,16 @@ This file documents recurring patterns and standards used in the project.
 * File type validation
 * Chunked upload support
 
+
+### Logging Patterns
+* Structured logging with consistent levels (Trace, Debug, Info, Warning, Error, Critical)
+* Service-level logging for API operations and business logic
+* Component-level logging for lifecycle and user interactions
+* Centralized error handling and logging
+* Performance monitoring through timing logs
+
+[2025-03-30 17:37:29] - Established client-side logging patterns
+
 ## Architectural Patterns
 
 ### API Design
