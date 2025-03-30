@@ -1,0 +1,189 @@
+@page "/payments"
+@page "/payments/{PropertyId:int}"
+@using RentTrackerClient.Models
+@using RentTrackerClient.Services
+@using Microsoft.JSInterop
+@inject RentalPaymentService PaymentService
+@inject RentalPropertyService PropertyService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Rental Payments - Rent Tracker</PageTitle>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Rental Payments</h1>
+        <button class="btn btn-primary" @onclick="ShowAddPaymentModal">Add Payment</button>
+    </div>
+
+    @if (payments == null)
+    {
+        <p>Loading...</p>
+    }
+    else if (!payments.Any())
+    {
+        <p>No payments found.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Property</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var payment in payments)
+                    {
+                        <tr>
+                            <td>@payment.PaymentDate.ToShortDateString()</td>
+                            <td>@payment.Amount.ToString("C")</td>
+                            <td>@(payment.RentalProperty?.Address ?? "-")</td>
+                            <td>@(payment.PaymentMethod ?? "-")</td>
+                            <td>@(payment.PaymentReference ?? "-")</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary me-2" @onclick="() => EditPayment(payment)">Edit</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeletePayment(payment.Id)">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (showPaymentModal)
+    {
+        <div class="modal fade show" style="display: block;" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(editingPayment?.Id > 0 ? "Edit" : "Add") Payment</h5>
+                        <button type="button" class="btn-close" @onclick="ClosePaymentModal"></button>
+                    </div>
+                    <EditForm Model="@editingPayment" OnValidSubmit="HandlePaymentSubmit">
+                        <div class="modal-body">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Amount</label>
+                                <InputNumber id="amount" class="form-control" @bind-Value="editingPayment!.Amount" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="paymentDate" class="form-label">Payment Date</label>
+                                <InputDate id="paymentDate" class="form-control" @bind-Value="editingPayment!.PaymentDate" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="paymentMethod" class="form-label">Payment Method</label>
+                                <InputText id="paymentMethod" class="form-control" @bind-Value="editingPayment!.PaymentMethod" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="paymentReference" class="form-label">Payment Reference</label>
+                                <InputText id="paymentReference" class="form-control" @bind-Value="editingPayment!.PaymentReference" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <InputTextArea id="notes" class="form-control" @bind-Value="editingPayment!.Notes" rows="3" />
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="ClosePaymentModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int? PropertyId { get; set; }
+
+    private List<RentalPayment>? payments;
+    private RentalPayment? editingPayment;
+    private bool showPaymentModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPayments();
+    }
+
+    private async Task LoadPayments()
+    {
+        if (PropertyId.HasValue)
+        {
+            payments = await PropertyService.GetPropertyPaymentsAsync(PropertyId.Value);
+        }
+        else
+        {
+            payments = await PaymentService.GetAllPaymentsAsync();
+        }
+    }
+
+    private void ShowAddPaymentModal()
+    {
+        editingPayment = new RentalPayment
+        {
+            RentalPropertyId = PropertyId ?? 0,
+            PaymentDate = DateTime.Today
+        };
+        showPaymentModal = true;
+    }
+
+    private void EditPayment(RentalPayment payment)
+    {
+        editingPayment = payment;
+        showPaymentModal = true;
+    }
+
+    private async Task DeletePayment(int id)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this payment?"))
+        {
+            await PaymentService.DeletePaymentAsync(id);
+            await LoadPayments();
+        }
+    }
+
+    private async Task HandlePaymentSubmit()
+    {
+        try
+        {
+            if (editingPayment!.Id > 0)
+            {
+                await PaymentService.UpdatePaymentAsync(editingPayment.Id, editingPayment);
+            }
+            else
+            {
+                await PaymentService.CreatePaymentAsync(editingPayment);
+            }
+            
+            ClosePaymentModal();
+            await LoadPayments();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving payment: {ex.Message}");
+        }
+    }
+
+    private void ClosePaymentModal()
+    {
+        showPaymentModal = false;
+        editingPayment = null;
+    }
+}

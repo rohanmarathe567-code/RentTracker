@@ -1,0 +1,57 @@
+@page "/"
+@using RentTrackerClient.Models
+@using RentTrackerClient.Services
+@inject RentalPropertyService PropertyService
+
+<PageTitle>Rent Tracker</PageTitle>
+
+<h1>Rental Properties</h1>
+
+<div class="mb-3">
+    <a href="/properties/new" class="btn btn-primary">Add New Property</a>
+</div>
+
+@if (properties == null)
+{
+    <p>Loading...</p>
+}
+else if (!properties.Any())
+{
+    <p>No properties found. Add your first property to get started!</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var property in properties)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">@property.Address</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">@property.Suburb, @property.State @property.PostCode</h6>
+                        <p class="card-text">
+                            @if (property.WeeklyRentAmount.HasValue)
+                            {
+                                <strong>Weekly Rent: </strong> @property.WeeklyRentAmount.Value.ToString("C")<br />
+                            }
+                            @if (property.PropertyManager != null)
+                            {
+                                <strong>Manager: </strong> @property.PropertyManager<br />
+                            }
+                        </p>
+                        <a href="/properties/@property.Id" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<RentalProperty>? properties;
+
+    protected override async Task OnInitializedAsync()
+    {
+        properties = await PropertyService.GetAllPropertiesAsync();
+    }
+}

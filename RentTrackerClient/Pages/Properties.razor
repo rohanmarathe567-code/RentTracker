@@ -1,0 +1,126 @@
+@page "/properties"
+@page "/properties/{Id:int}"
+@using RentTrackerClient.Models
+@using RentTrackerClient.Services
+@inject RentalPropertyService PropertyService
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(Id == null ? "Add Property" : "Edit Property") - Rent Tracker</PageTitle>
+
+<div class="container">
+    <h1>@(Id == null ? "Add New Property" : "Edit Property")</h1>
+
+    @if (property == null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        <EditForm Model="@property" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label for="address" class="form-label">Address</label>
+                <InputText id="address" class="form-control" @bind-Value="property.Address" />
+                <ValidationMessage For="@(() => property.Address)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="suburb" class="form-label">Suburb</label>
+                <InputText id="suburb" class="form-control" @bind-Value="property.Suburb" />
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="state" class="form-label">State</label>
+                    <InputText id="state" class="form-control" @bind-Value="property.State" />
+                </div>
+                <div class="col">
+                    <label for="postCode" class="form-label">Post Code</label>
+                    <InputText id="postCode" class="form-control" @bind-Value="property.PostCode" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <InputTextArea id="description" class="form-control" @bind-Value="property.Description" rows="3" />
+            </div>
+
+            <div class="mb-3">
+                <label for="weeklyRent" class="form-label">Weekly Rent Amount</label>
+                <InputNumber id="weeklyRent" class="form-control" @bind-Value="property.WeeklyRentAmount" />
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="leaseStart" class="form-label">Lease Start Date</label>
+                    <InputDate id="leaseStart" class="form-control" @bind-Value="property.LeaseStartDate" />
+                </div>
+                <div class="col">
+                    <label for="leaseEnd" class="form-label">Lease End Date</label>
+                    <InputDate id="leaseEnd" class="form-control" @bind-Value="property.LeaseEndDate" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="propertyManager" class="form-label">Property Manager</label>
+                <InputText id="propertyManager" class="form-control" @bind-Value="property.PropertyManager" />
+            </div>
+
+            <div class="mb-3">
+                <label for="propertyManagerContact" class="form-label">Property Manager Contact</label>
+                <InputText id="propertyManagerContact" class="form-control" @bind-Value="property.PropertyManagerContact" />
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-secondary" @onclick="NavigateBack">Cancel</button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private RentalProperty? property;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            property = await PropertyService.GetPropertyAsync(Id.Value);
+        }
+        else
+        {
+            property = new RentalProperty();
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            if (Id.HasValue)
+            {
+                await PropertyService.UpdatePropertyAsync(Id.Value, property!);
+            }
+            else
+            {
+                await PropertyService.CreatePropertyAsync(property!);
+            }
+            NavigateBack();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving property: {ex.Message}");
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}
