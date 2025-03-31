@@ -1,4 +1,62 @@
 
+## [2025-03-31 19:54] - Payments Endpoint Pagination Implementation
+
+### Completed Tasks
+- Refactored PaymentsController to support pagination
+- Updated PaymentService to support paginated queries
+- Added search filtering for payments
+- Implemented AsNoTracking for performance
+
+### Key Improvements
+- Standardized pagination across payment endpoints
+- Reduced response payload size
+- Added optional search filtering
+- Improved query performance
+
+### Implementation Details
+- Searchable fields: PaymentMethod, PaymentReference, Notes
+- Pagination support with page number and page size
+- Ordered by payment date in descending order
+
+### Example API Usage
+- GET /api/properties/{propertyId}/payments?pageNumber=1&pageSize=10&searchTerm=bank
+- Returns paginated list of payments with metadata
+
+### Next Steps
+- Add unit tests for payment pagination
+- Update API documentation
+- Consider adding more advanced filtering options
+
+---
+
+
+## [2025-03-31 19:48] - Properties Endpoint Pagination Implementation
+
+### Completed Tasks
+- Refactored PropertiesController to support pagination
+- Added search term filtering
+- Implemented AsNoTracking for performance
+- Created reusable pagination infrastructure
+
+### Key Improvements
+- Standardized pagination across the application
+- Reduced response payload size
+- Added optional search filtering
+- Improved query performance
+
+### Implementation Details
+- PaginationParameters: Manages pagination request parameters
+- PaginatedResponse: Provides metadata about paginated results
+- PaginationExtensions: Adds pagination methods to IQueryable
+
+### Next Steps
+- Add unit tests for pagination infrastructure
+- Update API documentation
+- Consider adding more advanced filtering options
+
+---
+
+
 ## [2025-03-30] GUID Implementation Progress
 - [x] Create SequentialGuidGenerator service
 - [x] Update RentalProperty model to use GUID

@@ -1,4 +1,35 @@
 
+## [2025-03-31 19:44] - Property Endpoint Optimization
+
+### Decision
+Optimize the GET /api/properties endpoint by:
+1. Removing eager loading of payments and attachments
+2. Adding pagination support
+3. Using AsNoTracking for better performance
+
+### Rationale
+- Current implementation returns all payments and attachments with properties, causing large response sizes
+- Separate endpoints already exist for fetching payments (/api/properties/{propertyId}/payments)
+- Pagination is needed to handle large datasets efficiently
+- AsNoTracking improves performance for read-only operations
+
+### Implementation Details
+1. Properties endpoint changes:
+   - Remove navigation property loading
+   - Add pagination parameters (page number, page size)
+   - Add AsNoTracking for better performance
+2. Continue using existing payments endpoint for payment data
+3. Update documentation to reflect these changes
+
+### Impact
+- Improved API performance
+- Reduced response sizes
+- Better scalability for large datasets
+- Clearer separation of concerns between properties and payments
+
+---
+
+
 ## [2025-03-30] HTTP Endpoint GUID Updates
 - Updated RentTracker.http to use GUID-based identifiers
 - Added example GUIDs for properties, payments, and attachments

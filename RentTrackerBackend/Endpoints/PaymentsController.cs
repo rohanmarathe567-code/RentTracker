@@ -1,6 +1,7 @@
-using System;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RentTrackerBackend.Models;
+using RentTrackerBackend.Models.Pagination;
+using RentTrackerBackend.Extensions;
 using RentTrackerBackend.Services;
 
 namespace RentTrackerBackend.Endpoints;
@@ -9,12 +10,27 @@ public static class PaymentsController
 {
     public static void MapPaymentEndpoints(this WebApplication app)
     {
-        // Get payments for a specific property
-        app.MapGet("/api/properties/{propertyId}/payments", async (Guid propertyId, IPaymentService paymentService) =>
+        // Get paginated payments for a specific property
+        app.MapGet("/api/properties/{propertyId}/payments", async (
+            Guid propertyId, 
+            [AsParameters] PaginationParameters parameters, 
+            IPaymentService paymentService) =>
         {
             try
             {
-                var payments = await paymentService.GetPaymentsByPropertyIdAsync(propertyId);
+                var query = await paymentService.GetPaymentsByPropertyQueryAsync(propertyId);
+                
+                // Optional: Add search filtering if needed
+                if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                {
+                    query = query.Where(p => 
+                        (p.PaymentMethod != null && p.PaymentMethod.Contains(parameters.SearchTerm)) || 
+                        (p.PaymentReference != null && p.PaymentReference.Contains(parameters.SearchTerm)) || 
+                        (p.Notes != null && p.Notes.Contains(parameters.SearchTerm)));
+                }
+                
+                var payments = await query.ToPaginatedListAsync(parameters);
+                
                 return Results.Ok(payments);
             }
             catch (ArgumentException ex)
@@ -28,7 +44,10 @@ public static class PaymentsController
         });
 
         // Get a specific payment by ID for a specific property
-        app.MapGet("/api/properties/{propertyId}/payments/{paymentId}", async (Guid propertyId, Guid paymentId, IPaymentService paymentService) =>
+        app.MapGet("/api/properties/{propertyId}/payments/{paymentId}", async (
+            Guid propertyId, 
+            Guid paymentId, 
+            IPaymentService paymentService) =>
         {
             try
             {
@@ -49,7 +68,11 @@ public static class PaymentsController
         });
 
         // Update an existing payment for a specific property
-        app.MapPut("/api/properties/{propertyId}/payments/{paymentId}", async (Guid propertyId, Guid paymentId, RentalPayment updatedPayment, IPaymentService paymentService) =>
+        app.MapPut("/api/properties/{propertyId}/payments/{paymentId}", async (
+            Guid propertyId, 
+            Guid paymentId, 
+            RentalPayment updatedPayment, 
+            IPaymentService paymentService) =>
         {
             try
             {
@@ -79,7 +102,10 @@ public static class PaymentsController
         });
 
         // Delete a payment for a specific property
-        app.MapDelete("/api/properties/{propertyId}/payments/{paymentId}", async (Guid propertyId, Guid paymentId, IPaymentService paymentService) =>
+        app.MapDelete("/api/properties/{propertyId}/payments/{paymentId}", async (
+            Guid propertyId, 
+            Guid paymentId, 
+            IPaymentService paymentService) =>
         {
             try
             {
