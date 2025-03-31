@@ -94,3 +94,20 @@ renttracker.db
 *.tmp
 *.bak
 *.cache
+
+### K6 Performance Testing ###
+# Node.js dependencies
+RentTrackerBackend/k6s/node_modules/
+
+# K6 test result files
+RentTrackerBackend/k6s/results/
+*.k6.json
+*.k6.log
+
+# Local k6 configuration
+RentTrackerBackend/k6s/.env
+RentTrackerBackend/k6s/*.local.js
+
+# Bundled or compiled k6 test scripts
+RentTrackerBackend/k6s/dist/
+RentTrackerBackend/k6s/bundle/
