@@ -5,7 +5,7 @@ Comprehensive HTTP endpoints for RentTracker, covering properties, payments, and
 
 ## Base Structure
 ```
-@baseUrl = http://localhost:5149
+@baseUrl = http://localhost:7000
 ```
 
 ## Health Check Endpoint

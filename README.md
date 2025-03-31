@@ -1,10 +1,36 @@
 # RentTracker
 
+[![Project Status: Active](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/yourusername/RentTracker)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![.NET Build](https://github.com/yourusername/RentTracker/workflows/build/badge.svg)](https://github.com/yourusername/RentTracker/actions)
+
 A comprehensive rental property management system for tracking payments and managing property-related documents.
 
 ## Overview
 
 RentTracker is a modern property management solution built with ASP.NET Core and Blazor WebAssembly that helps landlords efficiently manage their rental properties, track payments, and handle property-related documents. The system provides an intuitive web application with a robust backend API for property management operations while maintaining secure data storage and file handling capabilities.
+
+## Getting Started
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/RentTracker.git
+cd RentTracker
+
+# Set up database connection in appsettings.json
+# Run database migrations
+cd RentTrackerBackend
+dotnet ef database update
+
+# Run the backend
+dotnet run
+
+# In another terminal, run the frontend
+cd ../RentTrackerClient
+dotnet run
+```
 
 ## Features
 
@@ -42,6 +68,21 @@ RentTracker is a modern property management solution built with ASP.NET Core and
 * Improved Data Export
 * Advanced Search and Filtering
 * Enhanced API Documentation
+
+## Project Status and Roadmap
+
+### Current Status
+- [x] Basic Property Management
+- [x] Payment Tracking
+- [x] Document Storage
+- [ ] Multi-tenancy Support
+- [ ] Advanced Reporting
+- [ ] Payment Reminder System
+
+### Upcoming Milestones
+1. Q2 2025: Implement Multi-tenancy
+2. Q3 2025: Enhanced Reporting Features
+3. Q4 2025: Docker Containerization
 
 ## Architecture
 
@@ -254,6 +295,12 @@ The backend API will be available at `https://localhost:5001`, and the frontend 
 4. Push to the branch
 5. Create a Pull Request
 
+## Support and Contact
+
+If you encounter any issues or have questions, please [open an issue](https://github.com/yourusername/RentTracker/issues) on GitHub.
+
+For commercial support or custom development, contact: support@renttracker.com
+
 ## License
 
-Apache 2.0 © 2025
+Apache 2.0 © 2024

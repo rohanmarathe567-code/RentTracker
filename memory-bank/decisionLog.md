@@ -1,4 +1,14 @@
 
+## HTTP Endpoints Design Decisions [3/31/2025]
+- Adopted GUID for all resource identifiers
+- Implemented nested resource model (properties > payments > attachments)
+- Chose multipart/form-data for file uploads
+- Standardized on UTC timestamps
+- Base URL set to http://localhost:7000 for development
+- Implemented comprehensive error handling strategy
+- Designed flexible POST/PUT endpoints allowing optional server-generated IDs
+
+
 ## [2025-03-31 19:44] - Property Endpoint Optimization
 
 ### Decision

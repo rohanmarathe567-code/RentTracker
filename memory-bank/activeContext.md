@@ -1,3 +1,12 @@
+
+## HTTP Endpoints Planning [3/31/2025]
+- Comprehensive endpoint design for RentTracker
+- Covers properties, payments, and attachments
+- Implemented CRUD operations with GUID-based identifiers
+- Supports file attachments via multipart/form-data
+- Base URL configured at http://localhost:7000
+- Includes health check endpoint
+
 ## HTTP Endpoints Update [2025-03-30]
 - Updated RentTracker.http and http-endpoints-plan.md to reflect current backend endpoint implementations
 - Key changes:

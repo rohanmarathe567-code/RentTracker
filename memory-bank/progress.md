@@ -1,4 +1,17 @@
 
+## HTTP Endpoints Planning Progress [3/31/2025]
+- [x] Defined base URL and health check endpoint
+- [x] Designed properties CRUD endpoints
+- [x] Designed payments CRUD endpoints
+- [x] Designed attachments management endpoints
+- [x] Implemented multipart file upload support
+- [x] Documented endpoint design patterns
+- [x] Logged key design decisions
+- [ ] Implement backend endpoint handlers
+- [ ] Create Postman/curl test collection
+- [ ] Validate endpoint specifications
+
+
 ## [2025-03-31 19:54] - Payments Endpoint Pagination Implementation
 
 ### Completed Tasks

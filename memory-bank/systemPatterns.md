@@ -1,4 +1,14 @@
 
+## HTTP Endpoint Design Pattern [3/31/2025]
+- RESTful API design
+- GUID-based resource identification
+- Consistent CRUD operation structure
+- Multipart file upload support
+- UTC timestamp standardization
+- Nested resource relationships (e.g., payments and attachments under properties)
+- Explicit error handling and validation
+
+
 ## [2025-03-31 19:45] - Pagination Pattern Implementation
 
 ### Infrastructure Components
