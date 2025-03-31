@@ -1,4 +1,10 @@
 
+[2025-03-31 20:14:39] - Created k6 performance testing scripts for RentTrackerBackend
+- Added performance test scripts for Health, Properties, Payments, and Attachments endpoints
+- Utilized Faker.js for generating realistic test data
+- Implemented various load testing scenarios with different virtual user configurations
+- Added README.md with setup and running instructions
+
 ## HTTP Endpoints Design Decisions [3/31/2025]
 - Adopted GUID for all resource identifiers
 - Implemented nested resource model (properties > payments > attachments)

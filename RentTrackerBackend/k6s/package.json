@@ -1,0 +1,11 @@
+{
+  "name": "renttracker-performance-tests",
+  "version": "1.0.0",
+  "description": "K6 Performance Tests for RentTracker",
+  "dependencies": {
+    "@faker-js/faker": "^8.3.1"
+  },
+  "scripts": {
+    "test": "k6 run"
+  }
+}

@@ -1,4 +1,10 @@
 
+[2025-03-31 20:15:14] - Performance Testing Pattern
+- Introduced k6 performance testing framework
+- Standardized test script structure across different endpoints
+- Implemented dynamic test data generation using Faker.js
+- Configured scalable load testing scenarios
+
 ## HTTP Endpoint Design Pattern [3/31/2025]
 - RESTful API design
 - GUID-based resource identification
