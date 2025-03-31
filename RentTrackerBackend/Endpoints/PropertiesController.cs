@@ -11,7 +11,7 @@ public static class PropertiesController
         app.MapGet("/api/properties", async (ApplicationDbContext db) =>
             await db.RentalProperties.ToListAsync());
 
-        app.MapGet("/api/properties/{id}", async (int id, ApplicationDbContext db) =>
+        app.MapGet("/api/properties/{id}", async (Guid id, ApplicationDbContext db) =>
             await db.RentalProperties.FindAsync(id) is RentalProperty property
                 ? Results.Ok(property)
                 : Results.NotFound());
@@ -27,7 +27,7 @@ public static class PropertiesController
             return Results.Created($"/api/properties/{property.Id}", property);
         });
 
-        app.MapPut("/api/properties/{id}", async (int id, RentalProperty updatedProperty, ApplicationDbContext db) =>
+        app.MapPut("/api/properties/{id}", async (Guid id, RentalProperty updatedProperty, ApplicationDbContext db) =>
         {
             var property = await db.RentalProperties.FindAsync(id);
             
@@ -51,7 +51,7 @@ public static class PropertiesController
             return Results.NoContent();
         });
 
-        app.MapDelete("/api/properties/{id}", async (int id, ApplicationDbContext db) =>
+        app.MapDelete("/api/properties/{id}", async (Guid id, ApplicationDbContext db) =>
         {
             var property = await db.RentalProperties.FindAsync(id);
             
