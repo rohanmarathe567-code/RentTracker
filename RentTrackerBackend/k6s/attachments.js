@@ -20,7 +20,7 @@ export default function () {
     description: faker.lorem.sentence(),
   };
 
-  const createRes = http.post('http://localhost:7000/attachments', JSON.stringify(createAttachmentPayload), {
+  const createRes = http.post('http://localhost:7000/api/attachments', JSON.stringify(createAttachmentPayload), {
     headers: { 'Content-Type': 'application/json' },
   });
 
@@ -29,7 +29,7 @@ export default function () {
   });
 
   // Get Attachments Test
-  const getRes = http.get('http://localhost:7000/attachments');
+  const getRes = http.get('http://localhost:7000/api/attachments');
   
   check(getRes, {
     'get attachments status is 200': (r) => r.status === 200,

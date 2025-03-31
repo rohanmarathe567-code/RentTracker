@@ -20,7 +20,7 @@ export default function () {
     paymentMethod: faker.helpers.arrayElement(['Cash', 'Credit Card', 'Bank Transfer', 'Check']),
   };
 
-  const createRes = http.post('http://localhost:7000/payments', JSON.stringify(createPaymentPayload), {
+  const createRes = http.post('http://localhost:7000/api/payments', JSON.stringify(createPaymentPayload), {
     headers: { 'Content-Type': 'application/json' },
   });
 
@@ -29,7 +29,7 @@ export default function () {
   });
 
   // Get Payments Test
-  const getRes = http.get('http://localhost:7000/payments');
+  const getRes = http.get('http://localhost:7000/api/payments');
   
   check(getRes, {
     'get payments status is 200': (r) => r.status === 200,

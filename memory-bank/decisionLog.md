@@ -1,3 +1,8 @@
+## [2025-03-31] K6 Script Endpoint Updates
+- Added `/api` prefix to all k6 test script endpoints
+- Updated health.js, properties.js, payments.js, and attachments.js
+- Ensures consistency with backend API routing
+
 
 [2025-03-31 20:14:39] - Created k6 performance testing scripts for RentTrackerBackend
 - Added performance test scripts for Health, Properties, Payments, and Attachments endpoints

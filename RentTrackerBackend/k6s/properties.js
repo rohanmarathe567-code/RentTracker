@@ -22,7 +22,7 @@ export default function () {
     monthlyRent: faker.number.float({ min: 1000, max: 5000, precision: 0.01 }),
   };
 
-  const createRes = http.post('http://localhost:7000/properties', JSON.stringify(createPropertyPayload), {
+  const createRes = http.post('http://localhost:7000/api/properties', JSON.stringify(createPropertyPayload), {
     headers: { 'Content-Type': 'application/json' },
   });
 
@@ -31,7 +31,7 @@ export default function () {
   });
 
   // Get Properties Test
-  const getRes = http.get('http://localhost:7000/properties');
+  const getRes = http.get('http://localhost:7000/api/properties');
   
   check(getRes, {
     'get properties status is 200': (r) => r.status === 200,
