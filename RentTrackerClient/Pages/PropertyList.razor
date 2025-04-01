@@ -1,0 +1,163 @@
+@page "/properties"
+@using RentTrackerClient.Models
+@using RentTrackerClient.Models.Pagination
+@using RentTrackerClient.Services
+@inject RentalPropertyService PropertyService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Properties - Rent Tracker</PageTitle>
+
+<div class="property-list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <button class="btn btn-primary" @onclick="NavigateToAddProperty">Add New Property</button>
+    </div>
+
+    <div class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search properties..." 
+                   @bind-value="searchTerm" @bind-value:event="oninput" />
+            <button class="btn btn-outline-secondary" type="button" @onclick="SearchProperties">Search</button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+    else if (!propertiesResponse.Items.Any())
+    {
+        <div class="alert alert-info">No properties found.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Address</th>
+                        <th>Suburb</th>
+                        <th>State</th>
+                        <th>Weekly Rent</th>
+                        <th>Lease End</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var property in propertiesResponse.Items)
+                    {
+                        <tr style="cursor: pointer;" @onclick="() => NavigateToEditProperty(property.Id)">
+                            <td>@property.Address</td>
+                            <td>@property.Suburb</td>
+                            <td>@property.State</td>
+                            <td>@(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}" : "-")</td>
+                            <td>@(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true" 
+                                        @onclick="() => NavigateToEditProperty(property.Id)">
+                                    Edit
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (propertiesResponse.TotalPages > 1)
+        {
+            <nav aria-label="Properties pagination">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(propertiesResponse.HasPreviousPage ? "" : "disabled")">
+                        <button class="page-link" @onclick="() => OnPageChanged(propertiesResponse.PageNumber - 1)" 
+                                disabled="@(!propertiesResponse.HasPreviousPage)">
+                            Previous
+                        </button>
+                    </li>
+                    
+                    @for (int i = 1; i <= propertiesResponse.TotalPages; i++)
+                    {
+                        var pageNumber = i;
+                        <li class="page-item @(pageNumber == propertiesResponse.PageNumber ? "active" : "")">
+                            <button class="page-link" @onclick="() => OnPageChanged(pageNumber)">
+                                @pageNumber
+                            </button>
+                        </li>
+                    }
+                    
+                    <li class="page-item @(propertiesResponse.HasNextPage ? "" : "disabled")">
+                        <button class="page-link" @onclick="() => OnPageChanged(propertiesResponse.PageNumber + 1)" 
+                                disabled="@(!propertiesResponse.HasNextPage)">
+                            Next
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+</div>
+
+@code {
+    private PaginatedResponse<RentalProperty> propertiesResponse = new();
+    private PaginationParameters parameters = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? searchTerm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPropertiesAsync();
+    }
+
+    private async Task LoadPropertiesAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            parameters.SearchTerm = searchTerm;
+            propertiesResponse = await PropertyService.GetPaginatedPropertiesAsync(parameters);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading properties: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnPageChanged(int pageNumber)
+    {
+        parameters.PageNumber = pageNumber;
+        await LoadPropertiesAsync();
+    }
+
+    private void SearchProperties()
+    {
+        parameters.PageNumber = 1; // Reset to first page when search changes
+        parameters.SearchTerm = searchTerm;
+        _ = LoadPropertiesAsync();
+    }
+
+    private void NavigateToAddProperty()
+    {
+        NavigationManager.NavigateTo("/properties/add");
+    }
+
+    private void NavigateToEditProperty(Guid id)
+    {
+        NavigationManager.NavigateTo($"/properties/{id}");
+    }
+}

@@ -1,5 +1,5 @@
 @page "/payments"
-@page "/payments/{PropertyId:int}"
+@page "/payments/{PropertyId:guid}"
 @using RentTrackerClient.Models
 @using RentTrackerClient.Services
 @using Microsoft.JSInterop
@@ -64,7 +64,7 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">@(editingPayment?.Id > 0 ? "Edit" : "Add") Payment</h5>
+                        <h5 class="modal-title">@(editingPayment?.Id != Guid.Empty ? "Edit" : "Add") Payment</h5>
                         <button type="button" class="btn-close" @onclick="ClosePaymentModal"></button>
                     </div>
                     <EditForm Model="@editingPayment" OnValidSubmit="HandlePaymentSubmit">
@@ -111,7 +111,7 @@
 
 @code {
     [Parameter]
-    public int? PropertyId { get; set; }
+    public Guid? PropertyId { get; set; }
 
     private List<RentalPayment>? payments;
     private RentalPayment? editingPayment;
@@ -138,7 +138,7 @@
     {
         editingPayment = new RentalPayment
         {
-            RentalPropertyId = PropertyId ?? 0,
+            RentalPropertyId = PropertyId ?? Guid.Empty,
             PaymentDate = DateTime.Today
         };
         showPaymentModal = true;
@@ -150,7 +150,7 @@
         showPaymentModal = true;
     }
 
-    private async Task DeletePayment(int id)
+    private async Task DeletePayment(Guid id)
     {
         if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this payment?"))
         {
@@ -163,7 +163,7 @@
     {
         try
         {
-            if (editingPayment!.Id > 0)
+            if (editingPayment!.Id != Guid.Empty)
             {
                 await PaymentService.UpdatePaymentAsync(editingPayment.Id, editingPayment);
             }

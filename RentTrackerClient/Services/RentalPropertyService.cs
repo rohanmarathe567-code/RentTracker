@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 using RentTrackerClient.Models;
+using RentTrackerClient.Models.Pagination;
+using System.Web;
 
 namespace RentTrackerClient.Services;
 
@@ -13,12 +15,44 @@ public class RentalPropertyService : HttpClientService
     public async Task<List<RentalProperty>> GetAllPropertiesAsync()
     {
         _logger.LogInformation("Fetching all rental properties");
-        var properties = await GetListAsync<RentalProperty>("");
-        _logger.LogDebug($"Retrieved {properties.Count} rental properties");
-        return properties;
+        try
+        {
+            // Use pagination parameters to ensure we get a valid response
+            var parameters = new PaginationParameters { PageNumber = 1, PageSize = 50 };
+            var paginatedResult = await GetPaginatedPropertiesAsync(parameters);
+            var properties = paginatedResult.Items.ToList();
+            _logger.LogDebug($"Retrieved {properties.Count} rental properties");
+            return properties;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching all properties");
+            return new List<RentalProperty>();
+        }
+    }
+    
+    public async Task<PaginatedResponse<RentalProperty>> GetPaginatedPropertiesAsync(PaginationParameters parameters)
+    {
+        _logger.LogInformation($"Fetching paginated rental properties. Page: {parameters.PageNumber}, Size: {parameters.PageSize}");
+        
+        var queryString = BuildQueryString(parameters);
+        var result = await GetAsync<PaginatedResponse<RentalProperty>>(queryString);
+        
+        if (result != null)
+        {
+            _logger.LogDebug($"Retrieved {result.Items.Count()} properties (page {result.PageNumber} of {result.TotalPages})");
+        }
+        else
+        {
+            _logger.LogWarning("Failed to retrieve paginated properties");
+            // Return empty response to avoid null reference exceptions
+            result = new PaginatedResponse<RentalProperty>();
+        }
+        
+        return result;
     }
 
-    public async Task<RentalProperty?> GetPropertyAsync(int id)
+    public async Task<RentalProperty?> GetPropertyAsync(Guid id)
     {
         _logger.LogInformation($"Fetching rental property with ID: {id}");
         var property = await GetAsync<RentalProperty>($"{id}");
@@ -54,7 +88,7 @@ public class RentalPropertyService : HttpClientService
         return createdProperty;
     }
 
-    public async Task<RentalProperty?> UpdatePropertyAsync(int id, RentalProperty property)
+    public async Task<RentalProperty?> UpdatePropertyAsync(Guid id, RentalProperty property)
     {
         _logger.LogInformation($"Updating rental property with ID: {id}");
         
@@ -89,7 +123,7 @@ public class RentalPropertyService : HttpClientService
         return updatedProperty;
     }
 
-    public async Task DeletePropertyAsync(int id)
+    public async Task DeletePropertyAsync(Guid id)
     {
         _logger.LogInformation($"Deleting rental property with ID: {id}");
         
@@ -105,7 +139,7 @@ public class RentalPropertyService : HttpClientService
         }
     }
 
-    public async Task<List<RentalPayment>> GetPropertyPaymentsAsync(int id)
+    public async Task<List<RentalPayment>> GetPropertyPaymentsAsync(Guid id)
     {
         _logger.LogInformation($"Fetching payments for rental property with ID: {id}");
         
@@ -115,7 +149,7 @@ public class RentalPropertyService : HttpClientService
         return payments;
     }
 
-    public async Task<List<Attachment>> GetPropertyAttachmentsAsync(int id)
+    public async Task<List<Attachment>> GetPropertyAttachmentsAsync(Guid id)
     {
         _logger.LogInformation($"Fetching attachments for rental property with ID: {id}");
         
@@ -123,5 +157,19 @@ public class RentalPropertyService : HttpClientService
         
         _logger.LogDebug($"Retrieved {attachments.Count} attachments for rental property with ID: {id}");
         return attachments;
+    }
+    
+    private string BuildQueryString(PaginationParameters parameters)
+    {
+        var query = HttpUtility.ParseQueryString(string.Empty);
+        query["pageNumber"] = parameters.PageNumber.ToString();
+        query["pageSize"] = parameters.PageSize.ToString();
+        
+        if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+        {
+            query["searchTerm"] = parameters.SearchTerm;
+        }
+        
+        return $"?{query}";
     }
 }

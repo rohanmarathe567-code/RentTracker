@@ -1,16 +1,23 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager NavigationManager
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    <header class="top-row px-4">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <h3 class="app-title">
+                <a href="/" class="text-decoration-none">Rent Tracker</a>
+            </h3>
+            <div class="d-flex">
+                <NavLink class="nav-link" href="properties" Match="NavLinkMatch.All">
+                    Properties
+                </NavLink>
+            </div>
+        </div>
+    </header>
 
     <main>
-        <div class="top-row px-4">
-            <h3>Rent Tracker</h3>
-        </div>
-
-        <article class="content px-4">
+        <article class="content">
             @Body
         </article>
     </main>
@@ -20,28 +27,47 @@
     .page {
         position: relative;
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
     }
 
     main {
         flex: 1;
-    }
-
-    .sidebar {
-        background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+        overflow: auto;
     }
 
     .top-row {
         background-color: #f7f7f7;
         border-bottom: 1px solid #d6d5d5;
-        justify-content: flex-start;
         height: 3.5rem;
         display: flex;
         align-items: center;
+        z-index: 10;
     }
 
     .top-row h3 {
         margin: 0;
         color: #333;
+    }
+
+    .app-title a {
+        color: #333;
+    }
+
+    .nav-link {
+        color: #0366d6;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+    }
+
+    .nav-link:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .content {
+        padding: 0;
+        height: 100%;
     }
 </style>

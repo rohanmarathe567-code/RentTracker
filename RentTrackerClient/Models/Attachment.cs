@@ -2,7 +2,7 @@ namespace RentTrackerClient.Models;
 
 public class Attachment
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     
     public string FileName { get; set; } = string.Empty;
     
@@ -16,9 +16,9 @@ public class Attachment
     
     public DateTime UploadDate { get; set; }
     
-    public int? RentalPropertyId { get; set; }
+    public Guid? RentalPropertyId { get; set; }
     
-    public int? RentalPaymentId { get; set; }
+    public Guid? RentalPaymentId { get; set; }
     
     public RentalProperty? RentalProperty { get; set; }
     

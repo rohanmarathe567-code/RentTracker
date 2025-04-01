@@ -1,20 +1,32 @@
-@page "/properties"
-@page "/properties/{Id:int}"
+@page "/properties/add"
+@page "/properties/{Id:guid}"
 @using RentTrackerClient.Models
 @using RentTrackerClient.Services
 @inject RentalPropertyService PropertyService
 @inject NavigationManager NavigationManager
 
-<PageTitle>@(Id == null ? "Add Property" : "Edit Property") - Rent Tracker</PageTitle>
+<PageTitle>@(Id == Guid.Empty ? "Add Property" : "Edit Property") - Rent Tracker</PageTitle>
 
-<div class="container">
-    <h1>@(Id == null ? "Add New Property" : "Edit Property")</h1>
+<div class="property-edit-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>@(Id == Guid.Empty ? "Add New Property" : "Edit Property")</h1>
+        <button class="btn btn-outline-secondary" @onclick="NavigateToList">Back to List</button>
+    </div>
 
-    @if (property == null)
+    @if (isLoading)
     {
-        <p>Loading...</p>
+        <div class="loading-container">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
     }
-    else
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+        <button class="btn btn-primary" @onclick="NavigateToList">Back to Properties</button>
+    }
+    else if (property != null)
     {
         <EditForm Model="@property" OnValidSubmit="HandleValidSubmit">
             <DataAnnotationsValidator />
@@ -74,8 +86,8 @@
             </div>
 
             <div class="mb-3">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <button type="button" class="btn btn-secondary" @onclick="NavigateBack">Cancel</button>
+                <button type="submit" class="btn btn-primary me-2">Save</button>
+                <button type="button" class="btn btn-secondary" @onclick="NavigateToList">Cancel</button>
             </div>
         </EditForm>
     }
@@ -83,44 +95,69 @@
 
 @code {
     [Parameter]
-    public int? Id { get; set; }
+    public Guid Id { get; set; } = Guid.Empty;
 
     private RentalProperty? property;
+    private bool isLoading = true;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        if (Id.HasValue)
+        try
         {
-            property = await PropertyService.GetPropertyAsync(Id.Value);
+            isLoading = true;
+            
+            if (Id != Guid.Empty)
+            {
+                property = await PropertyService.GetPropertyAsync(Id);
+                
+                if (property == null)
+                {
+                    errorMessage = $"Property with ID {Id} not found.";
+                }
+            }
+            else
+            {
+                property = new RentalProperty();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            property = new RentalProperty();
+            errorMessage = $"Error loading property: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
     private async Task HandleValidSubmit()
     {
+        if (property == null)
+            return;
+
         try
         {
-            if (Id.HasValue)
+            if (Id != Guid.Empty)
             {
-                await PropertyService.UpdatePropertyAsync(Id.Value, property!);
+                await PropertyService.UpdatePropertyAsync(Id, property);
             }
             else
             {
-                await PropertyService.CreatePropertyAsync(property!);
+                await PropertyService.CreatePropertyAsync(property);
             }
-            NavigateBack();
+            NavigateToList();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving property: {ex.Message}");
+            errorMessage = $"Error saving property: {ex.Message}";
+            Console.WriteLine(ex);
         }
     }
 
-    private void NavigateBack()
+    private void NavigateToList()
     {
-        NavigationManager.NavigateTo("/");
+        NavigationManager.NavigateTo("/properties");
     }
 }

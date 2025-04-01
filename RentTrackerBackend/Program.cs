@@ -25,7 +25,7 @@ try
     {
         options.AddDefaultPolicy(policy =>
         {
-            policy.WithOrigins("http://localhost:5112", "http://localhost:7000")
+            policy.WithOrigins("http://localhost:5112", "http://localhost:5113", "http://localhost:7000")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();

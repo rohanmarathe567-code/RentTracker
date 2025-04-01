@@ -1,4 +1,3 @@
-
 ## HTTP Endpoints Planning [3/31/2025]
 - Comprehensive endpoint design for RentTracker
 - Covers properties, payments, and attachments
@@ -83,3 +82,11 @@
 - Completed refactoring of attachment and payment handling systems
 - Introduced new SequentialGuidGenerator service
 - Updated related models and controllers
+
+[2025-04-01 19:27:00] - Frontend UI Updates
+- Modified Properties.razor to support pagination and display property list
+- Removed navigation menu and made the page full screen
+- Updated client models to use Guid instead of int for IDs
+- Created separate PropertyList and PropertyEdit components
+- Added CSS styling for the properties pages
+- Updated RentalPropertyService to support paginated API responses

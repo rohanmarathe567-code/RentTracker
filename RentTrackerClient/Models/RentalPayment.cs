@@ -2,9 +2,9 @@ namespace RentTrackerClient.Models;
 
 public class RentalPayment
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     
-    public int RentalPropertyId { get; set; }
+    public Guid RentalPropertyId { get; set; }
     
     public decimal Amount { get; set; }
     
