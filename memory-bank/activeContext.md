@@ -84,6 +84,7 @@
 - Updated related models and controllers
 
 [2025-04-01 19:27:00] - Frontend UI Updates
+[2025-04-02 22:07:00] - Property to Payments Navigation
 - Modified Properties.razor to support pagination and display property list
 - Removed navigation menu and made the page full screen
 - Updated client models to use Guid instead of int for IDs
@@ -92,6 +93,13 @@
 - Updated RentalPropertyService to support paginated API responses
 
 [2025-04-02 19:36:14] - Backend ID Generation
+
+[2025-04-02 22:07:00] - Property to Payments Navigation
+- Modified PropertyList.razor to navigate to payments list when a property row is clicked
+- Added a dedicated Payments button in the property list actions column
+- Enhanced Payments.razor with pagination and improved UI matching the property list style
+- Added property-specific context when viewing payments for a specific property
+- Implemented search functionality for payments
 - Modified PropertyEdit.razor to remove frontend ID generation
 - Updated PropertiesController.cs to always generate new IDs for new properties
 - Ensured proper separation of concerns with backend-only ID generation

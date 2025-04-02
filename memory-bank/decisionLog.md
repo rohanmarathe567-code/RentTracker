@@ -33,3 +33,37 @@ Move all ID generation responsibility to the backend to ensure proper separation
 - Improved security through proper separation of concerns
 - More consistent ID generation
 - Cleaner frontend code with less responsibility
+
+## Decision: Property to Payments Navigation
+
+### Context
+- Currently, clicking on a property row in the property list navigates to the property edit page
+- There's no direct way to view payments for a specific property from the property list
+- Users need to easily access payment information for properties
+
+### Decision
+Implement navigation from the property list to the payments list when a property row is clicked, and add a dedicated Payments button in the actions column.
+
+### Rationale
+1. Usability: Users frequently need to check payments for properties, making this a common workflow
+2. Consistency: Maintain the same UI patterns (pagination, styling, edit/delete buttons) across the application
+3. Efficiency: Reduce the number of clicks needed to access payment information
+
+### Implementation Details
+1. PropertyList.razor Changes:
+   - Modified row click handler to navigate to payments page instead of edit page
+   - Added a dedicated Payments button in the actions column
+   - Kept the Edit button functionality as is
+
+2. Payments.razor Enhancements:
+   - Added pagination support matching the property list implementation
+   - Improved UI to match the property list styling
+   - Added property-specific context when viewing payments for a specific property
+   - Implemented search functionality for payments
+   - Added confirmation modal for payment deletion
+   - Added navigation back to properties list
+
+### Impact
+- Improved user experience through more intuitive navigation
+- Enhanced consistency across the application
+- More efficient workflow for managing property payments

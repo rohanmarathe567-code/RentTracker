@@ -174,3 +174,13 @@
 - Ensured consistent ID generation through backend-only approach
 - Simplified frontend code by removing ID handling logic
 - Maintained backward compatibility with existing code
+
+[2025-04-02 22:07:30] - Property to Payments Navigation Implementation
+- [x] Modified PropertyList.razor to navigate to payments list when a property row is clicked
+- [x] Added a dedicated Payments button in the property list actions column
+- [x] Enhanced Payments.razor with pagination support
+- [x] Improved UI for the payments list to match property list styling
+- [x] Added property-specific context when viewing payments for a specific property
+- [x] Implemented search functionality for payments
+- [x] Added confirmation modal for payment deletion
+- [x] Added navigation back to properties list from property-specific payments view

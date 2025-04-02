@@ -53,7 +53,7 @@
                 <tbody>
                     @foreach (var property in propertiesResponse.Items)
                     {
-                        <tr style="cursor: pointer;" @onclick="() => NavigateToEditProperty(property.Id)">
+                        <tr style="cursor: pointer;" @onclick="() => NavigateToPayments(property.Id)">
                             <td>@property.Address</td>
                             <td>@property.Suburb</td>
                             <td>@property.State</td>
@@ -64,6 +64,10 @@
                                     <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true"
                                             @onclick="() => NavigateToEditProperty(property.Id)">
                                         Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" @onclick:stopPropagation="true"
+                                            @onclick="() => NavigateToPayments(property.Id)">
+                                        Payments
                                     </button>
                                     <button class="btn btn-sm btn-danger" @onclick:stopPropagation="true"
                                             @onclick="() => ConfirmDelete(property)">
@@ -194,6 +198,11 @@
     private void NavigateToEditProperty(Guid id)
     {
         NavigationManager.NavigateTo($"/properties/{id}");
+    }
+
+    private void NavigateToPayments(Guid id)
+    {
+        NavigationManager.NavigateTo($"/payments/{id}");
     }
 
     private void ConfirmDelete(RentalProperty property)

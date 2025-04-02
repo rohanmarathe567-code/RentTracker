@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using RentTrackerClient.Models;
 using RentTrackerClient.Models.Pagination;
 using System.Web;
+using System;
 
 namespace RentTrackerClient.Services;
 
@@ -10,6 +11,7 @@ public class RentalPropertyService : HttpClientService
     public RentalPropertyService(HttpClient httpClient, ILogger<RentalPropertyService> logger)
         : base(httpClient, "api/properties", logger)
     {
+        _logger.LogInformation("RentalPropertyService initialized with base URL: api/properties");
     }
 
     public async Task<List<RentalProperty>> GetAllPropertiesAsync()
@@ -170,14 +172,47 @@ public class RentalPropertyService : HttpClientService
         }
     }
 
-    public async Task<List<RentalPayment>> GetPropertyPaymentsAsync(Guid id)
+    public async Task<PaginatedResponse<RentalPayment>> GetPropertyPaymentsAsync(Guid id, PaginationParameters? parameters = null)
     {
         _logger.LogInformation($"Fetching payments for rental property with ID: {id}");
         
-        var payments = await GetListAsync<RentalPayment>($"{id}/payments");
-        
-        _logger.LogDebug($"Retrieved {payments.Count} payments for rental property with ID: {id}");
-        return payments;
+        try
+        {
+            // Build query string with pagination parameters if provided
+            string queryString = "";
+            if (parameters != null)
+            {
+                var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
+                query["pageNumber"] = parameters.PageNumber.ToString();
+                query["pageSize"] = parameters.PageSize.ToString();
+                
+                if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                {
+                    query["searchTerm"] = parameters.SearchTerm;
+                }
+                
+                queryString = $"?{query}";
+            }
+            
+            // Use GetAsync instead of GetListAsync to get the paginated response
+            var paginatedResponse = await GetAsync<PaginatedResponse<RentalPayment>>($"{id}/payments{queryString}");
+            
+            if (paginatedResponse != null)
+            {
+                _logger.LogDebug($"Retrieved {paginatedResponse.Items.Count()} payments for property with ID: {id}");
+                return paginatedResponse;
+            }
+            else
+            {
+                _logger.LogWarning($"No payments found for property with ID: {id}");
+                return new PaginatedResponse<RentalPayment>();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error fetching payments for property with ID: {id}");
+            return new PaginatedResponse<RentalPayment>();
+        }
     }
 
     public async Task<List<Attachment>> GetPropertyAttachmentsAsync(Guid id)

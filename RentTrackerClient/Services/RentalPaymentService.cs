@@ -93,10 +93,20 @@ public class RentalPaymentService : HttpClientService
     {
         _logger.LogInformation($"Fetching payments for property with ID: {propertyId}");
         
-        var payments = await GetListAsync<RentalPayment>($"property/{propertyId}");
-        
-        _logger.LogDebug($"Retrieved {payments.Count} payments for property with ID: {propertyId}");
-        return payments;
+        try
+        {
+            // The correct endpoint format is: /api/properties/{propertyId}/payments
+            // Since our base URL is already "api/payments", we need to use "../properties/{propertyId}/payments"
+            var payments = await GetListAsync<RentalPayment>($"../properties/{propertyId}/payments");
+            
+            _logger.LogDebug($"Retrieved {payments.Count} payments for property with ID: {propertyId}");
+            return payments;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error fetching payments for property with ID: {propertyId}");
+            return new List<RentalPayment>();
+        }
     }
 
     public async Task<decimal> GetTotalPaymentsForPropertyAsync(Guid propertyId)
