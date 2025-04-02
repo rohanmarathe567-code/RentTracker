@@ -70,7 +70,7 @@ public static class PropertiesController
             
             await db.SaveChangesAsync();
             
-            return Results.NoContent();
+            return Results.Ok(property);
         });
 
         // Delete a property
