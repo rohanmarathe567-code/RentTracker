@@ -131,30 +131,78 @@
             isLoading = false;
         }
     }
+private async Task HandleValidSubmit()
+{
+    if (property == null)
+        return;
 
-    private async Task HandleValidSubmit()
+    try
     {
-        if (property == null)
-            return;
-
-        try
+        // Clear any previous error messages
+        errorMessage = null;
+        
+        // Ensure required fields are set
+        if (string.IsNullOrWhiteSpace(property.Address))
         {
-            if (Id != Guid.Empty)
+            errorMessage = "Address is required";
+            return;
+        }
+        
+        // Ensure all DateTime properties are in UTC format
+        // Convert LeaseStartDate to UTC if it has a value
+        if (property.LeaseStartDate.HasValue)
+        {
+            property.LeaseStartDate = DateTime.SpecifyKind(property.LeaseStartDate.Value, DateTimeKind.Utc);
+        }
+        
+        // Convert LeaseEndDate to UTC if it has a value
+        if (property.LeaseEndDate.HasValue)
+        {
+            property.LeaseEndDate = DateTime.SpecifyKind(property.LeaseEndDate.Value, DateTimeKind.Utc);
+        }
+        
+        if (Id != Guid.Empty)
+        {
+            // Always update the UpdatedAt timestamp
+            property.UpdatedAt = DateTime.UtcNow;
+            
+            var updatedProperty = await PropertyService.UpdatePropertyAsync(Id, property);
+            if (updatedProperty != null)
             {
-                await PropertyService.UpdatePropertyAsync(Id, property);
+                Console.WriteLine($"Property updated successfully: {updatedProperty.Id}");
+                NavigateToList();
             }
             else
             {
-                await PropertyService.CreatePropertyAsync(property);
+                errorMessage = "Failed to update property. Please try again.";
             }
-            NavigateToList();
         }
-        catch (Exception ex)
+        else
         {
-            errorMessage = $"Error saving property: {ex.Message}";
-            Console.WriteLine(ex);
+            // Let the backend handle ID generation
+            
+            // Set default values for dates
+            property.CreatedAt = DateTime.UtcNow;
+            property.UpdatedAt = DateTime.UtcNow;
+            
+            var createdProperty = await PropertyService.CreatePropertyAsync(property);
+            if (createdProperty != null)
+            {
+                Console.WriteLine($"Property created successfully: {createdProperty.Id}");
+                NavigateToList();
+            }
+            else
+            {
+                errorMessage = "Failed to create property. Please try again.";
+            }
         }
     }
+    catch (Exception ex)
+    {
+        errorMessage = $"Error saving property: {ex.Message}";
+        Console.WriteLine($"Exception details: {ex}");
+    }
+}
 
     private void NavigateToList()
     {

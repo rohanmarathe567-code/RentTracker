@@ -3,6 +3,7 @@ using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Extensions;
+using RentTrackerBackend.Services;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -37,15 +38,47 @@ public static class PropertiesController
                 : Results.NotFound());
 
         // Create a new property
-        app.MapPost("/api/properties", async (RentalProperty property, ApplicationDbContext db) =>
+        app.MapPost("/api/properties", async (RentalProperty property, ApplicationDbContext db, ILogger<Program> logger) =>
         {
-            property.CreatedAt = DateTime.UtcNow;
-            property.UpdatedAt = DateTime.UtcNow;
-            
-            db.RentalProperties.Add(property);
-            await db.SaveChangesAsync();
-            
-            return Results.Created($"/api/properties/{property.Id}", property);
+            try
+            {
+                logger.LogInformation("Creating new property: {@Property}", property);
+                
+                // Ensure required fields are set
+                if (string.IsNullOrWhiteSpace(property.Address))
+                {
+                    logger.LogWarning("Property creation failed: Address is required");
+                    return Results.BadRequest("Address is required");
+                }
+                
+                // Set default values for CreatedAt and UpdatedAt
+                property.CreatedAt = DateTime.UtcNow;
+                property.UpdatedAt = DateTime.UtcNow;
+                
+                // Always generate a new ID for new properties
+                property.Id = SequentialGuidGenerator.NewSequentialGuid();
+                
+                // Clear navigation properties to avoid issues
+                property.RentalPayments = new List<RentalPayment>();
+                property.Attachments = new List<Attachment>();
+                
+                logger.LogDebug("Adding property to database: {@Property}", property);
+                db.RentalProperties.Add(property);
+                
+                await db.SaveChangesAsync();
+                logger.LogInformation("Property created successfully with ID: {Id}", property.Id);
+                
+                return Results.Created($"/api/properties/{property.Id}", property);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error creating property: {Message}", ex.Message);
+                return Results.Problem(
+                    title: "Error creating property",
+                    detail: ex.Message,
+                    statusCode: 500
+                );
+            }
         });
 
         // Update an existing property

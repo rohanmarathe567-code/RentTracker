@@ -90,3 +90,9 @@
 - Created separate PropertyList and PropertyEdit components
 - Added CSS styling for the properties pages
 - Updated RentalPropertyService to support paginated API responses
+
+[2025-04-02 19:36:14] - Backend ID Generation
+- Modified PropertyEdit.razor to remove frontend ID generation
+- Updated PropertiesController.cs to always generate new IDs for new properties
+- Ensured proper separation of concerns with backend-only ID generation
+- Improved security and consistency in ID management

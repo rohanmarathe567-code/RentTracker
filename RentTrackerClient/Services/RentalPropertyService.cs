@@ -7,7 +7,7 @@ namespace RentTrackerClient.Services;
 
 public class RentalPropertyService : HttpClientService
 {
-    public RentalPropertyService(HttpClient httpClient, ILogger<RentalPropertyService> logger) 
+    public RentalPropertyService(HttpClient httpClient, ILogger<RentalPropertyService> logger)
         : base(httpClient, "api/properties", logger)
     {
     }
@@ -71,21 +71,52 @@ public class RentalPropertyService : HttpClientService
 
     public async Task<RentalProperty?> CreatePropertyAsync(RentalProperty property)
     {
-        _logger.LogInformation("Creating new rental property");
-        _logger.LogDebug($"Property details: {System.Text.Json.JsonSerializer.Serialize(property)}");
-        
-        var createdProperty = await PostAsync<RentalProperty>("", property);
-        
-        if (createdProperty != null)
+        try
         {
-            _logger.LogInformation($"Successfully created rental property with ID: {createdProperty.Id}");
-        }
-        else
-        {
-            _logger.LogWarning("Failed to create rental property");
-        }
+            _logger.LogInformation("Creating new rental property");
+            
+            // Enhanced JSON serialization logging
+            var serializedProperty = System.Text.Json.JsonSerializer.Serialize(property, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNameCaseInsensitive = true
+            });
+            
+            _logger.LogDebug($"Serialized Property JSON: {serializedProperty}");
+            
+            // Log individual property values for more detailed debugging
+            _logger.LogDebug($"Property Validation: " +
+                $"Id={property.Id}, " +
+                $"Address={property.Address}, " +
+                $"WeeklyRentAmount={property.WeeklyRentAmount}, " +
+                $"CreatedAt={property.CreatedAt}, " +
+                $"UpdatedAt={property.UpdatedAt}");
+            
+            // Ensure required fields are set
+            if (string.IsNullOrWhiteSpace(property.Address))
+            {
+                _logger.LogWarning("Cannot create property: Address is required");
+                return null;
+            }
+            
+            var createdProperty = await PostAsync<RentalProperty>("", property);
+            
+            if (createdProperty != null)
+            {
+                _logger.LogInformation($"Successfully created rental property with ID: {createdProperty.Id}");
+            }
+            else
+            {
+                _logger.LogWarning("Failed to create rental property");
+            }
 
-        return createdProperty;
+            return createdProperty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating rental property");
+            throw; // Rethrow to allow the UI to handle the error
+        }
     }
 
     public async Task<RentalProperty?> UpdatePropertyAsync(Guid id, RentalProperty property)

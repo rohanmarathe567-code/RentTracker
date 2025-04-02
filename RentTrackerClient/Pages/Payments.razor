@@ -163,12 +163,21 @@
     {
         try
         {
-            if (editingPayment!.Id != Guid.Empty)
+            // Ensure PaymentDate is in UTC format
+            editingPayment!.PaymentDate = DateTime.SpecifyKind(editingPayment.PaymentDate, DateTimeKind.Utc);
+            
+            // Set or update timestamps
+            if (editingPayment.Id != Guid.Empty)
             {
+                // Update the UpdatedAt timestamp
+                editingPayment.UpdatedAt = DateTime.UtcNow;
                 await PaymentService.UpdatePaymentAsync(editingPayment.Id, editingPayment);
             }
             else
             {
+                // Set default values for timestamps
+                editingPayment.CreatedAt = DateTime.UtcNow;
+                editingPayment.UpdatedAt = DateTime.UtcNow;
                 await PaymentService.CreatePaymentAsync(editingPayment);
             }
             

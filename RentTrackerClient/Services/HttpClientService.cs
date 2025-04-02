@@ -100,7 +100,14 @@ public abstract class HttpClientService
         try
         {
             var fullUrl = $"{_baseUrl}/{endpoint}";
-            _logger.LogDebug($"POST Request: {fullUrl}. Data: {JsonSerializer.Serialize(data)}");
+            
+            // Log the request details with better formatting
+            var requestJson = JsonSerializer.Serialize(data, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNameCaseInsensitive = true
+            });
+            _logger.LogDebug($"POST Request: {fullUrl}\nRequest Data: {requestJson}");
 
             var startTime = DateTime.UtcNow;
             var response = await _httpClient.PostAsJsonAsync(fullUrl, data, _jsonOptions);
@@ -108,8 +115,35 @@ public abstract class HttpClientService
 
             _logger.LogInformation($"POST Request to {fullUrl} completed in {duration.TotalMilliseconds}ms. Status: {response.StatusCode}");
 
-            response.EnsureSuccessStatusCode();
+            // Read the response content regardless of status code
             var responseContent = await response.Content.ReadAsStringAsync();
+            
+            // If the response is not successful, log the error details
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError($"POST Request failed with status code {response.StatusCode}. Response: {responseContent}");
+                
+                // Try to parse error details if available
+                try
+                {
+                    var errorDetails = JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent);
+                    if (errorDetails != null)
+                    {
+                        foreach (var error in errorDetails)
+                        {
+                            _logger.LogError($"Error detail - {error.Key}: {error.Value}");
+                        }
+                    }
+                }
+                catch (JsonException)
+                {
+                    _logger.LogWarning($"Could not parse error response as JSON: {responseContent}");
+                }
+            }
+            
+            // Now ensure success status code (will throw if not successful)
+            response.EnsureSuccessStatusCode();
+            
             _logger.LogDebug($"Raw POST Response Content: {responseContent}");
 
             try
@@ -126,7 +160,12 @@ public abstract class HttpClientService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, $"HTTP POST request failed for endpoint: {endpoint}");
+            _logger.LogError(ex, $"HTTP POST request failed for endpoint: {endpoint}. Error: {ex.Message}");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Unexpected error during POST request to endpoint: {endpoint}. Error: {ex.Message}");
             throw;
         }
     }
