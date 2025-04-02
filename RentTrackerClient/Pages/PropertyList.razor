@@ -60,10 +60,16 @@
                             <td>@(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}" : "-")</td>
                             <td>@(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true" 
-                                        @onclick="() => NavigateToEditProperty(property.Id)">
-                                    Edit
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true"
+                                            @onclick="() => NavigateToEditProperty(property.Id)">
+                                        Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick:stopPropagation="true"
+                                            @onclick="() => ConfirmDelete(property)">
+                                        Delete
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -104,12 +110,41 @@
     }
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade @(isDeleteModalVisible ? "show" : "")" tabindex="-1" role="dialog"
+     style="display: @(isDeleteModalVisible ? "block" : "none")">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" @onclick="CancelDelete" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the property at @(propertyToDelete?.Address), @(propertyToDelete?.Suburb)?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                <button type="button" class="btn btn-danger" @onclick="DeleteProperty">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Backdrop -->
+@if (isDeleteModalVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     private PaginatedResponse<RentalProperty> propertiesResponse = new();
     private PaginationParameters parameters = new();
     private bool isLoading = true;
     private string? errorMessage;
     private string? searchTerm;
+    private bool isDeleteModalVisible = false;
+    private RentalProperty? propertyToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -159,5 +194,49 @@
     private void NavigateToEditProperty(Guid id)
     {
         NavigationManager.NavigateTo($"/properties/{id}");
+    }
+
+    private void ConfirmDelete(RentalProperty property)
+    {
+        propertyToDelete = property;
+        isDeleteModalVisible = true;
+    }
+
+    private void CancelDelete()
+    {
+        isDeleteModalVisible = false;
+        propertyToDelete = null;
+    }
+
+    private async Task DeleteProperty()
+    {
+        if (propertyToDelete == null) return;
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            await PropertyService.DeletePropertyAsync(propertyToDelete.Id);
+            
+            // Close the modal
+            isDeleteModalVisible = false;
+            propertyToDelete = null;
+            
+            // Reload the properties list
+            await LoadPropertiesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting property: {ex.Message}";
+            Console.WriteLine(ex);
+            isDeleteModalVisible = false;
+            propertyToDelete = null;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 }
