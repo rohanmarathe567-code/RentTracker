@@ -82,6 +82,32 @@
     background-color: rgba(0, 123, 255, 0.1);
 }
 
+/* Property Card Styles */
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #0d6efd;
+}
+
+.card .card-text {
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.card .card-text strong {
+    color: #212529;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .property-list-container,
@@ -96,6 +122,15 @@
     .d-flex.justify-content-between {
         flex-direction: column;
         gap: 10px;
+    }
+
+    .col-md-6 {
+        padding: 10px;
+    }
+
+    .card {
+        height: auto !important;
+        margin-bottom: 10px;
     }
     
     .d-flex.justify-content-between h1 {

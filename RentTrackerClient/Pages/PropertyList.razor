@@ -4,12 +4,17 @@
 @using RentTrackerClient.Services
 @inject RentalPropertyService PropertyService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Properties - Rent Tracker</PageTitle>
 
 <div class="property-list-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <button class="btn btn-primary" @onclick="NavigateToAddProperty">Add New Property</button>
+        <button class="btn btn-secondary" @onclick="() => _ = ToggleView()">
+            <i class="bi bi-@(isCardView ? "table" : "grid-3x3-gap")"></i>
+            @(isCardView ? "Table View" : "Card View")
+        </button>
     </div>
 
     <div class="mb-4">
@@ -39,78 +44,115 @@
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th @onclick='@(() => SortTable("Address"))' style="cursor: pointer;">
-                            Address
-                            @if (parameters.SortField == "Address")
-                            {
-                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                            }
-                        </th>
-                        <th @onclick='@(() => SortTable("Suburb"))' style="cursor: pointer;">
-                            Suburb
-                            @if (parameters.SortField == "Suburb")
-                            {
-                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                            }
-                        </th>
-                        <th @onclick='@(() => SortTable("State"))' style="cursor: pointer;">
-                            State
-                            @if (parameters.SortField == "State")
-                            {
-                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                            }
-                        </th>
-                        <th @onclick='@(() => SortTable("WeeklyRentAmount"))' style="cursor: pointer;">
-                            Weekly Rent
-                            @if (parameters.SortField == "WeeklyRentAmount")
-                            {
-                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                            }
-                        </th>
-                        <th @onclick='@(() => SortTable("LeaseEndDate"))' style="cursor: pointer;">
-                            Lease End
-                            @if (parameters.SortField == "LeaseEndDate")
-                            {
-                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                            }
-                        </th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var property in propertiesResponse.Items)
-                    {
-                        <tr style="cursor: pointer;" @onclick="() => NavigateToPayments(property.Id)">
-                            <td>@property.Address</td>
-                            <td>@property.Suburb</td>
-                            <td>@property.State</td>
-                            <td>@(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}" : "-")</td>
-                            <td>@(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")</td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true"
+        @if (!isCardView)
+        {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th @onclick='@(() => SortTable("Address"))' style="cursor: pointer;">
+                                Address
+                                @if (parameters.SortField == "Address")
+                                {
+                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                                }
+                            </th>
+                            <th @onclick='@(() => SortTable("Suburb"))' style="cursor: pointer;">
+                                Suburb
+                                @if (parameters.SortField == "Suburb")
+                                {
+                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                                }
+                            </th>
+                            <th @onclick='@(() => SortTable("State"))' style="cursor: pointer;">
+                                State
+                                @if (parameters.SortField == "State")
+                                {
+                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                                }
+                            </th>
+                            <th @onclick='@(() => SortTable("WeeklyRentAmount"))' style="cursor: pointer;">
+                                Weekly Rent
+                                @if (parameters.SortField == "WeeklyRentAmount")
+                                {
+                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                                }
+                            </th>
+                            <th @onclick='@(() => SortTable("LeaseEndDate"))' style="cursor: pointer;">
+                                Lease End
+                                @if (parameters.SortField == "LeaseEndDate")
+                                {
+                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                                }
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var property in propertiesResponse.Items)
+                        {
+                            <tr style="cursor: pointer;" @onclick="() => NavigateToPayments(property.Id)">
+                                <td>@property.Address</td>
+                                <td>@property.Suburb</td>
+                                <td>@property.State</td>
+                                <td>@(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}" : "-")</td>
+                                <td>@(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true"
+                                                @onclick="() => NavigateToEditProperty(property.Id)">
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" @onclick:stopPropagation="true"
+                                                @onclick="() => NavigateToPayments(property.Id)">
+                                            Payments
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" @onclick:stopPropagation="true"
+                                                @onclick="() => ConfirmDelete(property)">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var property in propertiesResponse.Items)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100" style="cursor: pointer;" @onclick="() => NavigateToPayments(property.Id)">
+                            <div class="card-body">
+                                <h5 class="card-title">@property.Address</h5>
+                                <p class="card-text">
+                                    <strong>Location:</strong> @property.Suburb, @property.State<br />
+                                    <strong>Weekly Rent:</strong> @(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}" : "-")<br />
+                                    <strong>Lease End:</strong> @(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")
+                                </p>
+                                <div class="d-flex gap-2" @onclick:stopPropagation="true">
+                                    <button class="btn btn-sm btn-outline-primary"
                                             @onclick="() => NavigateToEditProperty(property.Id)">
                                         Edit
                                     </button>
-                                    <button class="btn btn-sm btn-outline-success" @onclick:stopPropagation="true"
+                                    <button class="btn btn-sm btn-outline-success"
                                             @onclick="() => NavigateToPayments(property.Id)">
                                         Payments
                                     </button>
-                                    <button class="btn btn-sm btn-danger" @onclick:stopPropagation="true"
+                                    <button class="btn btn-sm btn-danger"
                                             @onclick="() => ConfirmDelete(property)">
                                         Delete
                                     </button>
                                 </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
 
         @if (propertiesResponse.TotalPages > 1)
         {
@@ -172,6 +214,8 @@
     <div class="modal-backdrop fade show"></div>
 }
 @code {
+    private const string ViewModeKey = "propertyListViewMode";
+    private bool isCardView = false;
     private PaginatedResponse<RentalProperty> propertiesResponse = new();
     private PaginationParameters parameters = new()
     {
@@ -186,6 +230,18 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var storedViewMode = await JSRuntime.InvokeAsync<string>("localStorage.getItem", ViewModeKey);
+            isCardView = storedViewMode == "card";
+        }
+        catch (Exception ex)
+        {
+            // Default to table view if localStorage access fails
+            Console.WriteLine($"Error accessing localStorage: {ex.Message}");
+            isCardView = false;
+        }
+
         await LoadPropertiesAsync();
     }
 
@@ -298,6 +354,22 @@ private async Task OnSearchInput()
         {
             isLoading = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task ToggleView()
+    {
+        isCardView = !isCardView;
+        try
+        {
+            // Small delay to avoid excessive writes
+            await Task.Delay(100);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", ViewModeKey, isCardView ? "card" : "table");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving view preference: {ex.Message}");
+            // Continue with the view toggle even if saving fails
         }
     }
 }
