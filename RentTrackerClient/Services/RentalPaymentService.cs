@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 using RentTrackerClient.Models;
+using RentTrackerClient.Models.Pagination;
+using System.Web;
 
 namespace RentTrackerClient.Services;
 
@@ -10,13 +12,6 @@ public class RentalPaymentService : HttpClientService
     {
     }
 
-    public async Task<List<RentalPayment>> GetAllPaymentsAsync()
-    {
-        _logger.LogInformation("Fetching all rental payments");
-        var payments = await GetListAsync<RentalPayment>("");
-        _logger.LogDebug($"Retrieved {payments.Count} rental payments");
-        return payments;
-    }
 
     public async Task<RentalPayment?> GetPaymentAsync(Guid id)
     {

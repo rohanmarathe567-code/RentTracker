@@ -190,6 +190,12 @@ public class RentalPropertyService : HttpClientService
                 {
                     query["searchTerm"] = parameters.SearchTerm;
                 }
+
+                if (!string.IsNullOrWhiteSpace(parameters.SortField))
+                {
+                    query["sortField"] = parameters.SortField;
+                    query["sortDescending"] = parameters.SortDescending.ToString().ToLower();
+                }
                 
                 queryString = $"?{query}";
             }
@@ -235,7 +241,14 @@ public class RentalPropertyService : HttpClientService
         {
             query["searchTerm"] = parameters.SearchTerm;
         }
+
+        if (!string.IsNullOrWhiteSpace(parameters.SortField))
+        {
+            query["sortField"] = parameters.SortField;
+            query["sortDescending"] = parameters.SortDescending.ToString().ToLower();
+        }
         
-        return $"?{query}";
+        var queryString = query.ToString();
+        return string.IsNullOrEmpty(queryString) ? string.Empty : $"?{queryString}";
     }
 }

@@ -50,6 +50,32 @@
     position: sticky;
     top: 0;
     z-index: 1;
+    user-select: none;
+}
+
+/* Sortable header styles */
+.table th[style*="cursor: pointer"] {
+    padding-right: 25px;
+    position: relative;
+}
+
+.table th[style*="cursor: pointer"]:hover {
+    background-color: #e9ecef;
+}
+
+/* Sort indicator styles */
+.table th[style*="cursor: pointer"] span {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em;
+    color: #6c757d;
+}
+
+/* Active sort header */
+.table th[style*="cursor: pointer"]:has(span) {
+    background-color: #e9ecef;
 }
 
 .table-hover tbody tr:hover {

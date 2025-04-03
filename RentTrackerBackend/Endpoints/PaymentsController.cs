@@ -23,10 +23,34 @@ public static class PaymentsController
                 // Optional: Add search filtering if needed
                 if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
                 {
-                    query = query.Where(p => 
-                        (p.PaymentMethod != null && p.PaymentMethod.Contains(parameters.SearchTerm)) || 
-                        (p.PaymentReference != null && p.PaymentReference.Contains(parameters.SearchTerm)) || 
+                    query = query.Where(p =>
+                        (p.PaymentMethod != null && p.PaymentMethod.Contains(parameters.SearchTerm)) ||
+                        (p.PaymentReference != null && p.PaymentReference.Contains(parameters.SearchTerm)) ||
                         (p.Notes != null && p.Notes.Contains(parameters.SearchTerm)));
+                }
+
+                // Apply sorting if specified
+                if (!string.IsNullOrWhiteSpace(parameters.SortField))
+                {
+                    query = parameters.SortField.ToLower() switch
+                    {
+                        "paymentdate" => parameters.SortDescending
+                            ? query.OrderByDescending(p => p.PaymentDate)
+                            : query.OrderBy(p => p.PaymentDate),
+                        "amount" => parameters.SortDescending
+                            ? query.OrderByDescending(p => p.Amount)
+                            : query.OrderBy(p => p.Amount),
+                        "paymentmethod" => parameters.SortDescending
+                            ? query.OrderByDescending(p => p.PaymentMethod)
+                            : query.OrderBy(p => p.PaymentMethod),
+                        "paymentreference" => parameters.SortDescending
+                            ? query.OrderByDescending(p => p.PaymentReference)
+                            : query.OrderBy(p => p.PaymentReference),
+                        "notes" => parameters.SortDescending
+                            ? query.OrderByDescending(p => p.Notes)
+                            : query.OrderBy(p => p.Notes),
+                        _ => query.OrderByDescending(p => p.PaymentDate) // Default sort by payment date descending
+                    };
                 }
                 
                 var payments = await query.ToPaginatedListAsync(parameters);

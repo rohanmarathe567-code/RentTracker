@@ -14,8 +14,12 @@ public class PaginationParameters
         get => _pageSize;
         set => _pageSize = value > 0 ? Math.Min(value, MaxPageSize) : DefaultPageSize;
     }
-    
     public string? SearchTerm { get; set; }
+    
+    public string? SortField { get; set; }
+    
+    public bool SortDescending { get; set; }
+    
     
     public void Validate()
     {

@@ -21,9 +21,36 @@ public static class PropertiesController
             // Optional: Add search filtering if needed
             if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
             {
-                query = query.Where(p => 
-                    p.Address.Contains(parameters.SearchTerm) || 
+                query = query.Where(p =>
+                    p.Address.Contains(parameters.SearchTerm) ||
                     (p.Suburb != null && p.Suburb.Contains(parameters.SearchTerm)));
+            }
+
+            // Apply sorting if specified
+            if (!string.IsNullOrWhiteSpace(parameters.SortField))
+            {
+                query = parameters.SortField.ToLower() switch
+                {
+                    "address" => parameters.SortDescending
+                        ? query.OrderByDescending(p => p.Address)
+                        : query.OrderBy(p => p.Address),
+                    "suburb" => parameters.SortDescending
+                        ? query.OrderByDescending(p => p.Suburb)
+                        : query.OrderBy(p => p.Suburb),
+                    "state" => parameters.SortDescending
+                        ? query.OrderByDescending(p => p.State)
+                        : query.OrderBy(p => p.State),
+                    "weeklyrentamount" => parameters.SortDescending
+                        ? query.OrderByDescending(p => p.WeeklyRentAmount)
+                        : query.OrderBy(p => p.WeeklyRentAmount),
+                    "leasestartdate" => parameters.SortDescending
+                        ? query.OrderByDescending(p => p.LeaseStartDate)
+                        : query.OrderBy(p => p.LeaseStartDate),
+                    "leaseenddate" => parameters.SortDescending
+                        ? query.OrderByDescending(p => p.LeaseEndDate)
+                        : query.OrderBy(p => p.LeaseEndDate),
+                    _ => query.OrderBy(p => p.Address) // Default sort
+                };
             }
             
             var result = await query.ToPaginatedListAsync(parameters);

@@ -4,7 +4,7 @@ import faker from "k6/x/faker"
 
 export const options = {
   vus: 1,
-  iterations: 1
+  iterations: 6
 };
 
 export default function () {

@@ -1,4 +1,3 @@
-@page "/payments"
 @page "/payments/{PropertyId:guid}"
 @using RentTrackerClient.Models
 @using RentTrackerClient.Models.Pagination
@@ -60,15 +59,41 @@
             <table class="table table-striped table-hover">
                 <thead class="table-light">
                     <tr>
-                        <th>Date</th>
-                        <th>Amount</th>
-                        @if (!PropertyId.HasValue)
-                        {
-                            <th>Property</th>
-                        }
-                        <th>Method</th>
-                        <th>Reference</th>
-                        <th>Notes</th>
+                        <th @onclick='@(() => SortTable("PaymentDate"))' style="cursor: pointer;">
+                            Date
+                            @if (parameters.SortField == "PaymentDate")
+                            {
+                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                            }
+                        </th>
+                        <th @onclick='@(() => SortTable("Amount"))' style="cursor: pointer;">
+                            Amount
+                            @if (parameters.SortField == "Amount")
+                            {
+                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                            }
+                        </th>
+                        <th @onclick='@(() => SortTable("PaymentMethod"))' style="cursor: pointer;">
+                            Method
+                            @if (parameters.SortField == "PaymentMethod")
+                            {
+                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                            }
+                        </th>
+                        <th @onclick='@(() => SortTable("PaymentReference"))' style="cursor: pointer;">
+                            Reference
+                            @if (parameters.SortField == "PaymentReference")
+                            {
+                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                            }
+                        </th>
+                        <th @onclick='@(() => SortTable("Notes"))' style="cursor: pointer;">
+                            Notes
+                            @if (parameters.SortField == "Notes")
+                            {
+                                <span>@(parameters.SortDescending ? "▼" : "▲")</span>
+                            }
+                        </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -78,10 +103,6 @@
                         <tr>
                             <td>@payment.PaymentDate.ToShortDateString()</td>
                             <td>@payment.Amount.ToString("C")</td>
-                            @if (!PropertyId.HasValue)
-                            {
-                                <td>@(payment.RentalProperty?.Address ?? "-")</td>
-                            }
                             <td>@(payment.PaymentMethod ?? "-")</td>
                             <td>@(payment.PaymentReference ?? "-")</td>
                             <td>@(payment.Notes ?? "-")</td>
@@ -221,7 +242,11 @@
     public Guid? PropertyId { get; set; }
 
     private PaginatedResponse<RentalPayment> paymentsResponse = new();
-    private PaginationParameters parameters = new();
+    private PaginationParameters parameters = new()
+    {
+        SortField = "PaymentDate",
+        SortDescending = true  // Most recent first
+    };
     private RentalProperty? property;
     private RentalPayment? editingPayment;
     private RentalPayment? paymentToDelete;
@@ -312,32 +337,8 @@
             }
             else
             {
-                // For all payments, we'll use the payment service
-                // TODO: Update PaymentService to support pagination
-                var allPayments = await PaymentService.GetAllPaymentsAsync();
-                
-                // Convert to paginated response for consistency
-                var filteredPayments = string.IsNullOrWhiteSpace(searchTerm)
-                    ? allPayments
-                    : allPayments.Where(p =>
-                        (p.PaymentMethod?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (p.PaymentReference?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (p.Notes?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (p.RentalProperty?.Address?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
-                
-                int totalCount = filteredPayments.Count;
-                int skip = (parameters.PageNumber - 1) * parameters.PageSize;
-                
-                paymentsResponse = new PaginatedResponse<RentalPayment>
-                {
-                    Items = filteredPayments.Skip(skip).Take(parameters.PageSize).ToList(),
-                    PageNumber = parameters.PageNumber,
-                    TotalCount = totalCount,
-                    TotalPages = (int)Math.Ceiling(totalCount / (double)parameters.PageSize)
-                };
-                
-                paymentsResponse.HasPreviousPage = paymentsResponse.PageNumber > 1;
-                paymentsResponse.HasNextPage = paymentsResponse.PageNumber < paymentsResponse.TotalPages;
+                // All payments must be associated with a property
+                throw new InvalidOperationException("PropertyId is required");
             }
         }
         catch (Exception ex)
@@ -353,10 +354,29 @@
         await LoadPaymentsAsync();
     }
 
+    private async Task SortTable(string field)
+    {
+        if (parameters.SortField == field)
+        {
+            // If already sorting by this field, toggle direction
+            parameters.SortDescending = !parameters.SortDescending;
+        }
+        else
+        {
+            // New sort field, set as ascending by default
+            parameters.SortField = field;
+            parameters.SortDescending = false;
+        }
+        
+        parameters.PageNumber = 1; // Reset to first page when sort changes
+        await LoadPaymentsAsync();
+    }
+
     private void SearchPayments()
     {
         parameters.PageNumber = 1; // Reset to first page when search changes
         parameters.SearchTerm = searchTerm;
+        // Maintain current sort settings during search
         _ = LoadPaymentsAsync();
     }
 

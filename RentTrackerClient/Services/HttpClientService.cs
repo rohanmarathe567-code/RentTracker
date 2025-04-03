@@ -26,7 +26,7 @@ public abstract class HttpClientService
     {
         try
         {
-            var fullUrl = $"{_baseUrl}/{endpoint}";
+            var fullUrl = $"{_baseUrl}{(endpoint.StartsWith("?") ? "" : "/")}{endpoint}";
             _logger.LogDebug($"GET Request: {fullUrl}");
 
             var startTime = DateTime.UtcNow;
