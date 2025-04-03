@@ -413,7 +413,7 @@
             isLoading = true;
             StateHasChanged();
 
-            await PaymentService.DeletePaymentAsync(paymentToDelete.Id);
+            await PaymentService.DeletePaymentAsync(paymentToDelete.RentalPropertyId, paymentToDelete.Id);
             
             // Close the modal
             isDeleteModalVisible = false;
@@ -443,12 +443,18 @@
             // Ensure PaymentDate is in UTC format
             editingPayment!.PaymentDate = DateTime.SpecifyKind(editingPayment.PaymentDate, DateTimeKind.Utc);
             
+            // Ensure RentalPropertyId is set correctly
+            if (PropertyId.HasValue && editingPayment.RentalPropertyId == Guid.Empty)
+            {
+                editingPayment.RentalPropertyId = PropertyId.Value;
+            }
+            
             // Set or update timestamps
             if (editingPayment.Id != Guid.Empty)
             {
                 // Update the UpdatedAt timestamp
                 editingPayment.UpdatedAt = DateTime.UtcNow;
-                await PaymentService.UpdatePaymentAsync(editingPayment.Id, editingPayment);
+                await PaymentService.UpdatePaymentAsync(editingPayment.RentalPropertyId, editingPayment.Id, editingPayment);
             }
             else
             {
@@ -464,7 +470,7 @@
         catch (Exception ex)
         {
             errorMessage = $"Error saving payment: {ex.Message}";
-            Console.WriteLine(ex);
+            _logger.LogError(ex, "Error saving payment");
         }
     }
 

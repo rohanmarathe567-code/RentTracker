@@ -184,11 +184,25 @@ public abstract class HttpClientService
             _logger.LogInformation($"PUT Request to {fullUrl} completed in {duration.TotalMilliseconds}ms. Status: {response.StatusCode}");
 
             response.EnsureSuccessStatusCode();
+            
+            // For 204 No Content responses, return null without attempting to deserialize
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                _logger.LogDebug("Server returned 204 No Content - no response body to deserialize");
+                return default;
+            }
+
             var responseContent = await response.Content.ReadAsStringAsync();
             _logger.LogDebug($"Raw PUT Response Content: {responseContent}");
 
             try
             {
+                if (string.IsNullOrWhiteSpace(responseContent))
+                {
+                    _logger.LogDebug("Empty response content - returning default value");
+                    return default;
+                }
+                
                 var result = await response.Content.ReadFromJsonAsync<T>(_jsonOptions);
                 _logger.LogDebug($"PUT Request Result: {JsonSerializer.Serialize(result)}");
                 return result;

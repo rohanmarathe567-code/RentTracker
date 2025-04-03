@@ -40,7 +40,8 @@ public class RentalPaymentService : HttpClientService
         _logger.LogInformation("Creating new rental payment");
         _logger.LogDebug($"Payment details: {System.Text.Json.JsonSerializer.Serialize(payment)}");
         
-        var createdPayment = await PostAsync<RentalPayment>("", payment);
+        // Use the nested resource endpoint pattern: /api/properties/{propertyId}/payments
+        var createdPayment = await PostAsync<RentalPayment>($"../properties/{payment.RentalPropertyId}/payments", payment);
         
         if (createdPayment != null)
         {
@@ -54,12 +55,12 @@ public class RentalPaymentService : HttpClientService
         return createdPayment;
     }
 
-    public async Task<RentalPayment?> UpdatePaymentAsync(Guid id, RentalPayment payment)
+    public async Task<RentalPayment?> UpdatePaymentAsync(Guid propertyId, Guid id, RentalPayment payment)
     {
-        _logger.LogInformation($"Updating rental payment with ID: {id}");
+        _logger.LogInformation($"Updating rental payment with ID: {id} for property {propertyId}");
         _logger.LogDebug($"Updated payment details: {System.Text.Json.JsonSerializer.Serialize(payment)}");
         
-        var updatedPayment = await PutAsync<RentalPayment>($"{id}", payment);
+        var updatedPayment = await PutAsync<RentalPayment>($"../properties/{propertyId}/payments/{id}", payment);
         
         if (updatedPayment != null)
         {
@@ -73,13 +74,13 @@ public class RentalPaymentService : HttpClientService
         return updatedPayment;
     }
 
-    public async Task DeletePaymentAsync(Guid id)
+    public async Task DeletePaymentAsync(Guid propertyId, Guid id)
     {
-        _logger.LogInformation($"Deleting rental payment with ID: {id}");
+        _logger.LogInformation($"Deleting rental payment with ID: {id} for property {propertyId}");
         
         try
         {
-            await DeleteAsync($"{id}");
+            await DeleteAsync($"../properties/{propertyId}/payments/{id}");
             _logger.LogInformation($"Successfully deleted rental payment with ID: {id}");
         }
         catch (Exception ex)

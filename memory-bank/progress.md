@@ -10,6 +10,7 @@ This file tracks the project's progress using a task list format.
 - [x] Add validation for property existence
 - [x] Ensure proper error handling
 - [x] Update HTTP documentation
+- [x] Update client code to use the new nested endpoint structure
 
 ### Implementation Details
 - Endpoint: POST /api/properties/{propertyId}/payments
@@ -17,6 +18,7 @@ This file tracks the project's progress using a task list format.
 - Validates property existence and payment data
 - Follows existing error handling patterns
 - Implements backend-only ID generation for payments
+- Client code updated to use the nested endpoint structure
 
 ## [2025-04-02] Property to Payments Navigation Implementation
 - [x] Modified PropertyList.razor to navigate to payments list when a property row is clicked

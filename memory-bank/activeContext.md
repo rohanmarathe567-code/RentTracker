@@ -6,6 +6,7 @@ This file tracks the project's current status, including recent changes, current
 - ✅ Implemented POST endpoint for /api/properties/{propertyId}/payments
 - ✅ Added CreatePaymentAsync method to IPaymentService interface
 - ✅ Updated README.md API documentation to reflect current endpoints
+- ✅ Updated client code to use the new nested endpoint structure for payment creation
 
 ## Recent Changes
 

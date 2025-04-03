@@ -102,3 +102,34 @@ Implement the missing POST endpoint for creating payments associated with a spec
 - Updated README.md API documentation to reflect current endpoints
 
 [2025-04-03 19:18:11]
+
+## Decision: Update Client Code to Use Nested Payment Endpoint
+
+### Context
+- The backend has implemented a POST endpoint for /api/properties/{propertyId}/payments
+- The client code was still using the old endpoint structure for creating payments
+- The client needed to be updated to use the new nested endpoint structure
+
+### Decision
+Update the RentalPaymentService.CreatePaymentAsync method to use the new nested endpoint structure.
+
+### Rationale
+1. Consistency: Align client code with the backend API structure
+2. Proper Resource Hierarchy: Follow RESTful design principles with nested resources
+3. Improved Data Integrity: Ensure payments are properly associated with properties
+
+### Implementation Details
+1. RentalPaymentService.cs Changes:
+   - Modified CreatePaymentAsync to use "../properties/{payment.RentalPropertyId}/payments" endpoint
+   - Used the relative path pattern to navigate from the base URL
+
+2. Payments.razor Changes:
+   - Added explicit check to ensure RentalPropertyId is set correctly
+   - Improved error logging
+
+### Impact
+- Improved API consistency between client and server
+- Better adherence to RESTful design principles
+- Enhanced data integrity with explicit property-payment relationship
+
+[2025-04-03 19:49:35]
