@@ -34,7 +34,7 @@ public class RentalPayment
     
     // Navigation properties
     [ForeignKey("RentalPropertyId")]
-    public RentalProperty? RentalProperty { get; set; }
+    public virtual RentalProperty? RentalProperty { get; set; }
     
     public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
 }

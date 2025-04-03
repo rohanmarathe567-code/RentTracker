@@ -20,16 +20,21 @@ public class PaymentService : IPaymentService
             .FirstOrDefaultAsync(p => p.Id == paymentId);
     }
 
-    public async Task<IQueryable<RentalPayment>> GetPaymentsByPropertyQueryAsync(Guid propertyId)
+    private async Task ValidatePropertyExistsAsync(Guid propertyId)
     {
-        // Validate property exists
-        var propertyExists = await _context.RentalProperties
+        var exists = await _context.RentalProperties
+            .AsNoTracking()
             .AnyAsync(p => p.Id == propertyId);
 
-        if (!propertyExists)
+        if (!exists)
         {
             throw new ArgumentException($"Property with ID {propertyId} not found.");
         }
+    }
+
+    public async Task<IQueryable<RentalPayment>> GetPaymentsByPropertyQueryAsync(Guid propertyId)
+    {
+        await ValidatePropertyExistsAsync(propertyId);
 
         return _context.RentalPayments
             .AsNoTracking()
@@ -76,14 +81,7 @@ public class PaymentService : IPaymentService
 
     public async Task<RentalPayment> CreatePaymentAsync(RentalPayment payment)
     {
-        // Validate property exists
-        var propertyExists = await _context.RentalProperties
-            .AnyAsync(p => p.Id == payment.RentalPropertyId);
-
-        if (!propertyExists)
-        {
-            throw new ArgumentException($"Property with ID {payment.RentalPropertyId} not found.");
-        }
+        await ValidatePropertyExistsAsync(payment.RentalPropertyId);
 // Always generate a new ID for new payments, regardless of what's provided
 payment.Id = SequentialGuidGenerator.NewSequentialGuid();
 

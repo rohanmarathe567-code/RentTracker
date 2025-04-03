@@ -133,3 +133,36 @@ Update the RentalPaymentService.CreatePaymentAsync method to use the new nested 
 - Enhanced data integrity with explicit property-payment relationship
 
 [2025-04-03 19:49:35]
+
+## Decision: Optimize Payment Query Loading
+
+### Context
+- Payment endpoints were potentially eager loading RentalProperty data
+- The RentalProperty navigation property exists but isn't used in API responses
+- Performance could be impacted by unnecessary data loading
+
+### Decision
+Optimize payment queries by implementing explicit lazy loading and removing unnecessary property loading.
+
+### Rationale
+1. Performance: Reduce unnecessary data fetching from database
+2. Efficiency: Minimize memory usage and network bandwidth
+3. Best Practice: Follow the principle of loading only required data
+
+### Implementation Details
+1. RentalPayment Model Changes:
+   - Update navigation property to be explicitly lazy loaded
+   - Maintain proper foreign key relationship
+
+2. PaymentService Changes:
+   - Modify queries to use AsNoTracking()
+   - Ensure RentalProperty is not eagerly loaded
+   - Optimize IQueryable implementations
+
+### Impact
+- Improved query performance
+- Reduced memory usage
+- Lower network bandwidth consumption
+- No change to API contract or responses
+
+[2025-04-03 20:21:11]

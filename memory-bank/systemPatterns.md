@@ -138,6 +138,17 @@ This file documents recurring patterns and standards used in the project.
 * Asynchronous database operations
 * Structured error handling
 * Data validation practices
+* Explicit lazy loading for navigation properties
+* Query optimization patterns:
+  - Use AsNoTracking() for read-only operations
+  - Load only required navigation properties
+  - Avoid unnecessary eager loading
+* Entity relationship best practices:
+  - Clear separation of concerns in data loading
+  - Proper foreign key relationships
+  - Strategic use of navigation properties
+
+[2025-04-03 20:22:44] - Added query optimization and entity relationship patterns
 
 ### File Handling
 * Stream-based file operations

@@ -3,12 +3,22 @@
 This file tracks the project's current status, including recent changes, current goals, and open questions.
 
 ## Current Focus
+- 🚀 Optimizing payment endpoints performance
+  * Remove unnecessary eager loading of RentalProperty data
+  * Implement explicit lazy loading patterns
+  * Update PaymentService query implementations
 - ✅ Implemented POST endpoint for /api/properties/{propertyId}/payments
 - ✅ Added CreatePaymentAsync method to IPaymentService interface
 - ✅ Updated README.md API documentation to reflect current endpoints
 - ✅ Updated client code to use the new nested endpoint structure for payment creation
 
 ## Recent Changes
+
+[2025-04-03 20:23:08] - Performance Optimization Initiative
+- Identified unnecessary eager loading in payment endpoints
+- Created plan to optimize query performance
+- Updated system patterns documentation for entity relationships
+- Added explicit lazy loading guidelines to codebase
 
 [2025-04-03 19:14:20] - Payment Endpoint Implementation
 - Planning POST endpoint for /api/properties/{propertyId}/payments
