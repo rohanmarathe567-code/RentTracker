@@ -21,9 +21,15 @@ public static class PropertiesController
             // Optional: Add search filtering if needed
             if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
             {
+                var searchTerm = parameters.SearchTerm.ToLower();
                 query = query.Where(p =>
-                    p.Address.Contains(parameters.SearchTerm) ||
-                    (p.Suburb != null && p.Suburb.Contains(parameters.SearchTerm)));
+                    p.Address.ToLower().Contains(searchTerm) ||
+                    (p.Suburb != null && p.Suburb.ToLower().Contains(searchTerm)) ||
+                    (p.State != null && p.State.ToLower().Contains(searchTerm)) ||
+                    (p.PostCode != null && p.PostCode.Contains(searchTerm)) ||
+                    (p.Description != null && p.Description.ToLower().Contains(searchTerm)) ||
+                    (p.PropertyManager != null && p.PropertyManager.ToLower().Contains(searchTerm)) ||
+                    (p.PropertyManagerContact != null && p.PropertyManagerContact.ToLower().Contains(searchTerm)));
             }
 
             // Apply sorting if specified

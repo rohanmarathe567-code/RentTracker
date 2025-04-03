@@ -32,8 +32,9 @@
     <div class="mb-4">
         <div class="input-group">
             <input type="text" class="form-control" placeholder="Search payments..."
-                   @bind-value="searchTerm" @bind-value:event="oninput" />
-            <button class="btn btn-outline-secondary" type="button" @onclick="SearchPayments">Search</button>
+                   @bind-value="searchTerm"
+                   @bind-value:event="oninput"
+                   @bind-value:after="@(async () => await SearchPayments())" />
         </div>
     </div>
 
@@ -372,12 +373,12 @@
         await LoadPaymentsAsync();
     }
 
-    private void SearchPayments()
+    private async Task SearchPayments()
     {
         parameters.PageNumber = 1; // Reset to first page when search changes
         parameters.SearchTerm = searchTerm;
         // Maintain current sort settings during search
-        _ = LoadPaymentsAsync();
+        await LoadPaymentsAsync();
     }
 
     private void NavigateBackToProperties()

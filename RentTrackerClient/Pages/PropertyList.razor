@@ -14,9 +14,10 @@
 
     <div class="mb-4">
         <div class="input-group">
-            <input type="text" class="form-control" placeholder="Search properties..." 
-                   @bind-value="searchTerm" @bind-value:event="oninput" />
-            <button class="btn btn-outline-secondary" type="button" @onclick="SearchProperties">Search</button>
+            <input type="text" class="form-control" placeholder="Search properties..."
+                   @bind-value="searchTerm"
+                   @bind-value:event="oninput"
+                   @bind-value:after="@(async () => await OnSearchInput())" />
         </div>
     </div>
 
@@ -233,14 +234,13 @@
         parameters.PageNumber = 1; // Reset to first page when sort changes
         _ = LoadPropertiesAsync();
     }
+private async Task OnSearchInput()
+{
+    parameters.PageNumber = 1; // Reset to first page when search changes
+    parameters.SearchTerm = searchTerm;
+    await LoadPropertiesAsync();
+}
 
-    private void SearchProperties()
-    {
-        parameters.PageNumber = 1; // Reset to first page when search changes
-        parameters.SearchTerm = searchTerm;
-        // Maintain current sort settings during search
-        _ = LoadPropertiesAsync();
-    }
 
     private void NavigateToAddProperty()
     {
