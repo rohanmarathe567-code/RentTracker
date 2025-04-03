@@ -67,3 +67,38 @@ Implement navigation from the property list to the payments list when a property
 - Improved user experience through more intuitive navigation
 - Enhanced consistency across the application
 - More efficient workflow for managing property payments
+
+## Decision: Implement POST Endpoint for Payments
+
+### Context
+- The system was missing the POST endpoint for /api/properties/{propertyId}/payments
+- The IPaymentService interface lacked a CreatePaymentAsync method
+- The endpoint was already documented in the HTTP endpoints plan
+
+### Decision
+Implement the missing POST endpoint for creating payments associated with a specific property.
+
+### Rationale
+1. Completeness: The API needed full CRUD operations for payments
+2. Consistency: Follow the same patterns used in other endpoints
+3. Usability: Allow users to create new payments through the API
+
+### Implementation Details
+1. Service Layer Changes:
+   - Added CreatePaymentAsync method to IPaymentService interface
+   - Implemented method in PaymentService with property validation
+   - Always generate new IDs for payments, ignoring any client-provided IDs
+   - Ensured proper timestamp handling
+
+2. Controller Changes:
+   - Added POST endpoint to PaymentsController
+   - Implemented proper error handling and validation
+   - Returns 201 Created with location header pointing to the new resource
+
+### Impact
+- Complete CRUD operations for payments
+- Consistent API design across the application
+- Improved developer experience with predictable patterns
+- Updated README.md API documentation to reflect current endpoints
+
+[2025-04-03 19:18:11]

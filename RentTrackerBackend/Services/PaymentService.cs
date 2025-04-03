@@ -73,4 +73,28 @@ public class PaymentService : IPaymentService
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<RentalPayment> CreatePaymentAsync(RentalPayment payment)
+    {
+        // Validate property exists
+        var propertyExists = await _context.RentalProperties
+            .AnyAsync(p => p.Id == payment.RentalPropertyId);
+
+        if (!propertyExists)
+        {
+            throw new ArgumentException($"Property with ID {payment.RentalPropertyId} not found.");
+        }
+// Always generate a new ID for new payments, regardless of what's provided
+payment.Id = SequentialGuidGenerator.NewSequentialGuid();
+
+
+        // Set timestamps
+        payment.CreatedAt = DateTime.UtcNow;
+        payment.UpdatedAt = DateTime.UtcNow;
+
+        _context.RentalPayments.Add(payment);
+        await _context.SaveChangesAsync();
+        
+        return payment;
+    }
 }

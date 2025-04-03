@@ -126,5 +126,30 @@ public static class PaymentsController
                 return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
             }
         });
+
+        // Create a new payment for a specific property
+        app.MapPost("/api/properties/{propertyId}/payments", async (
+            Guid propertyId,
+            RentalPayment payment,
+            IPaymentService paymentService) =>
+        {
+            try
+            {
+                // Ensure the payment is associated with the correct property
+                payment.RentalPropertyId = propertyId;
+                
+                var createdPayment = await paymentService.CreatePaymentAsync(payment);
+                
+                return Results.Created($"/api/properties/{propertyId}/payments/{createdPayment.Id}", createdPayment);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
+            }
+        });
     }
 }

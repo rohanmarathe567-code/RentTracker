@@ -9,4 +9,5 @@ public interface IPaymentService
     Task<IQueryable<RentalPayment>> GetPaymentsByPropertyQueryAsync(Guid propertyId);
     Task<RentalPayment?> UpdatePaymentAsync(Guid paymentId, RentalPayment updatedPayment);
     Task<bool> DeletePaymentAsync(Guid paymentId);
+    Task<RentalPayment> CreatePaymentAsync(RentalPayment payment);
 }
