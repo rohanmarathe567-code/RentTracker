@@ -1,5 +1,37 @@
 # Decision Log
 
+## View Preference Storage Strategy
+**Date:** 2025-04-03
+
+### Decision
+Implement view preference (card/table view) storage in two phases:
+1. **Phase 1 (Current):** Use browser's localStorage
+2. **Phase 2 (Future):** Migrate to database storage when implementing authentication
+
+### Rationale
+- Immediate need: Maintain view preference across app executions
+- Current state: No authentication/user system yet
+- Future plans: Multi-tenancy with authentication is planned
+- Complexity: Avoid premature database schema changes
+- Migration path: Easy to migrate from localStorage to database when needed
+
+### Implementation Details
+#### Phase 1 (localStorage)
+- Store preference as "propertyListViewMode" with values "card"/"table"
+- Implement in PropertyList.razor using browser's localStorage
+- Default to "table" view if no preference is set
+
+#### Phase 2 (Future Database)
+- Will be implemented alongside authentication
+- Migration strategy will be developed to preserve user preferences
+- Consider implementing a generic UserPreferences table for extensibility
+
+### Technical Impact
+- Minimal database impact in Phase 1
+- Frontend-only changes required initially
+- Clean separation of concerns
+- Future-proofed design approach
+
 This file records architectural and implementation decisions using a list format.
 2024-04-02 19:34:38 - Log of updates made.
 

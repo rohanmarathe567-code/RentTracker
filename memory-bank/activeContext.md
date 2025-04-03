@@ -1,5 +1,20 @@
 # Active Context
 
+## Current Focus (2025-04-03)
+1. Implementing property list view persistence using localStorage
+   - Maintain user's preferred view (card/table) across sessions
+   - Simple localStorage-based solution as interim approach
+   - Will be migrated to database when authentication is implemented
+
+## Recent Changes
+- Decision made to use localStorage for view preferences initially
+- Documented two-phase approach in decisionLog.md
+- Plan created for future migration to database storage
+
+## Open Questions/Issues
+- Consider other preferences that might need persistence
+- Plan needed for migrating preferences when authentication is implemented
+
 This file tracks the project's current status, including recent changes, current goals, and open questions.
 
 ## Current Focus
