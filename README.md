@@ -36,25 +36,50 @@ dotnet run
 
 ### Existing Features
 * Property Management
-  - Add, edit, and delete rental properties
+  - Add, edit, and delete rental properties with server-side ID generation
   - Store property details (address, rent amount, lease dates)
   - Manage property manager information
+  - Paginated property list with search functionality
 * Payment Tracking
-  - Record and manage rental payments
-  - Track payment history
-  - Monitor payment status
+  - Record and manage rental payments through nested endpoints
+  - Track payment history with property context
+  - Monitor payment status with optimized performance
+  - Paginated payment list with search functionality
 * Document Management
   - Upload and store property-related documents
   - Secure file storage and retrieval
   - Support for various document types
-* Basic Property Details
+* Enhanced Property Management
   - Comprehensive property information storage
   - Lease agreement tracking
   - Property manager contact details
-* Responsive Web Interface
-  - Modern, intuitive Blazor WebAssembly client
-  - Responsive design for desktop and mobile
-  - Real-time data updates
+  - Improved navigation between properties and payments
+* Modern Web Interface
+  - Responsive Blazor WebAssembly client with optimized UI
+  - Full-screen layout with efficient navigation
+  - Real-time data updates with pagination support
+  - Dedicated components for property listing and editing
+
+### RentTrackerClient Features
+* Modern Component Architecture
+  - Separate PropertyList and PropertyEdit components
+  - Dedicated Payments component with property context
+  - Reusable UI components for consistency
+* Enhanced User Experience
+  - Paginated lists for both properties and payments
+  - Intuitive navigation between properties and their payments
+  - Full-screen layouts for better space utilization
+  - Consistent styling across components
+* Service Layer
+  - Typed HTTP client services
+  - Support for paginated API responses
+  - Proper error handling and validation
+  - Efficient state management
+* Performance Optimizations
+  - Lazy loading of related data
+  - Efficient data fetching with pagination
+  - Optimized API calls with proper caching
+  - Minimal client-side processing
 
 ### Planned Features
 * Multi-tenancy Support with Authentication
@@ -72,17 +97,26 @@ dotnet run
 ## Project Status and Roadmap
 
 ### Current Status
-- [x] Basic Property Management
-- [x] Payment Tracking
-- [x] Document Storage
+- [x] Enhanced Property Management with Pagination
+- [x] Optimized Payment Tracking with Nested Endpoints
+- [x] Document Storage System
+- [x] Improved Client Architecture
+- [x] Performance Optimizations
 - [ ] Multi-tenancy Support
 - [ ] Advanced Reporting
 - [ ] Payment Reminder System
 
+### Recent Achievements
+- ✅ Implemented optimized payment endpoints
+- ✅ Added pagination support for properties and payments
+- ✅ Enhanced client-side architecture with modular components
+- ✅ Improved query performance with lazy loading
+- ✅ Updated navigation and UI components
+
 ### Upcoming Milestones
 1. Q2 2025: Implement Multi-tenancy
 2. Q3 2025: Enhanced Reporting Features
-3. Q4 2025: Docker Containerization
+3. Q4 2025: Docker Containerization and CI/CD Pipeline
 
 ## Architecture
 
@@ -110,15 +144,18 @@ graph TD
     E --> E2[Secure Storage]
 ```
 
-* **Backend Framework**: ASP.NET Core minimal API (.NET 6+)
+* **Backend Framework**: ASP.NET Core minimal API (.NET 8)
 * **Frontend Framework**: Blazor WebAssembly (.NET 8)
-* **ORM**: Entity Framework Core
+* **ORM**: Entity Framework Core with optimized query patterns
 * **Database**: PostgreSQL
-* **Architecture Pattern**: RESTful API with WebAssembly Client
+* **Architecture Pattern**: RESTful API with nested endpoints
 * **File Management**: Custom FileService implementation
-* **UI Components**: Razor Components
+* **UI Components**: Modular Razor Components
+* **Client Architecture**: Service-based with typed HTTP clients
 
-### Core Models
+### Backend Implementation
+
+#### Core Models
 
 ```mermaid
 classDiagram
@@ -157,6 +194,53 @@ classDiagram
     RentalProperty "1" --> "*" Attachment
 ```
 
+### Client Architecture
+
+```mermaid
+graph TD
+    A[RentTrackerClient] --> B[Services]
+    A --> C[Components]
+    A --> D[Models]
+    A --> E[Shared]
+    
+    B --> B1[RentalPropertyService]
+    B --> B2[PaymentService]
+    B --> B3[AttachmentService]
+    
+    C --> C1[Property Management]
+    C --> C2[Payment Management]
+    C --> C3[Document Management]
+    
+    C1 --> C1A[PropertyList]
+    C1 --> C1B[PropertyEdit]
+    C2 --> C2A[PaymentList]
+    C2 --> C2B[PaymentEdit]
+    
+    D --> D1[DTOs]
+    D --> D2[View Models]
+    
+    E --> E1[Layouts]
+    E --> E2[UI Components]
+```
+
+#### Service Layer
+- Typed HTTP clients for API communication
+- Pagination support with generic response types
+- Error handling and validation
+- State management for UI components
+
+#### Component Structure
+- Modular design with separate components per feature
+- Shared UI components for consistency
+- Full-screen layouts with efficient navigation
+- Property-specific payment context maintenance
+
+#### State Management
+- Local component state for UI interactions
+- Service-level caching for API responses
+- Pagination state management
+- Loading and error states
+
 ## API Documentation
 
 ### Property Management
@@ -169,13 +253,20 @@ sequenceDiagram
     participant API
     participant Database
     
+    Client->>+API: GET /api/properties?page=1&pageSize=10
+    API->>+Database: Fetch Properties with Pagination
+    Database-->>-API: Return Paginated Results
+    API-->>-Client: Properties with Pagination Info
+
     Client->>+API: POST /api/properties
+    Note over API: Backend generates new ID
     API->>+Database: Create Property
     Database-->>-API: Property Created
     API-->>-Client: Return Property Details
 
     Client->>+API: GET /api/properties/{id}
     API->>+Database: Fetch Property
+    Note over API: Using AsNoTracking for read-only
     Database-->>-API: Return Property
     API-->>-Client: Property Details
 
@@ -206,18 +297,21 @@ sequenceDiagram
     participant API
     participant Database
     
+    Client->>+API: GET /api/properties/{propertyId}/payments?page=1&pageSize=10
+    API->>+Database: Fetch Paginated Payments
+    Note over API: Using lazy loading & AsNoTracking
+    Database-->>-API: Return Paginated Payments
+    API-->>-Client: Payments with Pagination Info
+
     Client->>+API: POST /api/properties/{propertyId}/payments
+    Note over API: Backend generates payment ID
     API->>+Database: Record Payment
     Database-->>-API: Payment Recorded
     API-->>-Client: 201 Created with Payment Details
 
-    Client->>+API: GET /api/properties/{propertyId}/payments
-    API->>+Database: Fetch Payments
-    Database-->>-API: Return Payments
-    API-->>-Client: Payment History
-    
     Client->>+API: GET /api/properties/{propertyId}/payments/{paymentId}
     API->>+Database: Fetch Specific Payment
+    Note over API: Optimized query with no tracking
     Database-->>-API: Return Payment
     API-->>-Client: Payment Details
     
@@ -234,11 +328,11 @@ sequenceDiagram
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/properties/{propertyId}/payments` | List payments for a property |
-| GET | `/api/properties/{propertyId}/payments/{paymentId}` | Get specific payment details |
-| POST | `/api/properties/{propertyId}/payments` | Record new payment (ID generated by backend) |
-| PUT | `/api/properties/{propertyId}/payments/{paymentId}` | Update payment |
-| DELETE | `/api/properties/{propertyId}/payments/{paymentId}` | Delete payment |
+| GET | `/api/properties/{propertyId}/payments?page={page}&pageSize={size}` | List paginated payments for a property |
+| GET | `/api/properties/{propertyId}/payments/{paymentId}` | Get specific payment details (optimized query) |
+| POST | `/api/properties/{propertyId}/payments` | Record new payment with backend-generated ID |
+| PUT | `/api/properties/{propertyId}/payments/{paymentId}` | Update payment details |
+| DELETE | `/api/properties/{propertyId}/payments/{paymentId}` | Delete payment record |
 
 ### Document Management
 
@@ -272,9 +366,20 @@ sequenceDiagram
 ## Setup Guide
 
 ### Prerequisites
-- .NET 8 SDK
-- PostgreSQL database server
-- Storage location for file uploads
+- .NET 8 SDK (latest version)
+- PostgreSQL database server (13.0 or higher)
+- Storage location for file uploads (with proper permissions)
+- Visual Studio Code (recommended) or Visual Studio 2022
+
+### Development Environment Setup
+- Install Visual Studio Code and the C# Dev Kit extension
+- Configure the following extensions:
+  * C# Dev Kit for .NET development
+  * .NET Core Test Explorer for running tests
+  * GitLens for enhanced Git integration
+  * REST Client for testing API endpoints
+- Set up PostgreSQL and create a new database
+- Configure file storage permissions
 
 ### Installation Steps
 
@@ -311,6 +416,28 @@ dotnet run
 ```
 
 The backend API will be available at `https://localhost:5001`, and the frontend at `https://localhost:5002`.
+
+### Development Notes
+- Enable hot reload for faster development iterations
+- Use the integrated terminal for running commands
+- Utilize the built-in debugger for both backend and frontend
+- Configure user secrets for sensitive configuration
+- Follow the code style and organization patterns
+
+### Performance Considerations
+- Backend Optimizations:
+  * Lazy loading patterns for related data
+  * AsNoTracking for read-only operations
+  * Efficient query patterns with proper includes
+  * Pagination for all list operations
+  * Proper indexing on database tables
+
+- Frontend Optimizations:
+  * Component-level state management
+  * Efficient API call patterns
+  * Proper caching strategies
+  * Optimized rendering with proper component lifecycle
+  * Minimized re-renders using proper state management
 
 ## Contributing
 
