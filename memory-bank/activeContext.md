@@ -18,6 +18,9 @@
 ## Open Questions/Issues
 - Consider other preferences that might need persistence
 - Plan needed for migrating preferences when authentication is implemented
+- Need to determine storage provider choice for attachment system (local vs cloud)
+- Consider file size limits and supported file types for attachments
+- Plan needed for virus scanning integration approach
 
 This file tracks the project's current status, including recent changes, current goals, and open questions.
 

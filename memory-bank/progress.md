@@ -113,6 +113,15 @@ This file tracks the project's progress using a task list format.
 - Consider adding more advanced filtering options
 
 ## Next Steps
+
+### Immediate Priority
+- Attachment System Implementation (See attachment-system-plan.md)
+  - Phase 1: Core Infrastructure setup
+  - Phase 2: Enhanced Features development
+  - Phase 3: Security & Polish
+  - Phase 4: Cloud Storage integration
+
+### Future Features
 - Multi-tenancy and authentication implementation
 - Docker containerization
 - Enhanced reporting system development
