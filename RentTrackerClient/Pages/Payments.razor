@@ -38,6 +38,48 @@
         </div>
     </div>
 
+    <!-- Payment Timeline Control -->
+    <div class="card-no-hover mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Payments Timeline</h5>
+                <small class="text-muted">Last 6 payments</small>
+            </div>
+        </div>
+        <div class="card-body">
+            @{
+                var recentPayments = paymentsResponse.Items.OrderByDescending(p => p.PaymentDate).Take(6).ToList();
+            }
+            @if (recentPayments.Any())
+            {
+                <div class="d-flex overflow-auto gap-4 pb-2">
+                    @foreach (var payment in recentPayments)
+                    {
+                        var daysAgo = (DateTime.UtcNow - payment.PaymentDate).Days;
+                        var dotColor = daysAgo switch
+                        {
+                            <= 7 => "bg-success",
+                            <= 14 => "bg-primary",
+                            <= 30 => "bg-warning",
+                            _ => "bg-secondary"
+                        };
+
+                        <div class="text-center" style="min-width: 120px; pointer-events: none">
+                            <div class="rounded-circle mx-auto mb-2 @dotColor" style="width: 16px; height: 16px"></div>
+                            <div class="mb-1">@payment.Amount.ToString("C")</div>
+                            <div class="small mb-1">@payment.PaymentDate.ToShortDateString()</div>
+                            <div class="small mb-1">@(daysAgo == 0 ? "Today" : daysAgo == 1 ? "Yesterday" : $"{daysAgo} days ago")</div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">No payment history available</div>
+            }
+        </div>
+    </div>
+
     @if (isLoading)
     {
         <div class="loading-container">
@@ -235,7 +277,6 @@
 </div>
 
 @code {
-    // Logger for debugging
     [Inject]
     private ILogger<Payments> _logger { get; set; } = default!;
 
@@ -297,44 +338,11 @@
             
             if (PropertyId.HasValue)
             {
-                try
-                {
-                    // Try to get payments from the API with pagination parameters
-                    paymentsResponse = await PropertyService.GetPropertyPaymentsAsync(PropertyId.Value, parameters);
-                    
-                    // If we get here, the API call succeeded
-                    _logger.LogInformation($"Successfully retrieved {paymentsResponse.Items.Count()} payments for property {PropertyId.Value}");
-                }
-                catch (Exception ex)
-                {
-                    // If the API call fails, use mock data for demonstration purposes
-                    _logger.LogWarning($"Using mock data due to API error: {ex.Message}");
-                    
-                    // Create mock payments for the property
-                    var mockPayments = CreateMockPaymentsForProperty(PropertyId.Value);
-                    
-                    // Filter mock payments based on search term
-                    var filteredPayments = string.IsNullOrWhiteSpace(searchTerm)
-                        ? mockPayments
-                        : mockPayments.Where(p =>
-                            (p.PaymentMethod?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                            (p.PaymentReference?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                            (p.Notes?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
-                    
-                    int totalCount = filteredPayments.Count;
-                    int skip = (parameters.PageNumber - 1) * parameters.PageSize;
-                    
-                    paymentsResponse = new PaginatedResponse<RentalPayment>
-                    {
-                        Items = filteredPayments.Skip(skip).Take(parameters.PageSize).ToList(),
-                        PageNumber = parameters.PageNumber,
-                        TotalCount = totalCount,
-                        TotalPages = (int)Math.Ceiling(totalCount / (double)parameters.PageSize)
-                    };
-                    
-                    paymentsResponse.HasPreviousPage = paymentsResponse.PageNumber > 1;
-                    paymentsResponse.HasNextPage = paymentsResponse.PageNumber < paymentsResponse.TotalPages;
-                }
+                // Get payments from the API with pagination parameters
+                paymentsResponse = await PropertyService.GetPropertyPaymentsAsync(PropertyId.Value, parameters);
+                
+                // Log successful retrieval
+                _logger.LogInformation($"Successfully retrieved {paymentsResponse.Items.Count()} payments for property {PropertyId.Value}");
             }
             else
             {
@@ -495,50 +503,6 @@
         }
     }
 
-    // Helper method to create mock payments for a property
-    private List<RentalPayment> CreateMockPaymentsForProperty(Guid propertyId)
-    {
-        // Create a list of mock payments
-        return new List<RentalPayment>
-        {
-            new RentalPayment
-            {
-                Id = Guid.NewGuid(),
-                RentalPropertyId = propertyId,
-                Amount = 1200.00m,
-                PaymentDate = DateTime.UtcNow.AddDays(-30),
-                PaymentMethod = "Bank Transfer",
-                PaymentReference = "RENT-123456",
-                Notes = "Rent payment for last month",
-                CreatedAt = DateTime.UtcNow.AddDays(-30),
-                UpdatedAt = DateTime.UtcNow.AddDays(-30)
-            },
-            new RentalPayment
-            {
-                Id = Guid.NewGuid(),
-                RentalPropertyId = propertyId,
-                Amount = 1200.00m,
-                PaymentDate = DateTime.UtcNow,
-                PaymentMethod = "Credit Card",
-                PaymentReference = "RENT-123457",
-                Notes = "Rent payment for current month",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            },
-            new RentalPayment
-            {
-                Id = Guid.NewGuid(),
-                RentalPropertyId = propertyId,
-                Amount = 500.00m,
-                PaymentDate = DateTime.UtcNow.AddDays(-15),
-                PaymentMethod = "Cash",
-                PaymentReference = "DEPOSIT-123",
-                Notes = "Security deposit",
-                CreatedAt = DateTime.UtcNow.AddDays(-15),
-                UpdatedAt = DateTime.UtcNow.AddDays(-15)
-            }
-        };
-    }
 
     private void ClosePaymentModal()
     {

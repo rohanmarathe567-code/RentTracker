@@ -145,6 +145,39 @@
     color: var(--text-secondary);
 }
 
+/* Card Without Hover Effect */
+.card-no-hover {
+    border: var(--card-border) !important;
+    background: none !important;
+    box-shadow: var(--card-shadow) !important;
+    outline: none !important;
+    overflow: hidden !important;
+}
+
+.card-no-hover .card-body {
+    background-color: var(--background-secondary);
+    border-radius: 10px;
+    margin: 0;
+    padding: 1rem;
+    overflow: hidden;
+    border: 0;
+}
+
+.card-no-hover .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.card-no-hover .card-text {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.card-no-hover .card-text strong {
+    color: var(--text-secondary);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .property-list-container,
