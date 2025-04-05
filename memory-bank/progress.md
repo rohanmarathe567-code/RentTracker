@@ -10,6 +10,10 @@ This file tracks the project's progress using a task list format.
 - [x] Updated component styles to use theme variables
 - [x] Added default light theme configuration
 - [x] Documented theme patterns and standards
+- [x] Enhanced payment history with timeline visualization
+- [x] Added card/table view toggle for property list
+- [x] Improved responsive layout and button styling
+- [x] Integrated theme switcher into main layout with footer
 
 ### Implementation Details
 - Created centralized theme definition using CSS variables
