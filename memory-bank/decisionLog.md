@@ -231,3 +231,62 @@ Optimize payment queries by implementing explicit lazy loading and removing unne
 - No change to API contract or responses
 
 [2025-04-03 20:21:11]
+
+## Decision: Remove Mock Payment Data
+
+### Context
+- The payments page had mock data generation as a fallback for API failures
+- The API endpoints are now fully implemented and optimized
+- Mock data in production can mask real issues
+
+### Decision
+Remove the mock payment data functionality from Payments.razor
+
+### Rationale
+1. Reliability: Mock data can mask real API issues that should be addressed
+2. Consistency: API endpoints are now fully implemented and stable
+3. Maintenance: Removes unnecessary code that could cause confusion
+4. Best Practice: Production code should not contain testing/mock data
+
+### Implementation Details
+1. Payments.razor Changes:
+   - Removed CreateMockPaymentsForProperty method
+   - Simplified LoadPaymentsAsync to only use real API data
+   - Improved error handling for API failures
+
+### Impact
+- Cleaner codebase without mock data
+- More reliable error detection
+- Better visibility of actual API issues
+
+[2025-04-05 17:29:27]
+
+## Decision: Git Commit Workflow
+
+### Context
+- Need to establish a consistent Git workflow for the project
+- Want to avoid accidental pushes to remote repository
+
+### Decision
+Implement a Git workflow where commits are made locally without automatic pushes:
+- All changes will be committed locally when requested
+- Pushing to remote repository will be a separate explicit action
+- No automatic push after commit
+
+### Rationale
+1. Safety: Prevents accidental pushes of unreviewed changes
+2. Control: Gives more control over what gets pushed to remote
+3. Flexibility: Allows for local commit history management
+
+### Implementation Details
+1. When requested to commit:
+   - Stage all changes
+   - Create commit with appropriate message
+   - Do not push to remote
+
+### Impact
+- More controlled Git workflow
+- Reduced risk of premature pushes
+- Cleaner commit history management
+
+[2025-04-05 17:33:15]

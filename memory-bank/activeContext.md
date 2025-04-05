@@ -82,3 +82,9 @@ This file tracks the project's current status, including recent changes, current
 - Implementation priorities for planned features
 - Authentication and multi-tenancy design decisions
 - Docker configuration requirements
+
+## Recent Workflow Updates
+[2025-04-05 17:33:36] - Git Workflow
+- Established commit workflow: commit locally without automatic pushes
+- All changes will be committed when requested but not pushed automatically
+- Pushing to remote repository requires explicit action
