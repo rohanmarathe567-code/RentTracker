@@ -1,0 +1,68 @@
+/* Theme Variables */
+:root {
+    /* Default (Dark) Theme */
+    --background-primary: #1e1e2e;
+    --background-secondary: #181825;
+    --background-tertiary: #313244;
+    --background-hover: #45475a;
+    
+    --border-color: #6c7086;
+    
+    --text-primary: #cdd6f4;
+    --text-secondary: #89b4fa;
+    --text-error: #f38ba8;
+    
+    --card-shadow: none;
+    --card-border: none;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+    --background-primary: #ffffff;
+    --background-secondary: #f8f9fa;
+    --background-tertiary: #e9ecef;
+    --background-hover: #dee2e6;
+    
+    --border-color: #ced4da;
+    
+    --text-primary: #212529;
+    --text-secondary: #0d6efd;
+    --text-error: #dc3545;
+    
+    --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --card-border: 1px solid #dee2e6;
+}
+
+/* Mocha Theme */
+[data-theme="mocha"] {
+    --background-primary: #3c2a21;
+    --background-secondary: #2c1810;
+    --background-tertiary: #513931;
+    --background-hover: #674d42;
+    
+    --border-color: #967259;
+    
+    --text-primary: #e6d5b8;
+    --text-secondary: #d4a373;
+    --text-error: #ef4444;
+    
+    --card-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    --card-border: 1px solid #967259;
+}
+
+/* Cappuccino Theme */
+[data-theme="cappuccino"] {
+    --background-primary: #ede0d4;
+    --background-secondary: #e6ccb2;
+    --background-tertiary: #ddb892;
+    --background-hover: #b08968;
+    
+    --border-color: #9c6644;
+    
+    --text-primary: #7f5539;
+    --text-secondary: #9c6644;
+    --text-error: #cf6679;
+    
+    --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --card-border: 1px solid #9c6644;
+}

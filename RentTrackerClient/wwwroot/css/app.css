@@ -1,15 +1,141 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+}
+
+/* Form Controls */
+.form-control,
+.form-select {
+    background-color: #181825;
+    border-color: #6c7086;
+    color: #cdd6f4;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: #181825;
+    border-color: #89b4fa;
+    color: #cdd6f4;
+    box-shadow: 0 0 0 0.25rem rgba(137, 180, 250, 0.25);
+}
+
+.form-control:hover,
+.form-select:hover {
+    border-color: #89b4fa;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Primary Button - Blue */
+.btn-primary {
+    background-color: #89b4fa;
+    border-color: #89b4fa;
+    color: #11111b;
+}
+
+.btn-primary:hover {
+    background-color: #74c7ec;
+    border-color: #74c7ec;
+    color: #11111b;
+    transform: translateY(-1px);
+}
+
+.btn-primary:focus {
+    background-color: #89b4fa;
+    border-color: #89b4fa;
+    box-shadow: 0 0 0 0.25rem rgba(137, 180, 250, 0.5);
+}
+
+.btn-primary:active {
+    background-color: #89dceb !important;
+    border-color: #89dceb !important;
+    transform: translateY(1px);
+}
+
+/* Secondary Button - Surface */
+.btn-secondary {
+    background-color: #313244;
+    border-color: #45475a;
+    color: #cdd6f4;
+}
+
+.btn-secondary:hover {
+    background-color: #45475a;
+    border-color: #585b70;
+    color: #cdd6f4;
+    transform: translateY(-1px);
+}
+
+.btn-secondary:focus {
+    background-color: #313244;
+    border-color: #45475a;
+    box-shadow: 0 0 0 0.25rem rgba(69, 71, 90, 0.5);
+}
+
+.btn-secondary:active {
+    background-color: #45475a !important;
+    border-color: #585b70 !important;
+    transform: translateY(1px);
+}
+
+/* Danger Button - Red */
+.btn-danger {
+    background-color: #f38ba8;
+    border-color: #f38ba8;
+    color: #11111b;
+}
+
+.btn-danger:hover {
+    background-color: #eba0b7;
+    border-color: #eba0b7;
+    color: #11111b;
+    transform: translateY(-1px);
+}
+
+.btn-danger:focus {
+    background-color: #f38ba8;
+    border-color: #f38ba8;
+    box-shadow: 0 0 0 0.25rem rgba(243, 139, 168, 0.5);
+}
+
+.btn-danger:active {
+    background-color: #e64553 !important;
+    border-color: #e64553 !important;
+    transform: translateY(1px);
+}
+
+/* Link Button */
+.btn-link {
+    color: #89b4fa;
+    text-decoration: none;
+    padding: 0.5rem;
+}
+
+.btn-link:hover {
+    color: #74c7ec;
+    text-decoration: underline;
 }
 
 h1:focus {
     outline: none;
 }
 
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+/* Override Bootstrap table styles */
+.table {
+    --bs-table-bg: #181825;
+    --bs-table-color: #cdd6f4;
+    --bs-table-border-color: #6c7086;
+    --bs-table-striped-bg: #313244;
+    --bs-table-striped-color: #cdd6f4;
+    --bs-table-hover-bg: #313244;
+    --bs-table-hover-color: #cdd6f4;
 }
 
 .content {
@@ -17,9 +143,10 @@ h1:focus {
 }
 
 #blazor-error-ui {
-    background: lightyellow;
+    background: #313244;
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.4);
+    color: #cdd6f4;
     display: none;
     left: 0;
     padding: 0.6rem 1.25rem 0.7rem 1.25rem;
@@ -36,9 +163,9 @@ h1:focus {
     }
 
 .blazor-error-boundary {
-    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #f38ba8;
     padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
+    color: #cdd6f4;
 }
 
     .blazor-error-boundary::after {
@@ -46,11 +173,11 @@ h1:focus {
     }
 
 .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(17, 17, 27, 0.8);
 }
 
 .validation-message {
-    color: red;
+    color: #f38ba8;
     margin-top: 0.25rem;
     font-size: 0.875rem;
 }
