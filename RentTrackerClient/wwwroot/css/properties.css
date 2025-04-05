@@ -174,3 +174,40 @@
         margin-bottom: 10px;
     }
 }
+
+/* Modal Form Styles */
+.modal-dialog.modal-lg {
+    max-width: 800px;
+}
+
+.modal-content {
+    background-color: var(--background-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    background-color: var(--background-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-footer {
+    background-color: var(--background-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
+.modal-title {
+    color: var(--text-secondary);
+}
+
+/* Responsive modal adjustments */
+@media (max-width: 768px) {
+    .modal-dialog.modal-lg {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    .row.mb-3 [class^="col-"] {
+        margin-bottom: 10px;
+    }
+}

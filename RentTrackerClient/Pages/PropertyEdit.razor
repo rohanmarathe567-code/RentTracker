@@ -5,93 +5,109 @@
 @inject RentalPropertyService PropertyService
 @inject NavigationManager NavigationManager
 
-<PageTitle>@(Id == Guid.Empty ? "Add Property" : "Edit Property") - Rent Tracker</PageTitle>
+<PageTitle>Property Details - Rent Tracker</PageTitle>
 
-<div class="property-edit-container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>@(Id == Guid.Empty ? "Add New Property" : "Edit Property")</h1>
-        <button class="btn btn-outline-secondary" @onclick="NavigateToList">Back to List</button>
-    </div>
-
-    @if (isLoading)
-    {
-        <div class="loading-container">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+<!-- Property Form Modal -->
+<div class="modal fade show" style="display: block;" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(Id == Guid.Empty ? "Add New Property" : "Edit Property")</h5>
+                <button type="button" class="btn-close" @onclick="NavigateToList"></button>
             </div>
+            @if (isLoading)
+            {
+                <div class="modal-body">
+                    <div class="loading-container">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="modal-body">
+                    <div class="alert alert-danger">@errorMessage</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="NavigateToList">Back to Properties</button>
+                </div>
+            }
+            else if (property != null)
+            {
+                <EditForm Model="@property" OnValidSubmit="HandleValidSubmit">
+                    <div class="modal-body">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="address" class="form-label">Address</label>
+                                <InputText id="address" class="form-control" @bind-Value="property.Address" />
+                                <ValidationMessage For="@(() => property.Address)" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="suburb" class="form-label">Suburb</label>
+                                <InputText id="suburb" class="form-control" @bind-Value="property.Suburb" />
+                            </div>
+                            <div class="col-md-4">
+                                <label for="state" class="form-label">State</label>
+                                <InputText id="state" class="form-control" @bind-Value="property.State" />
+                            </div>
+                            <div class="col-md-4">
+                                <label for="postCode" class="form-label">Post Code</label>
+                                <InputText id="postCode" class="form-control" @bind-Value="property.PostCode" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="description" class="form-label">Description</label>
+                                <InputTextArea id="description" class="form-control" @bind-Value="property.Description" rows="3" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="weeklyRent" class="form-label">Weekly Rent Amount</label>
+                                <InputNumber id="weeklyRent" class="form-control" @bind-Value="property.WeeklyRentAmount" />
+                            </div>
+                            <div class="col-md-4">
+                                <label for="leaseStart" class="form-label">Lease Start Date</label>
+                                <InputDate id="leaseStart" class="form-control" @bind-Value="property.LeaseStartDate" />
+                            </div>
+                            <div class="col-md-4">
+                                <label for="leaseEnd" class="form-label">Lease End Date</label>
+                                <InputDate id="leaseEnd" class="form-control" @bind-Value="property.LeaseEndDate" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="propertyManager" class="form-label">Property Manager</label>
+                                <InputText id="propertyManager" class="form-control" @bind-Value="property.PropertyManager" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="propertyManagerContact" class="form-label">Property Manager Contact</label>
+                                <InputText id="propertyManagerContact" class="form-control" @bind-Value="property.PropertyManagerContact" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="NavigateToList">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </EditForm>
+            }
         </div>
-    }
-    else if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="alert alert-danger">@errorMessage</div>
-        <button class="btn btn-primary" @onclick="NavigateToList">Back to Properties</button>
-    }
-    else if (property != null)
-    {
-        <EditForm Model="@property" OnValidSubmit="HandleValidSubmit">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-
-            <div class="mb-3">
-                <label for="address" class="form-label">Address</label>
-                <InputText id="address" class="form-control" @bind-Value="property.Address" />
-                <ValidationMessage For="@(() => property.Address)" />
-            </div>
-
-            <div class="mb-3">
-                <label for="suburb" class="form-label">Suburb</label>
-                <InputText id="suburb" class="form-control" @bind-Value="property.Suburb" />
-            </div>
-
-            <div class="row mb-3">
-                <div class="col">
-                    <label for="state" class="form-label">State</label>
-                    <InputText id="state" class="form-control" @bind-Value="property.State" />
-                </div>
-                <div class="col">
-                    <label for="postCode" class="form-label">Post Code</label>
-                    <InputText id="postCode" class="form-control" @bind-Value="property.PostCode" />
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <InputTextArea id="description" class="form-control" @bind-Value="property.Description" rows="3" />
-            </div>
-
-            <div class="mb-3">
-                <label for="weeklyRent" class="form-label">Weekly Rent Amount</label>
-                <InputNumber id="weeklyRent" class="form-control" @bind-Value="property.WeeklyRentAmount" />
-            </div>
-
-            <div class="row mb-3">
-                <div class="col">
-                    <label for="leaseStart" class="form-label">Lease Start Date</label>
-                    <InputDate id="leaseStart" class="form-control" @bind-Value="property.LeaseStartDate" />
-                </div>
-                <div class="col">
-                    <label for="leaseEnd" class="form-label">Lease End Date</label>
-                    <InputDate id="leaseEnd" class="form-control" @bind-Value="property.LeaseEndDate" />
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="propertyManager" class="form-label">Property Manager</label>
-                <InputText id="propertyManager" class="form-control" @bind-Value="property.PropertyManager" />
-            </div>
-
-            <div class="mb-3">
-                <label for="propertyManagerContact" class="form-label">Property Manager Contact</label>
-                <InputText id="propertyManagerContact" class="form-control" @bind-Value="property.PropertyManagerContact" />
-            </div>
-
-            <div class="mb-3">
-                <button type="submit" class="btn btn-primary me-2">Save</button>
-                <button type="button" class="btn btn-secondary" @onclick="NavigateToList">Cancel</button>
-            </div>
-        </EditForm>
-    }
+    </div>
 </div>
+
+<div class="modal-backdrop fade show"></div>
 
 @code {
     [Parameter]
