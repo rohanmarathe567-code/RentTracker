@@ -98,19 +98,6 @@ public static class AttachmentsController
             }
         });
 
-        // Generic Attachment Endpoints
-        app.MapGet("/api/attachments/{attachmentId}", async (
-            Guid attachmentId,
-            ApplicationDbContext db,
-            IAttachmentService attachmentService) =>
-        {
-            var attachment = await db.Attachments.FindAsync(attachmentId);
-            
-            if (attachment == null)
-                return Results.NotFound($"Attachment with ID {attachmentId} not found.");
-
-            return Results.Ok(attachment);
-        });
     }
 }
 
