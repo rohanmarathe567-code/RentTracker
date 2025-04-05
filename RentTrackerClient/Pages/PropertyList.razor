@@ -19,7 +19,7 @@
 
     <div class="mb-4">
         <div class="input-group">
-            <input type="text" class="form-control" placeholder="Search properties..."
+            <input type="text" class="form-control" placeholder="Search by address, suburb or state..."
                    @bind-value="searchTerm"
                    @bind-value:event="oninput"
                    @bind-value:after="@(async () => await OnSearchInput())" />
