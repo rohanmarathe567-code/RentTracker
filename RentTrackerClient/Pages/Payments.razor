@@ -46,15 +46,9 @@
 
     <!-- Payment Timeline Control -->
     <div class="card-no-hover mb-4">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Recent Payments Timeline</h5>
-                <small class="text-muted">Last 6 payments</small>
-            </div>
-        </div>
         <div class="card-body">
             @{
-                var recentPayments = paymentsResponse.Items.OrderByDescending(p => p.PaymentDate).Take(6).ToList();
+                var recentPayments = paymentsResponse.Items.OrderByDescending(p => p.PaymentDate).Take(8).ToList();
             }
             @if (recentPayments.Any())
             {
