@@ -1,5 +1,38 @@
 # Decision Log
 
+## Theme Implementation Strategy
+**Date:** 2025-04-05
+
+### Decision
+Implement application theming with the following approach:
+1. Define a consistent theme system using CSS variables
+2. Store theme preferences in localStorage initially
+3. Plan for future migration to database storage alongside view preferences
+
+### Rationale
+- Need for consistent visual experience
+- Alignment with existing view preference storage strategy
+- Future extensibility for user customization
+- Maintainable approach using CSS variables
+
+### Implementation Details
+#### Phase 1 (Current)
+- Store theme preference in localStorage as "appTheme"
+- Implement theme switching mechanism in shared layout
+- Use CSS variables for colors, spacing, and typography
+- Default to light theme if no preference is set
+
+#### Phase 2 (Future)
+- Migrate to database storage alongside other user preferences
+- Expand theme customization options
+- Support per-user theme settings
+
+### Technical Impact
+- Improved visual consistency
+- Enhanced maintainability through CSS variables
+- Minimal database impact in Phase 1
+- Aligned with existing preference storage patterns
+
 ## View Preference Storage Strategy
 **Date:** 2025-04-03
 

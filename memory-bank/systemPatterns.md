@@ -112,12 +112,20 @@ GET /api/properties/123/payments/456
 - Retrieves payment 456 specifically for property 123
 ```
 
+## [2025-04-05] Theme System Implementation
+- Established CSS variable-based theming system
+- Implemented theme storage using localStorage (Phase 1)
+- Defined consistent color palette and typography scales
+- Created theme switching mechanism in shared layout
+- Standardized component-level theme application
+
 ## 2025-03-30: Frontend Architecture Update
 - Introduced Blazor WebAssembly as frontend framework
 - Implemented client-side rendering with .NET 8
 - Established pattern of WebAssembly client communicating with minimal API backend
 - Maintained separation of concerns between frontend and backend
 - Leveraged .NET ecosystem for full-stack development
+- Implemented theme-aware component architecture
 - Enabled rich, interactive client-side experiences
 
 # System Patterns
@@ -173,6 +181,13 @@ This file documents recurring patterns and standards used in the project.
 * Dependency injection
 * Service-based architecture
 * Repository pattern for data access
+
+### Theme System
+* CSS variable-based theming
+* Centralized theme definition
+* Component-level theme integration
+* Theme persistence strategy
+* Responsive design patterns
 
 ### Security
 * Token-based authentication (planned)

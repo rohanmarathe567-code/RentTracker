@@ -1,7 +1,11 @@
 # Active Context
 
-## Current Focus (2025-04-03)
-1. Implementing property list view persistence using localStorage
+## Current Focus (2025-04-05)
+1. Implementing theme and UI enhancements
+   - Establish consistent theme across the application
+   - Implement UI patterns for better user experience
+   - Support theme persistence using localStorage (interim)
+2. Property list view persistence using localStorage
    - Maintain user's preferred view (card/table) across sessions
    - Simple localStorage-based solution as interim approach
    - Will be migrated to database when authentication is implemented
@@ -69,8 +73,9 @@ This file tracks the project's current status, including recent changes, current
 - Updated RentalPropertyService to support paginated API responses
 
 ## Open Questions/Issues
-- How will client-side code adapt to the new nested endpoint structure?
-- What additional validation might be needed in the service layer?
+- What theme customization options should be available to users?
+- Should theme preferences be included in the future database migration?
+- How to handle theme transitions and animations?
 - Implementation priorities for planned features
 - Authentication and multi-tenancy design decisions
 - Docker configuration requirements
