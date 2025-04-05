@@ -4,6 +4,8 @@ using RentTrackerBackend.Services;
 using RentTrackerBackend.Endpoints;
 using Serilog;
 using Serilog.Events;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Server.IIS;
 
 // Configure Serilog early
 Log.Logger = new LoggerConfiguration()
@@ -28,8 +30,30 @@ try
             policy.WithOrigins("http://localhost:5112", "http://localhost:5113", "http://localhost:7000")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
-                  .AllowCredentials();
+                  .AllowCredentials()
+                  .WithExposedHeaders("Content-Disposition", "Content-Length");  // Required for file downloads
         });
+    });
+
+    // Configure maximum request body size for file uploads (50MB)
+    builder.Services.Configure<IISServerOptions>(options =>
+    {
+        options.MaxRequestBodySize = 52428800; // 50MB in bytes
+    });
+
+    builder.Services.Configure<KestrelServerOptions>(options =>
+    {
+        options.Limits.MaxRequestBodySize = 52428800; // 50MB in bytes
+    });
+
+    // Add antiforgery services
+    builder.Services.AddAntiforgery();
+
+    // Configure JSON serialization
+    builder.Services.ConfigureHttpJsonOptions(options =>
+    {
+        options.SerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -43,8 +67,8 @@ try
         options.UseNpgsql(connectionString);
     });
 
-    // Register FileService and Services
-    builder.Services.AddScoped<FileService>();
+    // Register Storage and Attachment Services
+    builder.Services.AddScoped<IStorageService, FileService>();
     builder.Services.AddScoped<IAttachmentService, AttachmentService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
 
@@ -59,6 +83,7 @@ try
     }
 
     app.UseCors();
+    app.UseAntiforgery();
 
     using (var scope = app.Services.CreateScope())
     {

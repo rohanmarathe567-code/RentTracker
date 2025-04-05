@@ -1,0 +1,141 @@
+@using System.Net.Http
+@using Microsoft.AspNetCore.Components.Forms
+@inject ILogger<FileUploader> Logger
+
+<div class="file-uploader @Class">
+    <InputFile OnChange="@OnInputFileChange" multiple="@Multiple" accept="@Accept" class="d-none" id="@_inputId" />
+    <div class="upload-zone @(isDragging ? "dragging" : "")" 
+         @ondragenter="HandleDragEnter"
+         @ondragleave="HandleDragLeave"
+         @ondragover:preventDefault
+         @ondrop="HandleDrop">
+        <label for="@_inputId" class="upload-label">
+            <div class="text-center">
+                <i class="bi bi-cloud-upload fs-1"></i>
+                <p class="mt-2">Drag files here or click to upload</p>
+                <small class="text-muted">@Accept</small>
+            </div>
+        </label>
+    </div>
+
+    @if (_files.Any())
+    {
+        <div class="mt-3">
+            @foreach (var file in _files)
+            {
+                <div class="file-item d-flex align-items-center mb-2">
+                    <i class="bi bi-file-earmark me-2"></i>
+                    <span class="flex-grow-1">@file.Name</span>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveFile(file)">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            }
+            <div class="mt-2">
+                <button class="btn btn-sm btn-primary" @onclick="UploadFiles" disabled="@IsUploading">
+                    <i class="bi bi-upload"></i>
+                    <span class="ms-1">Upload Files</span>
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (IsUploading)
+    {
+        <div class="progress mt-2">
+            <div class="progress-bar" role="progressbar" style="width: @(_progress)%" aria-valuenow="@_progress" aria-valuemin="0" aria-valuemax="100">
+                @_progress%
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .upload-zone {
+        border: 2px dashed #ccc;
+        padding: 2rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .upload-zone:hover, .upload-zone.dragging {
+        border-color: var(--bs-primary);
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+    }
+
+    .upload-label {
+        cursor: pointer;
+        margin: 0;
+        width: 100%;
+    }
+
+    .file-item {
+        padding: 0.5rem;
+        background-color: var(--bs-gray-100);
+        border-radius: 4px;
+    }
+</style>
+
+@code {
+    private readonly List<IBrowserFile> _files = new();
+    private readonly string _inputId = $"fileInput_{Guid.NewGuid()}";
+    private bool isDragging;
+    private int _progress;
+
+    [Parameter] public string Class { get; set; } = "";
+    [Parameter] public bool Multiple { get; set; } = true;
+    [Parameter] public string Accept { get; set; } = ".pdf,.doc,.docx,.jpg,.jpeg,.png";
+    [Parameter] public bool IsUploading { get; set; }
+    [Parameter] public EventCallback<IEnumerable<IBrowserFile>> OnFilesSelected { get; set; }
+    [Parameter] public EventCallback<IEnumerable<IBrowserFile>> OnUploadFiles { get; set; }
+
+    private void HandleDragEnter()
+    {
+        isDragging = true;
+    }
+
+    private void HandleDragLeave()
+    {
+        isDragging = false;
+    }
+
+    private async Task HandleDrop(DragEventArgs e)
+    {
+        isDragging = false;
+        // Note: Actual file handling will be done through InputFile
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        _files.Clear();
+        _files.AddRange(e.GetMultipleFiles(50)); // Limit to 50 files
+        await OnFilesSelected.InvokeAsync(_files);
+    }
+
+    private void RemoveFile(IBrowserFile file)
+    {
+        _files.Remove(file);
+    }
+
+    private async Task UploadFiles()
+    {
+        if (!_files.Any()) return;
+        
+        try
+        {
+            await OnUploadFiles.InvokeAsync(_files);
+            _files.Clear();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error uploading files");
+        }
+    }
+
+    public void UpdateProgress(int progress)
+    {
+        _progress = progress;
+        StateHasChanged();
+    }
+}

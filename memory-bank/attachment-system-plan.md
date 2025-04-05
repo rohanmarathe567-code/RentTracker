@@ -131,9 +131,8 @@ bool ValidateFileType(string contentType);
 
 ### Phase 2: Enhanced Features
 1. Add file preview capabilities
-2. Implement drag-and-drop upload
-3. Add progress tracking
-4. Create attachment list component
+2. Add progress tracking
+3. Create attachment list component
 
 ### Phase 3: Security & Polish
 1. Implement file validation
@@ -142,10 +141,8 @@ bool ValidateFileType(string contentType);
 4. Add batch operations support
 
 ### Phase 4: Cloud Storage
-1. Implement cloud storage provider
-2. Add configuration switching
-3. Create migration tools
-4. Update documentation
+1. Create migration tools
+2. Update documentation
 
 ## Testing Strategy
 
