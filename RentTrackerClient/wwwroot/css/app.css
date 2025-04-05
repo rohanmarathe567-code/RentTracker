@@ -27,10 +27,22 @@ html, body {
 
 /* Buttons */
 .btn {
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
+    border-radius: 6px;
     font-weight: 500;
     transition: all 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn i {
+    font-size: 0.875rem;
 }
 
 /* Primary Button - Blue */

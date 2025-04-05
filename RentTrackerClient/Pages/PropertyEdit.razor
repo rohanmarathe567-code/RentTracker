@@ -31,7 +31,10 @@
                     <div class="alert alert-danger">@errorMessage</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="NavigateToList">Back to Properties</button>
+                    <button type="button" class="btn btn-sm btn-primary" @onclick="NavigateToList">
+                        <i class="bi bi-arrow-left"></i>
+                        <span class="ms-1">Back to Properties</span>
+                    </button>
                 </div>
             }
             else if (property != null)
@@ -98,8 +101,14 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" @onclick="NavigateToList">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-sm btn-secondary" @onclick="NavigateToList">
+                            <i class="bi bi-x-lg"></i>
+                            <span class="ms-1">Cancel</span>
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            <span class="ms-1">Save</span>
+                        </button>
                     </div>
                 </EditForm>
             }

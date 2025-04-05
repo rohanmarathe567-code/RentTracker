@@ -10,10 +10,13 @@
 
 <div class="property-list-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <button class="btn btn-primary" @onclick="NavigateToAddProperty">Add New Property</button>
-        <button class="btn btn-outline-secondary" @onclick="() => _ = ToggleView()">
+        <button class="btn btn-sm btn-primary" @onclick="NavigateToAddProperty">
+            <i class="bi bi-plus-lg"></i>
+            <span class="ms-1">Add New Property</span>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="() => _ = ToggleView()">
             <i class="bi bi-@(isCardView ? "table" : "grid-3x3-gap")"></i>
-            @(isCardView ? "Table View" : "Card View")
+            <span class="ms-1">@(isCardView ? "Table View" : "Card View")</span>
         </button>
     </div>
 
@@ -100,16 +103,16 @@
                                 <td>
                                     <div class="d-flex gap-2">
                                         <button class="btn btn-sm btn-primary" @onclick:stopPropagation="true"
-                                                @onclick="() => NavigateToEditProperty(property.Id)">
-                                            Edit
+                                                @onclick="() => NavigateToEditProperty(property.Id)" title="Edit Property">
+                                            <i class="bi bi-pencil"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-success" @onclick:stopPropagation="true"
-                                                @onclick="() => NavigateToPayments(property.Id)">
-                                            Payments
+                                        <button class="btn btn-sm btn-primary" @onclick:stopPropagation="true"
+                                                @onclick="() => NavigateToPayments(property.Id)" title="View Payments">
+                                            <i class="bi bi-cash-coin"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick:stopPropagation="true"
-                                                @onclick="() => ConfirmDelete(property)">
-                                            Delete
+                                        <button class="btn btn-sm btn-danger" @onclick:stopPropagation="true"
+                                                @onclick="() => ConfirmDelete(property)" title="Delete Property">
+                                            <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -135,16 +138,16 @@
                                 </p>
                                 <div class="d-flex gap-2" @onclick:stopPropagation="true">
                                     <button class="btn btn-sm btn-primary"
-                                            @onclick="() => NavigateToEditProperty(property.Id)">
-                                        Edit
+                                            @onclick="() => NavigateToEditProperty(property.Id)" title="Edit Property">
+                                        <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-success"
-                                            @onclick="() => NavigateToPayments(property.Id)">
-                                        Payments
+                                    <button class="btn btn-sm btn-primary"
+                                            @onclick="() => NavigateToPayments(property.Id)" title="View Payments">
+                                        <i class="bi bi-cash-coin"></i>
                                     </button>
                                     <button class="btn btn-sm btn-danger"
-                                            @onclick="() => ConfirmDelete(property)">
-                                        Delete
+                                            @onclick="() => ConfirmDelete(property)" title="Delete Property">
+                                        <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
                             </div>
@@ -201,8 +204,14 @@
                 <p class="text-danger">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
-                <button type="button" class="btn btn-danger" @onclick="DeleteProperty">Delete</button>
+                <button type="button" class="btn btn-sm btn-secondary" @onclick="CancelDelete">
+                    <i class="bi bi-x-lg"></i>
+                    <span class="ms-1">Cancel</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" @onclick="DeleteProperty">
+                    <i class="bi bi-trash"></i>
+                    <span class="ms-1">Delete</span>
+                </button>
             </div>
         </div>
     </div>
