@@ -13,13 +13,13 @@
 
 <div class="property-list-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>
+        <h3>
             Rental Payments
             @if (property != null)
             {
                 <span class="fs-5 ms-2">for @property.Address, @property.Suburb</span>
             }
-        </h1>
+        </h3>
         <div>
             @if (PropertyId.HasValue)
             {
