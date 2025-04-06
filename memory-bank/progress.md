@@ -2,6 +2,21 @@
 
 This file tracks the project's progress using a task list format.
 
+## [2025-04-06] Attachment System Code Integration
+### Completed Tasks
+- [x] Integrated attachment model with rental properties and payments
+- [x] Extended ApplicationDbContext with Attachments support
+- [x] Added attachment-related endpoints in PropertiesController
+- [x] Committed core attachment system implementation
+- [x] Updated Memory Bank documentation
+
+### Implementation Details
+- Created Attachment model for file metadata storage
+- Added navigation properties for attachments in RentalProperty and RentalPayment
+- Configured DbContext for attachment relationships
+- Implemented attachment handling in PropertiesController
+- Documented implementation decisions in Memory Bank
+
 ## [2025-04-05] Theme System Implementation
 ### Completed Tasks
 - [x] Established CSS variable-based theming system
