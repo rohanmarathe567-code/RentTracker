@@ -151,13 +151,13 @@
                             <td>@(payment.Notes ?? "-")</td>
                             <td>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-primary" @onclick="() => EditPayment(payment)" title="Edit Payment">
+                                    <button class="btn btn-primary" @onclick="() => EditPayment(payment)" title="Edit Payment">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-primary" @onclick="() => ShowAttachments(payment)" title="Manage Attachments">
+                                    <button class="btn btn-secondary" @onclick="() => ShowAttachments(payment)" title="Manage Attachments">
                                         <i class="bi bi-paperclip"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger" @onclick="() => ConfirmDelete(payment)" title="Delete Payment">
+                                    <button class="btn btn-danger" @onclick="() => ConfirmDelete(payment)" title="Delete Payment">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>

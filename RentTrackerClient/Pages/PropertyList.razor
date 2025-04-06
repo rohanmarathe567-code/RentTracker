@@ -109,19 +109,19 @@
                                 <td>@(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")</td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-primary" @onclick:stopPropagation="true"
+                                        <button class="btn btn-primary" @onclick:stopPropagation="true"
                                                 @onclick="() => NavigateToEditProperty(property.Id)" title="Edit Property">
                                             <i class="bi bi-pencil"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-secondary" @onclick:stopPropagation="true"
+                                        <button class="btn btn-secondary" @onclick:stopPropagation="true"
                                                 @onclick="() => NavigateToPayments(property.Id)" title="View Payments">
                                             <i class="bi bi-cash-coin"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-info" @onclick:stopPropagation="true"
+                                        <button class="btn btn-secondary" @onclick:stopPropagation="true"
                                                 @onclick="() => ShowAttachments(property.Id)" title="View Attachments">
                                             <i class="bi bi-paperclip"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-danger" @onclick:stopPropagation="true"
+                                        <button class="btn btn-danger" @onclick:stopPropagation="true"
                                                 @onclick="() => ConfirmDelete(property)" title="Delete Property">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -148,19 +148,19 @@
                                     <strong>Lease End:</strong> @(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")
                                 </p>
                                 <div class="d-flex gap-2" @onclick:stopPropagation="true">
-                                    <button class="btn btn-sm btn-primary"
+                                    <button class="btn btn btn-primary"
                                             @onclick="() => NavigateToEditProperty(property.Id)" title="Edit Property">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-secondary"
+                                    <button class="btn btn-secondary"
                                             @onclick="() => NavigateToPayments(property.Id)" title="View Payments">
                                         <i class="bi bi-cash-coin"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-info"
+                                    <button class="btn btn-secondary"
                                             @onclick="() => ShowAttachments(property.Id)" title="View Attachments">
                                         <i class="bi bi-paperclip"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger"
+                                    <button class="btn btn-danger"
                                             @onclick="() => ConfirmDelete(property)" title="Delete Property">
                                         <i class="bi bi-trash"></i>
                                     </button>
