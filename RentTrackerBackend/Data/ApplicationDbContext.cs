@@ -18,23 +18,19 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure relationships
+        // Configure relationships and delete behaviors
         modelBuilder.Entity<RentalPayment>()
-            .HasOne(p => p.RentalProperty)
-            .WithMany(r => r.RentalPayments)
+            .HasOne<RentalProperty>()
+            .WithMany()
             .HasForeignKey(p => p.RentalPropertyId)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Attachment>()
-            .HasOne(a => a.RentalProperty)
-            .WithMany(r => r.Attachments)
-            .HasForeignKey(a => a.RentalPropertyId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .Property(a => a.RentalPropertyId)
+            .IsRequired(false);
 
         modelBuilder.Entity<Attachment>()
-            .HasOne(a => a.RentalPayment)
-            .WithMany(p => p.Attachments)
-            .HasForeignKey(a => a.RentalPaymentId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .Property(a => a.RentalPaymentId)
+            .IsRequired(false);
     }
 }

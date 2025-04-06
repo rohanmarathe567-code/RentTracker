@@ -1,5 +1,83 @@
 # Decision Log
 
+## Remove Navigation Properties
+**Date:** 2025-04-06
+
+### Decision
+Remove all navigation properties from RentalProperty, RentalPayment, and Attachment models to reduce coupling and simplify the domain models.
+
+### Rationale
+1. Clean Architecture:
+   - Navigation properties create unnecessary coupling between models
+   - EntityType/EntityId pattern in Attachments is sufficient
+   - Models should be focused on their core responsibilities
+
+2. Current Implementation Issues:
+   - Bidirectional relationships aren't necessary
+   - Navigation properties are already ignored in API responses
+   - Using explicit loading instead of navigation property benefits
+
+3. Benefits of Removal:
+   - Reduced coupling between models
+   - Cleaner and more focused domain models
+   - Simplified database queries
+   - Better alignment with our attachment system design
+
+### Implementation Details
+Remove the following navigation properties:
+
+1. From RentalProperty:
+   - Remove ICollection<RentalPayment> RentalPayments
+   - Remove ICollection<Attachment> Attachments
+
+2. From RentalPayment:
+   - Remove virtual RentalProperty? RentalProperty
+   - Remove ICollection<Attachment> Attachments
+
+3. From Attachment:
+   - Remove RentalProperty? RentalProperty
+   - Remove RentalPayment? RentalPayment
+
+### Impact
+- Cleaner domain models
+- Reduced coupling
+- Simpler codebase
+- No functional changes as we're already using EntityType/EntityId
+
+## Attachment System Architecture Validation
+**Date:** 2025-04-06
+
+### Decision
+Confirmed that the current attachment system design, which keeps attachment details separate from Properties and Payments models, is the correct approach.
+
+### Rationale
+1. Clean Separation of Concerns:
+   - Attachments are managed in a dedicated table
+   - Properties and Payments remain focused on their core data
+   - Relationships are handled through EntityType/EntityId pattern
+
+2. Technical Benefits:
+   - No data duplication
+   - Flexible attachment associations
+   - Simplified domain models
+   - Better maintainability
+
+3. Architecture Alignment:
+   - Follows single responsibility principle
+   - Enables independent scaling of attachment features
+   - Supports future enhancements without model changes
+
+### Implementation Details
+Current implementation is correct and doesn't need changes:
+- Attachments table handles all file metadata
+- EntityType/EntityId pattern manages relationships
+- No attachment details embedded in Properties or Payments
+
+### Impact
+- Validates current architecture
+- Confirms no need for model changes
+- Supports future attachment feature expansion
+
 ## Theme Implementation Strategy
 **Date:** 2025-04-05
 
@@ -64,9 +142,6 @@ Implement view preference (card/table view) storage in two phases:
 - Frontend-only changes required initially
 - Clean separation of concerns
 - Future-proofed design approach
-
-This file records architectural and implementation decisions using a list format.
-2024-04-02 19:34:38 - Log of updates made.
 
 ## Decision: Backend-Only ID Generation
 

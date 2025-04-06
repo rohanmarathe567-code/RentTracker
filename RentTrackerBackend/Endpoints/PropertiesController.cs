@@ -91,9 +91,7 @@ public static class PropertiesController
                 // Always generate a new ID for new properties
                 property.Id = SequentialGuidGenerator.NewSequentialGuid();
                 
-                // Clear navigation properties to avoid issues
-                property.RentalPayments = new List<RentalPayment>();
-                property.Attachments = new List<Attachment>();
+                // No need to initialize navigation properties as they've been removed
                 
                 logger.LogDebug("Adding property to database: {@Property}", property);
                 db.RentalProperties.Add(property);

@@ -32,9 +32,4 @@ public class RentalPayment
     
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     
-    // Navigation properties
-    [ForeignKey("RentalPropertyId")]
-    public virtual RentalProperty? RentalProperty { get; set; }
-    
-    public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
 }

@@ -40,12 +40,4 @@ public class Attachment
     
     public Guid? RentalPaymentId { get; set; }
     
-    // Navigation properties
-    [ForeignKey("RentalPropertyId")]
-    [JsonIgnore]
-    public RentalProperty? RentalProperty { get; set; }
-    
-    [ForeignKey("RentalPaymentId")]
-    [JsonIgnore]
-    public RentalPayment? RentalPayment { get; set; }
 }

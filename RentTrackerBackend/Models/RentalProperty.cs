@@ -40,8 +40,4 @@ public class RentalProperty
     
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     
-    // Navigation properties
-    public ICollection<RentalPayment> RentalPayments { get; set; } = new List<RentalPayment>();
-    
-    public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
 }
