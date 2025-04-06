@@ -1,3 +1,23 @@
+<style>
+    .table-responsive::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background-color: #dee2e6;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background-color: #adb5bd;
+    }
+</style>
+
 @using RentTrackerClient.Models
 @using RentTrackerClient.Services
 @inject AttachmentService AttachmentService
@@ -25,12 +45,15 @@
 
                 @if (attachments != null && attachments.Any())
                 {
-                    <div class="table-responsive">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-files me-2"></i>
+                        <span>@attachments.Count file@(attachments.Count != 1 ? "s" : "") attached</span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                         <table class="table table-striped">
                             <thead class="table-light">
                                 <tr>
                                     <th>File Name</th>
-                                    <th>Description</th>
                                     <th>Upload Date</th>
                                     <th>Actions</th>
                                 </tr>
@@ -43,16 +66,13 @@
                                             <i class="bi bi-file-earmark me-2"></i>
                                             @attachment.FileName
                                         </td>
-                                        <td>
-                                            @(string.IsNullOrEmpty(attachment.Description) ? "-" : attachment.Description)
-                                        </td>
                                         <td>@attachment.UploadDate.ToLocalTime().ToString("g")</td>
                                         <td>
                                             <div class="d-flex gap-2">
-                                                <button class="btn btn-sm btn-primary" @onclick="() => DownloadFile(attachment)">
+                                                <button class="btn btn-primary" @onclick="() => DownloadFile(attachment)">
                                                     <i class="bi bi-download"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteFile(attachment)">
+                                                <button class="btn btn-danger" @onclick="() => DeleteFile(attachment)">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
