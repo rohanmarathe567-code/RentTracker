@@ -5,11 +5,11 @@
 @using Microsoft.JSInterop
 @using RentTrackerClient.Components
 @using Microsoft.Extensions.Logging
-@using System.Threading
 @inject RentalPaymentService PaymentService
 @inject RentalPropertyService PropertyService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject ILogger<PaymentList> Logger
 
 <PageTitle>Rental Payments - Rent Tracker</PageTitle>
 
@@ -23,13 +23,10 @@
             }
         </h3>
         <div>
-            @if (PropertyId.HasValue)
-            {
-                <button class="btn btn-sm btn-outline-secondary me-2" @onclick="NavigateBackToProperties">
-                    <i class="bi bi-arrow-left"></i>
-                    <span class="ms-1">Back</span>
-                </button>
-            }
+            <button class="btn btn-sm btn-outline-secondary me-2" @onclick="NavigateBackToProperties">
+                <i class="bi bi-arrow-left"></i>
+                <span class="ms-1">Back</span>
+            </button>
             <button class="btn btn-sm btn-primary" @onclick="ShowAddPaymentModal">
                 <i class="bi bi-plus-lg"></i>
                 <span class="ms-1">Add Payment</span>
@@ -200,62 +197,6 @@
         }
     }
 
-    <!-- Payment Form Modal -->
-    @if (showPaymentModal)
-    {
-        <div class="modal fade show" style="display: block;" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">@(editingPayment?.Id != Guid.Empty ? "Edit" : "Add") Payment</h5>
-                        <button type="button" class="btn-close" @onclick="ClosePaymentModal"></button>
-                    </div>
-                    <EditForm Model="@editingPayment" OnValidSubmit="HandlePaymentSubmit">
-                        <div class="modal-body">
-                            <DataAnnotationsValidator />
-                            <ValidationSummary />
-
-                            <div class="mb-3">
-                                <label for="amount" class="form-label">Amount</label>
-                                <InputNumber id="amount" class="form-control" @bind-Value="editingPayment!.Amount" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="paymentDate" class="form-label">Payment Date</label>
-                                <InputDate id="paymentDate" class="form-control" @bind-Value="editingPayment!.PaymentDate" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="paymentMethod" class="form-label">Payment Method</label>
-                                <InputText id="paymentMethod" class="form-control" @bind-Value="editingPayment!.PaymentMethod" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="paymentReference" class="form-label">Payment Reference</label>
-                                <InputText id="paymentReference" class="form-control" @bind-Value="editingPayment!.PaymentReference" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="notes" class="form-label">Notes</label>
-                                <InputTextArea id="notes" class="form-control" @bind-Value="editingPayment!.Notes" rows="3" />
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-sm btn-secondary" @onclick="ClosePaymentModal">
-                                <i class="bi bi-x-lg"></i>
-                                <span class="ms-1">Cancel</span>
-                            </button>
-                            <button type="submit" class="btn btn-sm btn-primary">
-                                <i class="bi bi-check-lg"></i>
-                                <span class="ms-1">Save</span>
-                            </button>
-                        </div>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-    }
-
     <!-- Delete Confirmation Modal -->
     <div class="modal fade @(isDeleteModalVisible ? "show" : "")" tabindex="-1" role="dialog"
          style="display: @(isDeleteModalVisible ? "block" : "none")">
@@ -283,26 +224,30 @@
         </div>
     </div>
 
-    <!-- Shared Modal Backdrop -->
-    @if (showPaymentModal || isDeleteModalVisible)
+    <!-- Modal Backdrop -->
+    @if (isDeleteModalVisible || showPaymentModal)
     {
         <div class="modal-backdrop fade show"></div>
     }
 </div>
 
+<!-- Payment Edit Modal -->
+<PaymentEdit 
+    IsVisible="@showPaymentModal"
+    Payment="@editingPayment"
+    OnClose="@(() => ClosePaymentModal())"
+    OnSave="@(async (payment) => await HandlePaymentSaved(payment))" />
+
 <AttachmentsModal
     IsVisible="@showAttachmentsModal"
-    PropertyId="@(PropertyId.GetValueOrDefault())"
+    PropertyId="@PropertyId"
     PaymentId="@selectedPaymentId"
-    OnClose="CloseAttachmentsModal" />
-@implements IDisposable
+    OnClose="@(() => CloseAttachmentsModal())" />
 
-@code {
-    [Inject]
-    public ILogger<Payments> Logger { get; set; } = default!;
-
+@code
+{
     [Parameter]
-    public Guid? PropertyId { get; set; }
+    public required Guid PropertyId { get; set; }
 
     private PaginatedResponse<RentalPayment> paymentsResponse = new()
     {
@@ -336,12 +281,7 @@
             isLoading = true;
             StateHasChanged();
 
-            // If we have a property ID, load the property details
-            if (PropertyId.HasValue)
-            {
-                property = await PropertyService.GetPropertyAsync(PropertyId.Value);
-            }
-
+            property = await PropertyService.GetPropertyAsync(PropertyId);
             await LoadPaymentsAsync();
         }
         catch (Exception ex)
@@ -361,20 +301,8 @@
         try
         {
             parameters.SearchTerm = searchTerm;
-            
-            if (PropertyId.HasValue)
-            {
-                // Get payments from the API with pagination parameters
-                paymentsResponse = await PropertyService.GetPropertyPaymentsAsync(PropertyId.Value, parameters);
-                
-                // Log successful retrieval
-                Logger.LogInformation($"Successfully retrieved {paymentsResponse.Items.Count()} payments for property {PropertyId.Value}");
-            }
-            else
-            {
-                // All payments must be associated with a property
-                throw new InvalidOperationException("PropertyId is required");
-            }
+            paymentsResponse = await PropertyService.GetPropertyPaymentsAsync(PropertyId, parameters);
+            Logger.LogInformation($"Successfully retrieved {paymentsResponse.Items.Count()} payments for property {PropertyId}");
         }
         catch (Exception ex)
         {
@@ -393,17 +321,15 @@
     {
         if (parameters.SortField == field)
         {
-            // If already sorting by this field, toggle direction
             parameters.SortDescending = !parameters.SortDescending;
         }
         else
         {
-            // New sort field, set as ascending by default
             parameters.SortField = field;
             parameters.SortDescending = false;
         }
         
-        parameters.PageNumber = 1; // Reset to first page when sort changes
+        parameters.PageNumber = 1;
         await LoadPaymentsAsync();
     }
 
@@ -423,7 +349,7 @@
     {
         editingPayment = new RentalPayment
         {
-            RentalPropertyId = PropertyId ?? Guid.Empty,
+            RentalPropertyId = PropertyId,
             PaymentDate = DateTime.Today
         };
         showPaymentModal = true;
@@ -444,6 +370,11 @@
             UpdatedAt = payment.UpdatedAt
         };
         showPaymentModal = true;
+    }
+
+    private async Task HandlePaymentSaved(RentalPayment payment)
+    {
+        await LoadPaymentsAsync();
     }
 
     private void ConfirmDelete(RentalPayment payment)
@@ -469,11 +400,9 @@
 
             await PaymentService.DeletePaymentAsync(paymentToDelete.RentalPropertyId, paymentToDelete.Id);
             
-            // Close the modal
             isDeleteModalVisible = false;
             paymentToDelete = null;
             
-            // Reload the payments list
             await LoadPaymentsAsync();
         }
         catch (Exception ex)
@@ -502,54 +431,9 @@
         selectedPaymentId = null;
     }
 
-    private async Task HandlePaymentSubmit()
-    {
-        try
-        {
-            // Ensure PaymentDate is in UTC format
-            editingPayment!.PaymentDate = DateTime.SpecifyKind(editingPayment.PaymentDate, DateTimeKind.Utc);
-            
-            // Ensure RentalPropertyId is set correctly
-            if (PropertyId.HasValue && editingPayment.RentalPropertyId == Guid.Empty)
-            {
-                editingPayment.RentalPropertyId = PropertyId.Value;
-            }
-            
-            // Set or update timestamps
-            if (editingPayment.Id != Guid.Empty)
-            {
-                // Update the UpdatedAt timestamp
-                editingPayment.UpdatedAt = DateTime.UtcNow;
-                await PaymentService.UpdatePaymentAsync(editingPayment.RentalPropertyId, editingPayment.Id, editingPayment);
-            }
-            else
-            {
-                // Set default values for timestamps
-                editingPayment.CreatedAt = DateTime.UtcNow;
-                editingPayment.UpdatedAt = DateTime.UtcNow;
-                await PaymentService.CreatePaymentAsync(editingPayment);
-            }
-            
-            ClosePaymentModal();
-            await LoadPaymentsAsync();
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error saving payment: {ex.Message}";
-            Logger.LogError(ex, "Error saving payment");
-        }
-}
-
-
-
     private void ClosePaymentModal()
     {
         showPaymentModal = false;
         editingPayment = null;
-    }
-
-    void IDisposable.Dispose()
-    {
-        // Cleanup any resources
     }
 }

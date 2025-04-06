@@ -1,0 +1,109 @@
+@using RentTrackerClient.Models
+@using RentTrackerClient.Services
+@using Microsoft.Extensions.Logging
+@inject RentalPaymentService PaymentService
+@inject ILogger<PaymentEdit> Logger
+
+@if (IsVisible)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(Payment?.Id != Guid.Empty ? "Edit" : "Add") Payment</h5>
+                    <button type="button" class="btn-close" @onclick="OnClose"></button>
+                </div>
+                <EditForm Model="@Payment" OnValidSubmit="HandleSubmit">
+                    <div class="modal-body">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <InputNumber id="amount" class="form-control" @bind-Value="Payment!.Amount" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="paymentDate" class="form-label">Payment Date</label>
+                            <InputDate id="paymentDate" class="form-control" @bind-Value="Payment!.PaymentDate" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="paymentMethod" class="form-label">Payment Method</label>
+                            <InputText id="paymentMethod" class="form-control" @bind-Value="Payment!.PaymentMethod" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="paymentReference" class="form-label">Payment Reference</label>
+                            <InputText id="paymentReference" class="form-control" @bind-Value="Payment!.PaymentReference" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <InputTextArea id="notes" class="form-control" @bind-Value="Payment!.Notes" rows="3" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" @onclick="OnClose">
+                            <i class="bi bi-x-lg"></i>
+                            <span class="ms-1">Cancel</span>
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            <span class="ms-1">Save</span>
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code
+{
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public RentalPayment? Payment { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<RentalPayment> OnSave { get; set; }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            if (Payment == null) return;
+
+            // Ensure PaymentDate is in UTC format
+            Payment.PaymentDate = DateTime.SpecifyKind(Payment.PaymentDate, DateTimeKind.Utc);
+
+            // Set or update timestamps
+            if (Payment.Id != Guid.Empty)
+            {
+                // Update the UpdatedAt timestamp
+                Payment.UpdatedAt = DateTime.UtcNow;
+                await PaymentService.UpdatePaymentAsync(Payment.RentalPropertyId, Payment.Id, Payment);
+            }
+            else
+            {
+                // Set default values for timestamps
+                Payment.CreatedAt = DateTime.UtcNow;
+                Payment.UpdatedAt = DateTime.UtcNow;
+                await PaymentService.CreatePaymentAsync(Payment);
+            }
+
+            await OnSave.InvokeAsync(Payment);
+            await OnClose.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving payment");
+            throw;
+        }
+    }
+}
