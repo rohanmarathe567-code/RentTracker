@@ -13,7 +13,7 @@
             <div class="text-center">
                 <i class="bi bi-cloud-upload fs-1"></i>
                 <p class="mt-2">Drag files here or click to upload</p>
-                <small class="text-muted">@Accept</small>
+                <small>@Accept</small>
             </div>
         </label>
     </div>
@@ -52,28 +52,54 @@
 
 <style>
     .upload-zone {
-        border: 2px dashed #ccc;
+        border: 2px dashed var(--border-color);
         padding: 2rem;
         border-radius: 4px;
         cursor: pointer;
         transition: all 0.3s ease;
+        background-color: var(--background-secondary);
+        color: var(--text-primary);
     }
 
     .upload-zone:hover, .upload-zone.dragging {
-        border-color: var(--bs-primary);
-        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        border-color: var(--text-secondary);
+        background-color: var(--background-hover);
     }
 
     .upload-label {
         cursor: pointer;
         margin: 0;
         width: 100%;
+        color: var(--text-primary);
+    }
+
+    .upload-label i {
+        color: var(--text-secondary);
+    }
+
+    .upload-label small {
+        color: var(--text-secondary);
+        opacity: 0.8;
     }
 
     .file-item {
-        padding: 0.5rem;
-        background-color: var(--bs-gray-100);
+        padding: 0.75rem;
+        background-color: var(--background-tertiary);
         border-radius: 4px;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+
+    .file-item i {
+        color: var(--text-secondary);
+    }
+
+    .progress {
+        background-color: var(--background-tertiary);
+    }
+
+    .progress-bar {
+        background-color: var(--text-secondary);
     }
 </style>
 
