@@ -365,3 +365,93 @@ Implement a Git workflow where commits are made locally without automatic pushes
 - Cleaner commit history management
 
 [2025-04-05 17:33:15]
+
+## Payment List and Navigation Implementation
+**Date:** 2025-04-06
+
+### Decision
+Implement a dedicated payment list component with enhanced navigation and filtering capabilities, integrated with the property list view.
+
+### Rationale
+1. User Experience:
+   - Simplified navigation between properties and their payments
+   - Consistent list presentation across the application
+   - Improved data organization and accessibility
+
+2. Technical Benefits:
+   - Reusable list component patterns
+   - Consistent pagination implementation
+   - Efficient data loading and caching
+
+### Implementation Details
+1. PaymentList Component:
+   - Grid-based layout matching property list style
+   - Sortable columns for amount, date, description
+   - Filtered view when accessed from property context
+   - Pagination support with configurable page size
+   - Search functionality for payment records
+
+2. Navigation Integration:
+   - Direct access from property list rows
+   - Breadcrumb navigation for context awareness
+   - Back navigation to property list
+   - Quick filters for recent/upcoming payments
+
+### Impact
+- Improved user workflow efficiency
+- Consistent user interface patterns
+- Better data organization
+- Enhanced navigation experience
+
+## Attachment Component Architecture
+**Date:** 2025-04-06
+
+### Decision
+Implement a modular attachment system using a shared modal component, supporting both property and payment attachments.
+
+### Rationale
+1. Reusability:
+   - Single component handles both property and payment attachments
+   - Consistent upload/download experience
+   - Shared file validation logic
+
+2. User Experience:
+   - Unified interface for all attachment operations
+   - Intuitive drag-and-drop upload
+   - Immediate feedback on operations
+   - Preview support for supported file types
+
+3. Technical Benefits:
+   - Centralized file handling logic
+   - Consistent error handling
+   - Efficient resource usage
+   - Simplified maintenance
+
+### Implementation Details
+1. AttachmentsModal Component:
+   - Generic design supporting multiple entity types
+   - Drag-and-drop file upload
+   - Progress indicators
+   - File type validation
+   - Preview capabilities
+   - Grid/list view toggle
+
+2. Integration Points:
+   - Property detail view
+   - Payment detail view
+   - Reusable upload/download services
+   - Shared file validation
+
+3. Security Features:
+   - File type whitelisting
+   - Size limit enforcement
+   - Malware scanning integration point
+   - Secure file paths
+
+### Impact
+- Consistent file handling across application
+- Improved code maintainability
+- Enhanced user experience
+- Robust security implementation
+
+[2025-04-06 17:30:57]
