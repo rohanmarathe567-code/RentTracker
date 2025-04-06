@@ -1,0 +1,197 @@
+@using RentTrackerClient.Models
+@using RentTrackerClient.Services
+@inject AttachmentService AttachmentService
+@inject ILogger<AttachmentsModal> Logger
+
+<div class="modal fade @(IsVisible ? "show" : "")" tabindex="-1" role="dialog"
+     style="display: @(IsVisible ? "block" : "none")">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Attachments</h5>
+                <button type="button" class="btn-close" @onclick="OnClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+
+                <FileUploader
+                    Class="mb-4"
+                    OnFilesSelected="HandleFilesSelected"
+                    OnUploadFiles="HandleFileUpload"
+                    IsUploading="@isUploading" />
+
+                @if (attachments != null && attachments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Description</th>
+                                    <th>Upload Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var attachment in attachments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-file-earmark me-2"></i>
+                                            @attachment.FileName
+                                        </td>
+                                        <td>
+                                            @(string.IsNullOrEmpty(attachment.Description) ? "-" : attachment.Description)
+                                        </td>
+                                        <td>@attachment.UploadDate.ToLocalTime().ToString("g")</td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-sm btn-primary" @onclick="() => DownloadFile(attachment)">
+                                                    <i class="bi bi-download"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteFile(attachment)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">No attachments found.</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" @onclick="OnClose">
+                    <i class="bi bi-x-lg"></i>
+                    <span class="ms-1">Close</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public Guid PropertyId { get; set; }
+
+    [Parameter]
+    public Guid? PaymentId { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private List<Attachment>? attachments;
+    private bool isUploading;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && PropertyId != Guid.Empty)
+        {
+            await LoadAttachments();
+        }
+    }
+
+    private async Task LoadAttachments()
+    {
+        try
+        {
+            if (PaymentId.HasValue)
+            {
+                attachments = await AttachmentService.GetAttachmentsByPaymentAsync(PropertyId, PaymentId.Value);
+            }
+            else
+            {
+                attachments = await AttachmentService.GetAttachmentsByPropertyAsync(PropertyId);
+            }
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading attachments");
+            errorMessage = "Failed to load attachments";
+        }
+    }
+
+    private async Task HandleFilesSelected(IEnumerable<IBrowserFile> files)
+    {
+        // Files are handled in the FileUploader component
+    }
+
+    private async Task HandleFileUpload(IEnumerable<IBrowserFile> files)
+    {
+        isUploading = true;
+        errorMessage = null;
+
+        try
+        {
+            foreach (var file in files)
+            {
+                if (PaymentId.HasValue)
+                {
+                    await AttachmentService.UploadAttachmentToPaymentAsync(PropertyId, PaymentId.Value, file);
+                }
+                else
+                {
+                    await AttachmentService.UploadAttachmentAsync(PropertyId, file);
+                }
+            }
+            await LoadAttachments();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error uploading files");
+            errorMessage = "Failed to upload files";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private async Task DownloadFile(Attachment attachment)
+    {
+        try
+        {
+            var fileStream = await AttachmentService.DownloadAttachmentAsync(attachment.Id);
+            errorMessage = null;
+            // Handle file download (browser specific implementation needed)
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error downloading file");
+            errorMessage = "Failed to download file";
+        }
+    }
+
+    private async Task DeleteFile(Attachment attachment)
+    {
+        try
+        {
+            await AttachmentService.DeleteAttachmentAsync(attachment.Id);
+            await LoadAttachments();
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting file");
+            errorMessage = "Failed to delete file";
+        }
+    }
+}

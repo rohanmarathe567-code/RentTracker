@@ -4,7 +4,6 @@
 @using RentTrackerClient.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject RentalPropertyService PropertyService
-@inject AttachmentService AttachmentService
 @inject NavigationManager NavigationManager
 @inject ILogger<PropertyEdit> Logger
 
@@ -103,49 +102,7 @@
                             </div>
                         </div>
 
-                       @if (!Id.Equals(Guid.Empty))
-                       {
-                           <div class="row mb-3">
-                               <div class="col-12">
-                                   <h5>Attachments</h5>
-                                   <FileUploader
-                                       Class="mt-3"
-                                       OnFilesSelected="HandleFilesSelected"
-                                       OnUploadFiles="HandleFileUpload"
-                                       IsUploading="@isUploading" />
-
-                                   @if (attachments != null && attachments.Any())
-                                   {
-                                       <div class="mt-3">
-                                           <h6>Property Documents</h6>
-                                           <div class="list-group">
-                                               @foreach (var attachment in attachments)
-                                               {
-                                                   <div class="list-group-item d-flex justify-content-between align-items-center">
-                                                       <div>
-                                                           <i class="bi bi-file-earmark me-2"></i>
-                                                           <span>@attachment.FileName</span>
-                                                           @if (!string.IsNullOrEmpty(attachment.Description))
-                                                           {
-                                                               <small class="text-muted ms-2">@attachment.Description</small>
-                                                           }
-                                                       </div>
-                                                       <div>
-                                                           <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => DownloadFile(attachment)">
-                                                               <i class="bi bi-download"></i>
-                                                           </button>
-                                                           <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFile(attachment)">
-                                                               <i class="bi bi-trash"></i>
-                                                           </button>
-                                                       </div>
-                                                   </div>
-                                               }
-                                           </div>
-                                       </div>
-                                   }
-                               </div>
-                           </div>
-                       }
+                       @* Attachments section removed - now handled by AttachmentsModal *@
                    </div>
                    <div class="modal-footer">
                         <button type="button" class="btn btn-sm btn-secondary" @onclick="NavigateToList">
@@ -172,8 +129,6 @@
     private RentalProperty? property;
     private bool isLoading = true;
     private string? errorMessage;
-    private bool isUploading;
-    private List<Attachment>? attachments;
 
     protected override async Task OnInitializedAsync()
     {
@@ -204,82 +159,6 @@
         {
             isLoading = false;
 
-            // Load attachments if editing an existing property
-            if (Id != Guid.Empty)
-            {
-                await LoadAttachments();
-            }
-        }
-    }
-
-    private async Task LoadAttachments()
-    {
-        try
-        {
-            attachments = await AttachmentService.GetAttachmentsByPropertyAsync(Id);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading attachments");
-            errorMessage = "Failed to load attachments";
-        }
-    }
-
-    private async Task HandleFilesSelected(IEnumerable<IBrowserFile> files)
-    {
-        // Files are handled in the FileUploader component
-    }
-
-    private async Task HandleFileUpload(IEnumerable<IBrowserFile> files)
-    {
-        isUploading = true;
-        
-        try
-        {
-            foreach (var file in files)
-            {
-                await AttachmentService.UploadAttachmentAsync(Id, file);
-            }
-            
-            // Refresh the attachments list
-            await LoadAttachments();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error uploading files");
-            errorMessage = "Failed to upload files";
-        }
-        finally
-        {
-            isUploading = false;
-        }
-    }
-
-    private async Task DownloadFile(Attachment attachment)
-    {
-        try
-        {
-            var fileStream = await AttachmentService.DownloadAttachmentAsync(attachment.Id);
-            // Handle file download (browser specific implementation needed)
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error downloading file");
-            errorMessage = "Failed to download file";
-        }
-    }
-
-    private async Task DeleteFile(Attachment attachment)
-    {
-        try
-        {
-            await AttachmentService.DeleteAttachmentAsync(attachment.Id);
-            await LoadAttachments();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error deleting file");
-            errorMessage = "Failed to delete file";
         }
     }
 private async Task HandleValidSubmit()

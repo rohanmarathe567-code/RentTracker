@@ -92,6 +92,59 @@ public class AttachmentService : HttpClientService
         return attachments;
     }
 
+    public async Task<List<Attachment>> GetAttachmentsByPaymentAsync(Guid propertyId, Guid paymentId)
+    {
+        _logger.LogInformation($"Fetching attachments for property ID: {propertyId}, payment ID: {paymentId}");
+        
+        var attachments = await GetListAsync<Attachment>($"properties/{propertyId}/payments/{paymentId}/attachments");
+        
+        _logger.LogDebug($"Retrieved {attachments.Count} attachments for property ID: {propertyId}, payment ID: {paymentId}");
+        return attachments;
+    }
+
+    public async Task<Attachment?> UploadAttachmentToPaymentAsync(Guid propertyId, Guid paymentId, IBrowserFile file, string? description = null, string[]? tags = null)
+    {
+        _logger.LogInformation($"Uploading attachment for property ID: {propertyId}, payment ID: {paymentId}");
+        _logger.LogDebug($"Attachment filename: {file.Name}");
+
+        using var content = new MultipartFormDataContent();
+        using var fileStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+        using var fileContent = new StreamContent(fileStream);
+        
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+        content.Add(fileContent, "file", file.Name);
+        
+        if (description != null)
+            content.Add(new StringContent(description), "description");
+            
+        if (tags != null && tags.Length > 0)
+            content.Add(new StringContent(JsonSerializer.Serialize(tags)), "tags");
+
+        try
+        {
+            var response = await _httpClient.PostAsync($"{_baseUrl}/properties/{propertyId}/payments/{paymentId}/attachments", content);
+            response.EnsureSuccessStatusCode();
+
+            var attachment = await response.Content.ReadFromJsonAsync<Attachment>();
+            
+            if (attachment != null)
+            {
+                _logger.LogInformation($"Successfully uploaded attachment for property ID: {propertyId}, payment ID: {paymentId}. Attachment ID: {attachment.Id}");
+            }
+            else
+            {
+                _logger.LogWarning($"Attachment upload for property ID: {propertyId}, payment ID: {paymentId} returned no attachment");
+            }
+
+            return attachment;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error uploading attachment for property ID: {propertyId}, payment ID: {paymentId}");
+            throw;
+        }
+    }
+
     public async Task DeleteAttachmentAsync(Guid id)
     {
         _logger.LogInformation($"Deleting attachment with ID: {id}");

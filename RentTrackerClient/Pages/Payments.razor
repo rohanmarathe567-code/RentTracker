@@ -3,7 +3,9 @@
 @using RentTrackerClient.Models.Pagination
 @using RentTrackerClient.Services
 @using Microsoft.JSInterop
+@using RentTrackerClient.Components
 @using Microsoft.Extensions.Logging
+@using System.Threading
 @inject RentalPaymentService PaymentService
 @inject RentalPropertyService PropertyService
 @inject NavigationManager NavigationManager
@@ -38,9 +40,7 @@
     <div class="mb-4">
         <div class="input-group">
             <input type="text" class="form-control" placeholder="Search payments..."
-                   @bind-value="searchTerm"
-                   @bind-value:event="oninput"
-                   @bind-value:after="@(async () => await SearchPayments())" />
+                   @oninput="@(async (ChangeEventArgs e) => { searchTerm = e.Value?.ToString(); await SearchPayments(); })" />
         </div>
     </div>
 
@@ -154,6 +154,9 @@
                                     <button class="btn btn-sm btn-primary" @onclick="() => EditPayment(payment)" title="Edit Payment">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => ShowAttachments(payment)" title="Manage Attachments">
+                                        <i class="bi bi-paperclip"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-danger" @onclick="() => ConfirmDelete(payment)" title="Delete Payment">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -251,7 +254,6 @@
                 </div>
             </div>
         </div>
-        <div class="modal-backdrop fade show"></div>
     }
 
     <!-- Delete Confirmation Modal -->
@@ -281,21 +283,31 @@
         </div>
     </div>
 
-    <!-- Modal Backdrop for Delete Modal -->
-    @if (isDeleteModalVisible)
+    <!-- Shared Modal Backdrop -->
+    @if (showPaymentModal || isDeleteModalVisible)
     {
         <div class="modal-backdrop fade show"></div>
     }
 </div>
 
+<AttachmentsModal
+    IsVisible="@showAttachmentsModal"
+    PropertyId="@(PropertyId.GetValueOrDefault())"
+    PaymentId="@selectedPaymentId"
+    OnClose="CloseAttachmentsModal" />
+@implements IDisposable
+
 @code {
     [Inject]
-    private ILogger<Payments> _logger { get; set; } = default!;
+    public ILogger<Payments> Logger { get; set; } = default!;
 
     [Parameter]
     public Guid? PropertyId { get; set; }
 
-    private PaginatedResponse<RentalPayment> paymentsResponse = new();
+    private PaginatedResponse<RentalPayment> paymentsResponse = new()
+    {
+        Items = new List<RentalPayment>()
+    };
     private PaginationParameters parameters = new()
     {
         SortField = "PaymentDate",
@@ -307,6 +319,8 @@
     private bool isLoading = true;
     private bool showPaymentModal;
     private bool isDeleteModalVisible;
+    private bool showAttachmentsModal;
+    private Guid? selectedPaymentId;
     private string? errorMessage;
     private string? searchTerm;
 
@@ -333,7 +347,7 @@
         catch (Exception ex)
         {
             errorMessage = $"Error loading data: {ex.Message}";
-            Console.WriteLine(ex);
+            Logger.LogError(ex, "Error loading data");
         }
         finally
         {
@@ -354,7 +368,7 @@
                 paymentsResponse = await PropertyService.GetPropertyPaymentsAsync(PropertyId.Value, parameters);
                 
                 // Log successful retrieval
-                _logger.LogInformation($"Successfully retrieved {paymentsResponse.Items.Count()} payments for property {PropertyId.Value}");
+                Logger.LogInformation($"Successfully retrieved {paymentsResponse.Items.Count()} payments for property {PropertyId.Value}");
             }
             else
             {
@@ -365,7 +379,7 @@
         catch (Exception ex)
         {
             errorMessage = $"Error loading payments: {ex.Message}";
-            Console.WriteLine(ex);
+            Logger.LogError(ex, "Error loading payments");
         }
     }
 
@@ -395,9 +409,8 @@
 
     private async Task SearchPayments()
     {
-        parameters.PageNumber = 1; // Reset to first page when search changes
+        parameters.PageNumber = 1;
         parameters.SearchTerm = searchTerm;
-        // Maintain current sort settings during search
         await LoadPaymentsAsync();
     }
 
@@ -466,7 +479,7 @@
         catch (Exception ex)
         {
             errorMessage = $"Error deleting payment: {ex.Message}";
-            Console.WriteLine(ex);
+            Logger.LogError(ex, "Error deleting payment");
             isDeleteModalVisible = false;
             paymentToDelete = null;
         }
@@ -475,6 +488,18 @@
             isLoading = false;
             StateHasChanged();
         }
+    }
+
+    private void ShowAttachments(RentalPayment payment)
+    {
+        selectedPaymentId = payment.Id;
+        showAttachmentsModal = true;
+    }
+
+    private void CloseAttachmentsModal()
+    {
+        showAttachmentsModal = false;
+        selectedPaymentId = null;
     }
 
     private async Task HandlePaymentSubmit()
@@ -511,14 +536,20 @@
         catch (Exception ex)
         {
             errorMessage = $"Error saving payment: {ex.Message}";
-            _logger.LogError(ex, "Error saving payment");
+            Logger.LogError(ex, "Error saving payment");
         }
-    }
+}
+
 
 
     private void ClosePaymentModal()
     {
         showPaymentModal = false;
         editingPayment = null;
+    }
+
+    void IDisposable.Dispose()
+    {
+        // Cleanup any resources
     }
 }
