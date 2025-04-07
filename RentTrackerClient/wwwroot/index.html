@@ -1,17 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rent Tracker</title>
     <base href="/" />
-    <!-- Theme CSS - Load before app styles -->
-    <link href="css/themes.css" rel="stylesheet" />
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- App CSS - Load after theme and Bootstrap -->
+    <!-- App CSS -->
     <link href="css/app.css" rel="stylesheet" />
     <link href="css/properties.css" rel="stylesheet" />
     <link href="RentTrackerClient.styles.css" rel="stylesheet" />
@@ -26,10 +24,10 @@
         </div>
     </div>
 
-    <div id="blazor-error-ui">
+    <div id="blazor-error-ui" class="alert alert-warning">
         An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
+        <a href="" class="reload btn btn-link">Reload</a>
+        <button class="dismiss btn-close" aria-label="Close"></button>
     </div>
     
     <!-- Load JS in correct order -->
@@ -37,8 +35,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Load custom JS after Blazor -->
     <script src="js/fileDownload.js"></script>
+    <script src="components/themeSwitcher.js"></script>
     <script src="js/themeManager.js"></script>
-    <script src="js/fileDownload.js"></script>
     <script>
         // Initialize theme manager when Blazor is ready
         window.blazorReady = function () {

@@ -455,3 +455,44 @@ Implement a modular attachment system using a shared modal component, supporting
 - Robust security implementation
 
 [2025-04-06 17:30:57]
+
+## Migrate to Bootstrap Styling
+**Date:** 2025-04-07
+
+### Decision
+Fully migrate the application to Bootstrap styling framework and remove all custom CSS/theming implementation.
+
+### Rationale
+1. Consistency:
+   - Bootstrap provides a comprehensive, tested styling system
+   - Reduces maintenance overhead of custom CSS
+   - Ensures cross-browser compatibility
+
+2. Development Efficiency:
+   - Eliminates need to maintain custom theme system
+   - Leverages Bootstrap's extensive component library
+   - Simplifies responsive design implementation
+
+3. Future Maintainability:
+   - Easier onboarding for new developers
+   - Well-documented framework
+   - Large community support
+
+### Implementation Details
+1. Remove Existing Theme System:
+   - Remove custom CSS variables
+   - Remove theme switching mechanism
+   - Remove theme storage in localStorage
+
+2. Bootstrap Integration:
+   - Implement Bootstrap classes across all components
+   - Use Bootstrap's built-in theming system
+   - Leverage Bootstrap utilities for layout and spacing
+
+### Impact
+- Simplified styling architecture
+- Reduced CSS maintenance burden
+- More standardized UI components
+- Improved development velocity
+
+[2025-04-07 19:39:22]

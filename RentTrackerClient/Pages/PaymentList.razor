@@ -15,13 +15,13 @@
 
 <div class="property-list-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>
+        <h4>
             Rental Payments
             @if (property != null)
             {
-                <span class="fs-5 ms-2">for @property.Address, @property.Suburb</span>
+                <span class="fs-6 ms-1">for @property.Address, @property.Suburb</span>
             }
-        </h3>
+        </h4>
         <div>
             <button class="btn btn-sm btn-outline-secondary me-2" @onclick="NavigateBackToProperties">
                 <i class="bi bi-arrow-left"></i>
@@ -34,15 +34,11 @@
         </div>
     </div>
 
-    <div class="mb-4">
-        <div class="input-group">
-            <input type="text" class="form-control" placeholder="Search payments..."
-                   @oninput="@(async (ChangeEventArgs e) => { searchTerm = e.Value?.ToString(); await SearchPayments(); })" />
-        </div>
-    </div>
-
     <!-- Payment Timeline Control -->
-    <div class="card-no-hover mb-4">
+    <div class="card mb-4">
+        <div class="card-header">
+            Last 8 payments
+        </div>
         <div class="card-body">
             @{
                 var recentPayments = paymentsResponse.Items.OrderByDescending(p => p.PaymentDate).Take(8).ToList();
@@ -74,6 +70,13 @@
             {
                 <div class="text-muted">No payment history available</div>
             }
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search payments..."
+                   @oninput="@(async (ChangeEventArgs e) => { searchTerm = e.Value?.ToString(); await SearchPayments(); })" />
         </div>
     </div>
 

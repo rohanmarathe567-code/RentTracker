@@ -1,16 +1,24 @@
 window.themeManager = {
-    currentTheme: 'default',
+    currentTheme: 'light',
+    availableThemes: ['light', 'dark'],
 
     // Initialize theme
     initialize: function() {
         console.log('Theme Manager: Initializing...');
         const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
+        if (savedTheme && this.availableThemes.includes(savedTheme)) {
             console.log('Theme Manager: Found saved theme:', savedTheme);
             this.setTheme(savedTheme);
         } else {
-            console.log('Theme Manager: No saved theme found, using default');
+            console.log('Theme Manager: No saved theme found, using system preference');
+            this.setThemeFromSystemPreference();
         }
+    },
+
+    // Set theme from system preference
+    setThemeFromSystemPreference: function() {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        this.setTheme(prefersDark ? 'dark' : 'light');
     },
 
     // Set theme
@@ -18,18 +26,14 @@ window.themeManager = {
         console.log('Theme Manager: Setting theme to:', themeName);
         
         try {
-            this.currentTheme = themeName;
-            
-            if (themeName === 'default') {
-                document.documentElement.removeAttribute('data-theme');
-                console.log('Theme Manager: Removed data-theme attribute');
-            } else {
-                document.documentElement.setAttribute('data-theme', themeName);
-                console.log('Theme Manager: Set data-theme attribute to:', themeName);
+            if (!this.availableThemes.includes(themeName)) {
+                console.error('Theme Manager: Invalid theme name:', themeName);
+                return false;
             }
-            
+
+            this.currentTheme = themeName;
+            document.documentElement.setAttribute('data-bs-theme', themeName);
             localStorage.setItem('theme', themeName);
-            console.log('Theme Manager: Saved theme to localStorage');
             
             return true;
         } catch (error) {
@@ -41,6 +45,11 @@ window.themeManager = {
     // Get current theme
     getCurrentTheme: function() {
         return this.currentTheme;
+    },
+
+    // Get available themes
+    getAvailableThemes: function() {
+        return this.availableThemes;
     }
 };
 
@@ -48,6 +57,13 @@ window.themeManager = {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Theme Manager: DOM loaded, initializing...');
     window.themeManager.initialize();
+});
+
+// Watch for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem('theme')) {
+        window.themeManager.setTheme(e.matches ? 'dark' : 'light');
+    }
 });
 
 // Make Blazor initialization method available

@@ -1,20 +1,12 @@
 @inject IJSRuntime JSRuntime
 
-<div class="theme-switcher">
-    <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-palette text-primary"></i>
-        <select id="themeSelect" class="form-select form-select-sm" value="@_currentTheme" @onchange="OnThemeChangeAsync">
-            @foreach (var theme in _themes)
-            {
-                <option value="@theme">@(char.ToUpper(theme[0]) + theme[1..])</option>
-            }
-        </select>
-    </div>
-</div>
+<button class="btn btn-outline-secondary btn-sm" @onclick="ToggleThemeAsync">
+    <i class="bi @(_currentTheme == "dark" ? "bi-moon-stars" : "bi-sun")"></i>
+</button>
 
 @code {
-    private string _currentTheme = "default";
-    private readonly string[] _themes = new[] { "default", "light", "mocha", "cappuccino" };
+    private string _currentTheme = "light";
+    private readonly string[] _themes = new[] { "light", "dark" };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -37,19 +29,16 @@
         }
     }
 
-    private async Task OnThemeChangeAsync(ChangeEventArgs e)
+    private async Task ToggleThemeAsync()
     {
-        if (e.Value is string newTheme)
+        try
         {
-            try
-            {
-                _currentTheme = newTheme;
-                await JSRuntime.InvokeVoidAsync("themeManager.setTheme", newTheme);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error changing theme: {ex.Message}");
-            }
+            _currentTheme = _currentTheme == "dark" ? "light" : "dark";
+            await JSRuntime.InvokeVoidAsync("themeManager.setTheme", _currentTheme);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error changing theme: {ex.Message}");
         }
     }
 }

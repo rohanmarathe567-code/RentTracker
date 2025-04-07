@@ -11,9 +11,7 @@
 
 <div class="property-list-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>
-            Rental Properties
-        </h3>
+        <h5>Rental Properties</h5>
         <div>
 
             <button class="btn btn-sm btn-primary" @onclick="NavigateToAddProperty">
@@ -139,16 +137,24 @@
                 @foreach (var property in propertiesResponse.Items)
                 {
                     <div class="col-md-6 col-lg-4">
-                        <div class="card h-100" style="cursor: pointer;" @onclick="() => NavigateToPayments(property.Id)">
+                        <div class="card h-100 border" style="cursor: pointer;" @onclick="() => NavigateToPayments(property.Id)">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">@property.Address</h5>
+                            </div>
                             <div class="card-body">
-                                <h5 class="card-title">@property.Address</h5>
-                                <p class="card-text">
-                                    <strong>Location:</strong> @property.Suburb, @property.State<br />
-                                    <strong>Weekly Rent:</strong> @(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}" : "-")<br />
-                                    <strong>Lease End:</strong> @(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")
-                                </p>
-                                <div class="d-flex gap-2" @onclick:stopPropagation="true">
-                                    <button class="btn btn btn-primary"
+                                <div class="card-text mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span><i class="bi bi-geo-alt me-2"></i>@property.Suburb, @property.State</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span><i class="bi bi-cash me-2"></i>@(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}/week" : "-")</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span><i class="bi bi-calendar-event me-2"></i>Lease ends: @(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 justify-content-end" @onclick:stopPropagation="true">
+                                    <button class="btn btn-primary"
                                             @onclick="() => NavigateToEditProperty(property.Id)" title="Edit Property">
                                         <i class="bi bi-pencil"></i>
                                     </button>

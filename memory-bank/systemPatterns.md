@@ -182,12 +182,13 @@ This file documents recurring patterns and standards used in the project.
 * Service-based architecture
 * Repository pattern for data access
 
-### Theme System
-* CSS variable-based theming
-* Centralized theme definition
-* Component-level theme integration
-* Theme persistence strategy
-* Responsive design patterns
+### UI Framework
+* Pure Bootstrap implementation
+* No custom CSS
+* Built-in Bootstrap utilities for layout and spacing
+* Bootstrap components for consistent UI patterns
+* Bootstrap's responsive design system
+* Bootstrap's built-in theming capabilities
 
 ### Security
 * Token-based authentication (planned)
