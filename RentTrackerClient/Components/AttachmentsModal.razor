@@ -16,6 +16,14 @@
     .table-responsive::-webkit-scrollbar-thumb:hover {
         background-color: #adb5bd;
     }
+
+    .modal-delete {
+        z-index: 1060;
+    }
+
+    .modal-delete-backdrop {
+        z-index: 1055;
+    }
 </style>
 
 @using RentTrackerClient.Models
@@ -79,7 +87,7 @@
                                                 <button class="btn btn-primary" @onclick="() => DownloadFile(attachment)" title="Download File">
                                                     <i class="bi bi-download"></i>
                                                 </button>
-                                                <button class="btn btn-danger" @onclick="() => DeleteFile(attachment)" title="Delete File">
+                                                <button class="btn btn-danger" @onclick="() => ShowDeleteConfirmation(attachment)" title="Delete File">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
@@ -113,6 +121,36 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+<!-- Delete Confirmation Modal -->
+@if (attachmentToDelete != null)
+{
+    <div class="modal fade modal-delete show" tabindex="-1" role="dialog" style="display: block">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the file '@attachmentToDelete.FileName'?</p>
+                    <p class="text-danger mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        This action cannot be undone.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">
+                        <i class="bi bi-trash me-2"></i>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show modal-delete-backdrop"></div>
+}
+
 @code {
     [Parameter]
     public bool IsVisible { get; set; }
@@ -129,6 +167,7 @@
     private List<Attachment>? attachments;
     private bool isUploading;
     private string? errorMessage;
+    private Attachment? attachmentToDelete;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -215,11 +254,23 @@
         }
     }
 
-    private async Task DeleteFile(Attachment attachment)
+    private void ShowDeleteConfirmation(Attachment attachment)
     {
+        attachmentToDelete = attachment;
+    }
+
+    private void CancelDelete()
+    {
+        attachmentToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (attachmentToDelete == null) return;
+
         try
         {
-            await AttachmentService.DeleteAttachmentAsync(attachment.Id);
+            await AttachmentService.DeleteAttachmentAsync(attachmentToDelete.Id);
             await LoadAttachments();
             errorMessage = null;
         }
@@ -227,6 +278,10 @@
         {
             Logger.LogError(ex, "Error deleting file");
             errorMessage = "Failed to delete file";
+        }
+        finally
+        {
+            attachmentToDelete = null;
         }
     }
 }
