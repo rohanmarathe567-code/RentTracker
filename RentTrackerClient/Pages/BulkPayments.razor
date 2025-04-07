@@ -1,0 +1,204 @@
+@page "/bulk-payments/{PropertyId:guid}"
+@using System.ComponentModel.DataAnnotations
+@inject RentalPropertyService PropertyService
+@inject RentalPaymentService PaymentService
+@inject NavigationManager NavigationManager
+
+<h3>Bulk Payment Entry</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (property == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>
+            <span class="fs-6">for @property.Address, @property.Suburb</span>
+        </h4>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="NavigateBack">
+            <i class="bi bi-arrow-left"></i>
+            <span class="ms-1">Back</span>
+        </button>
+    </div>
+
+    <EditForm Model="@_paymentsList" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Amount*</th>
+                        <th>Payment Date*</th>
+                        <th>Payment Method</th>
+                        <th>Reference</th>
+                        <th>Notes</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _paymentsList)
+                    {
+                        <tr class="@(item.HasError ? "table-danger" : item.IsProcessed ? "table-success" : "")">
+                            <td>
+                                <InputNumber @bind-Value="item.Payment.Amount" class="form-control" />
+                            </td>
+                            <td>
+                                <InputDate @bind-Value="item.Payment.PaymentDate" class="form-control" />
+                            </td>
+                            <td>
+                                <InputText @bind-Value="item.Payment.PaymentMethod" class="form-control" />
+                            </td>
+                            <td>
+                                <InputText @bind-Value="item.Payment.PaymentReference" class="form-control" />
+                            </td>
+                            <td>
+                                <InputText @bind-Value="item.Payment.Notes" class="form-control" />
+                            </td>
+                            <td>
+                                @if (item.HasError)
+                                {
+                                    <span class="text-danger">@item.Error</span>
+                                }
+                                else if (item.IsProcessed)
+                                {
+                                    <span class="text-success">Success</span>
+                                }
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger" @onclick="() => RemovePayment(item)">
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mb-3">
+            <button type="button" class="btn btn-secondary" @onclick="AddNewPayment">
+                Add Payment Row
+            </button>
+        </div>
+
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary" disabled="@(isProcessing || _paymentsList.Count == 0)">
+                @if (isProcessing)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    <span>Processing...</span>
+                }
+                else
+                {
+                    <span>Submit All Payments</span>
+                }
+            </button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public required Guid PropertyId { get; set; }
+
+    private RentalProperty? property;
+    private List<PaymentItem> _paymentsList = new();
+    private string? errorMessage;
+    private bool isProcessing;
+
+    private class PaymentItem
+    {
+        public RentalPayment Payment { get; set; } = new()
+        {
+            PaymentDate = DateTime.UtcNow.Date
+        };
+        public string? Error { get; set; }
+        public bool IsProcessed { get; set; }
+        public bool HasError => !string.IsNullOrEmpty(Error);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        property = await PropertyService.GetPropertyAsync(PropertyId);
+        AddNewPayment(); // Add initial empty row
+    }
+
+    private void AddNewPayment()
+    {
+        _paymentsList.Add(new PaymentItem());
+    }
+
+    private void RemovePayment(PaymentItem payment)
+    {
+        _paymentsList.Remove(payment);
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo($"/payments/{PropertyId}");
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        errorMessage = null;
+        isProcessing = true;
+        var hasErrors = false;
+
+        try
+        {
+            foreach (var item in _paymentsList)
+            {
+                if (item.Payment.Amount <= 0)
+                {
+                    item.Error = "Amount must be greater than 0";
+                    hasErrors = true;
+                    continue;
+                }
+
+                try
+                {
+                    item.Payment.RentalPropertyId = PropertyId;
+                    var result = await PaymentService.CreatePaymentAsync(item.Payment);
+                    if (result == null)
+                    {
+                        item.Error = "Failed to create payment";
+                        hasErrors = true;
+                    }
+                    else
+                    {
+                        item.IsProcessed = true;
+                        item.Error = null;
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                    item.Error = $"Error: {ex.Message}";
+                    hasErrors = true;
+                }
+                catch (Exception ex)
+                {
+                    item.Error = $"Unexpected error: {ex.Message}";
+                    hasErrors = true;
+                }
+            }
+
+            if (!hasErrors)
+            {
+                NavigationManager.NavigateTo($"/payments/{PropertyId}");
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+}

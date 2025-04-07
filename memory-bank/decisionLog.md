@@ -489,6 +489,17 @@ Fully migrate the application to Bootstrap styling framework and remove all cust
    - Use Bootstrap's built-in theming system
    - Leverage Bootstrap utilities for layout and spacing
 
+### Implementation Details
+1. Frontend Changes:
+   - Modified PaymentDate initialization to use DateTime.UtcNow.Date
+   - Ensures all new payments use UTC dates
+   - Prevents timestamp with time zone errors
+
+2. Backend Changes:
+   - Updated PaymentService to enforce UTC dates
+   - Added UTC conversion in CreatePaymentAsync and UpdatePaymentAsync
+   - Uses DateTime.SpecifyKind to ensure proper UTC format
+
 ### Impact
 - Simplified styling architecture
 - Reduced CSS maintenance burden
@@ -496,3 +507,33 @@ Fully migrate the application to Bootstrap styling framework and remove all cust
 - Improved development velocity
 
 [2025-04-07 19:39:22]
+## PostgreSQL DateTime UTC Requirement
+**Date:** 2025-04-07
+
+### Decision
+Ensure all DateTime values are in UTC format before saving to PostgreSQL timestamp with time zone fields.
+
+### Rationale
+1. PostgreSQL Requirements:
+   - PostgreSQL's timestamp with time zone type only accepts UTC dates
+   - Non-UTC dates cause system errors during save operations
+   - DateTime.Kind=Unspecified is not supported
+
+2. Data Consistency:
+   - UTC timestamps ensure consistent time handling
+   - Prevents timezone-related issues
+   - Improves data integrity
+
+### Implementation Details
+1. BulkPayments.razor Changes:
+   - Modified PaymentDate initialization to use DateTime.UtcNow.Date
+   - Ensures all new payments use UTC dates
+   - Prevents timestamp with time zone errors
+
+### Impact
+- Resolved PostgreSQL save errors
+- Improved data consistency
+- Better timezone handling
+
+[2025-04-07 21:20:25]
+

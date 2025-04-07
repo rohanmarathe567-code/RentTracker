@@ -154,7 +154,34 @@ This file tracks the project's progress using a task list format.
 - Add progress indicators for large files
 - Implement file previews
 
+## [2025-04-07] Bootstrap Migration Implementation
+### Completed Tasks
+- [x] Migrated PropertyList.razor to pure Bootstrap styling
+- [x] Removed custom CSS classes in favor of Bootstrap utilities
+- [x] Implemented responsive grid layout with Bootstrap classes
+- [x] Updated components to use Bootstrap spacing utilities
+- [x] Added Bootstrap icons integration
+
+### Implementation Details
+- Converted custom styling to Bootstrap utility classes
+- Implemented responsive grid using col-md-6 col-lg-4
+- Used Bootstrap components for cards, modals, and buttons
+- Applied consistent Bootstrap spacing throughout
+- Integrated Bootstrap icons for improved UI
+
 ## Next Steps
+
+## [2025-04-07] PostgreSQL DateTime Handling Fix
+### Completed Tasks
+- [x] Fixed DateTime UTC format issue in PostgreSQL saves
+- [x] Updated BulkPayments.razor to use UTC dates
+- [x] Documented DateTime handling requirements
+- [x] Updated Memory Bank with timezone decisions
+
+### Implementation Details
+- Modified PaymentDate initialization to use DateTime.UtcNow.Date
+- Resolved PostgreSQL timestamp with time zone errors
+- Ensured consistent UTC date handling
 
 ### Immediate Priority
   - Phase 1: Core Infrastructure setup

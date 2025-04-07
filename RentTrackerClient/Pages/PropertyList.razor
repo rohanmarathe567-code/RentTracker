@@ -18,9 +18,6 @@
                 <i class="bi bi-plus-lg"></i>
                 <span class="ms-1">Add New Property</span>
             </button>
-            <button class="btn btn-sm btn-secondary" @onclick="() => _ = ToggleView()">
-                <i class="bi bi-@(isCardView ? "table" : "grid-3x3-gap")"></i>
-            </button>
         </div>
 
     </div>
@@ -52,87 +49,6 @@
     }
     else
     {
-        @if (!isCardView)
-        {
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th @onclick='@(() => SortTable("Address"))' style="cursor: pointer;">
-                                Address
-                                @if (parameters.SortField == "Address")
-                                {
-                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                                }
-                            </th>
-                            <th @onclick='@(() => SortTable("Suburb"))' style="cursor: pointer;">
-                                Suburb
-                                @if (parameters.SortField == "Suburb")
-                                {
-                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                                }
-                            </th>
-                            <th @onclick='@(() => SortTable("State"))' style="cursor: pointer;">
-                                State
-                                @if (parameters.SortField == "State")
-                                {
-                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                                }
-                            </th>
-                            <th @onclick='@(() => SortTable("WeeklyRentAmount"))' style="cursor: pointer;">
-                                Weekly Rent
-                                @if (parameters.SortField == "WeeklyRentAmount")
-                                {
-                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                                }
-                            </th>
-                            <th @onclick='@(() => SortTable("LeaseEndDate"))' style="cursor: pointer;">
-                                Lease End
-                                @if (parameters.SortField == "LeaseEndDate")
-                                {
-                                    <span>@(parameters.SortDescending ? "▼" : "▲")</span>
-                                }
-                            </th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var property in propertiesResponse.Items)
-                        {
-                            <tr style="cursor: pointer;" @onclick="() => NavigateToPayments(property.Id)">
-                                <td>@property.Address</td>
-                                <td>@property.Suburb</td>
-                                <td>@property.State</td>
-                                <td>@(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}" : "-")</td>
-                                <td>@(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")</td>
-                                <td>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-primary" @onclick:stopPropagation="true"
-                                                @onclick="() => NavigateToEditProperty(property.Id)" title="Edit Property">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-secondary" @onclick:stopPropagation="true"
-                                                @onclick="() => NavigateToPayments(property.Id)" title="View Payments">
-                                            <i class="bi bi-cash-coin"></i>
-                                        </button>
-                                        <button class="btn btn-secondary" @onclick:stopPropagation="true"
-                                                @onclick="() => ShowAttachments(property.Id)" title="View Attachments">
-                                            <i class="bi bi-paperclip"></i>
-                                        </button>
-                                        <button class="btn btn-danger" @onclick:stopPropagation="true"
-                                                @onclick="() => ConfirmDelete(property)" title="Delete Property">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        else
-        {
             <div class="row g-4">
                 @foreach (var property in propertiesResponse.Items)
                 {
@@ -176,7 +92,6 @@
                     </div>
                 }
             </div>
-        }
 
         @if (propertiesResponse.TotalPages > 1)
         {
@@ -250,8 +165,6 @@
     PropertyId="@selectedPropertyId"
     OnClose="@HideAttachments" />
 @code {
-    private const string ViewModeKey = "propertyListViewMode";
-    private bool isCardView = false;
     private PaginatedResponse<RentalProperty> propertiesResponse = new();
     private PaginationParameters parameters = new()
     {
@@ -268,18 +181,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var storedViewMode = await JSRuntime.InvokeAsync<string>("localStorage.getItem", ViewModeKey);
-            isCardView = storedViewMode == "card";
-        }
-        catch (Exception ex)
-        {
-            // Default to table view if localStorage access fails
-            Console.WriteLine($"Error accessing localStorage: {ex.Message}");
-            isCardView = false;
-        }
-
         await LoadPropertiesAsync();
     }
 
@@ -395,21 +296,6 @@ private async Task OnSearchInput()
         }
     }
 
-    private async Task ToggleView()
-    {
-        isCardView = !isCardView;
-        try
-        {
-            // Small delay to avoid excessive writes
-            await Task.Delay(100);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", ViewModeKey, isCardView ? "card" : "table");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving view preference: {ex.Message}");
-            // Continue with the view toggle even if saving fails
-        }
-    }
 
     private void ShowAttachments(Guid propertyId)
     {

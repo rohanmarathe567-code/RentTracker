@@ -54,7 +54,9 @@ public class PaymentService : IPaymentService
 
         // Update only the modifiable fields
         existingPayment.Amount = updatedPayment.Amount;
-        existingPayment.PaymentDate = updatedPayment.PaymentDate;
+        existingPayment.PaymentDate = updatedPayment.PaymentDate.Kind == DateTimeKind.Utc
+            ? updatedPayment.PaymentDate
+            : DateTime.SpecifyKind(updatedPayment.PaymentDate, DateTimeKind.Utc);
         existingPayment.PaymentMethod = updatedPayment.PaymentMethod;
         existingPayment.PaymentReference = updatedPayment.PaymentReference;
         existingPayment.Notes = updatedPayment.Notes;
@@ -85,6 +87,11 @@ public class PaymentService : IPaymentService
 // Always generate a new ID for new payments, regardless of what's provided
 payment.Id = SequentialGuidGenerator.NewSequentialGuid();
 
+
+        // Ensure PaymentDate is in UTC
+        payment.PaymentDate = payment.PaymentDate.Kind == DateTimeKind.Utc
+            ? payment.PaymentDate
+            : DateTime.SpecifyKind(payment.PaymentDate, DateTimeKind.Utc);
 
         // Set timestamps
         payment.CreatedAt = DateTime.UtcNow;
