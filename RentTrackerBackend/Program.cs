@@ -56,8 +56,7 @@ try
         options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
-    // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-    builder.Services.AddOpenApi();
+    // Configure Swagger/OpenAPI
     // Add services to the container.
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
@@ -79,7 +78,6 @@ try
     {
         app.UseSwagger();
         app.UseSwaggerUI();
-        app.MapOpenApi();
     }
 
     app.UseCors();
