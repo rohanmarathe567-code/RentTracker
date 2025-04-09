@@ -371,6 +371,43 @@ sequenceDiagram
 - Storage location for file uploads (with proper permissions)
 - Visual Studio Code (recommended) or Visual Studio 2022
 
+### Database Setup and Seeding
+The application uses Entity Framework Core for database management and includes automatic migrations and data seeding:
+
+#### Migrations
+Migrations are automatically applied when the application starts:
+```csharp
+// In Program.cs
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = services.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+```
+
+You can also manually apply migrations using:
+```bash
+cd RentTrackerBackend
+dotnet ef database update
+```
+
+#### Sample Data
+The application includes a `DatabaseSeeder` that automatically populates the database with sample data when it's empty:
+
+- **Rental Properties**:
+  * Sydney CBD apartment (2 bedrooms, $650/week)
+  * Bondi beach house (3 bedrooms, $950/week)
+
+- **Rental Payments**:
+  * Initial payments including bonds
+  * Regular rent payments with references
+
+- **Sample Attachments**:
+  * Lease agreements
+  * Payment receipts
+
+The seeder only runs if the database is empty, making it safe for production environments.
+
 ### Development Environment Setup
 - Install Visual Studio Code and the C# Dev Kit extension
 - Configure the following extensions:
@@ -389,7 +426,9 @@ git clone https://github.com/yourusername/RentTracker.git
 cd RentTracker
 ```
 
-2. Update database connection in `RentTrackerBackend/appsettings.json`:
+2. Configure the database connection:
+
+Create or update `RentTrackerBackend/appsettings.json`:
 ```json
 {
   "ConnectionStrings": {
@@ -397,6 +436,26 @@ cd RentTracker
   }
 }
 ```
+
+For development, you can use user secrets to store the connection string:
+```bash
+cd RentTrackerBackend
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=renttracker;Username=your_username;Password=your_password"
+```
+
+3. Verify database setup:
+```bash
+# Check database connection and migrations status
+cd RentTrackerBackend
+dotnet ef migrations list
+dotnet ef database update --verbose
+```
+
+The application will automatically:
+- Apply any pending migrations
+- Create required directories for file uploads
+- Seed sample data if the database is empty
 
 3. Run database migrations:
 ```bash
