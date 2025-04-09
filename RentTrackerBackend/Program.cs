@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Endpoints;
@@ -9,10 +10,9 @@ using Microsoft.AspNetCore.Server.IIS;
 
 // Configure Serilog early
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
+    .ReadFrom.Configuration(new ConfigurationBuilder()
+        .AddJsonFile("appsettings.json")
+        .Build())
     .CreateLogger();
 
 try 
@@ -70,6 +70,7 @@ try
     builder.Services.AddScoped<IStorageService, FileService>();
     builder.Services.AddScoped<IAttachmentService, AttachmentService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
+    builder.Services.AddScoped<DatabaseSeeder>();
 
     var app = builder.Build();
 
@@ -87,7 +88,13 @@ try
     {
         var services = scope.ServiceProvider;
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        dbContext.Database.EnsureCreated();
+        
+        // Apply migrations
+        await dbContext.Database.MigrateAsync();
+        
+        // Seed initial data
+        var seeder = services.GetRequiredService<DatabaseSeeder>();
+        await seeder.SeedAsync();
     }
 
     // Map API endpoints from controllers
@@ -105,6 +112,11 @@ try
     Directory.CreateDirectory(Path.Combine(uploadsDir, "payment"));
 
     app.Run();
+}
+catch (HostAbortedException)
+{
+    // Ignore HostAbortedException as it's an expected part of the shutdown process
+    Log.Information("Host aborted - shutting down gracefully");
 }
 catch (Exception ex)
 {
