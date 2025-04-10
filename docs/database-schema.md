@@ -1,3 +1,33 @@
+# Database Schema
+
+The database schema represents a rental property management system with 4 main entities:
+
+1. **RentalProperty**:
+   - Core entity storing property details (address, rent amount, lease dates)
+   - Has one-to-many relationships with RentalPayment and Attachment
+
+2. **RentalPayment**:
+   - Tracks payments made for properties
+   - Connected to RentalProperty and PaymentMethod (many-to-one)
+   - Can have multiple attachments (one-to-many with Attachment)
+
+3. **PaymentMethod**:
+   - Stores different payment methods 
+   - Has a one-to-many relationship with RentalPayment
+
+4. **Attachment**:
+   - Handles file storage for both properties and payments
+   - Contains metadata like fileName, contentType, fileSize
+   - Links to either RentalProperty or RentalPayment through their IDs
+
+Key Relationships:
+- A RentalProperty can have many RentalPayments
+- A PaymentMethod can be used for many RentalPayments
+- Both RentalProperty and RentalPayment can have multiple Attachments
+
+All entities include standard audit fields (createdAt, updatedAt) and use UUID primary keys for identification.
+
+```mermaid
 erDiagram
     RentalProperty ||--|{ RentalPayment : "has"
     PaymentMethod ||--|{ RentalPayment : "has"
