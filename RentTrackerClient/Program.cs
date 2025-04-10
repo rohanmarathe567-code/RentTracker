@@ -35,4 +35,12 @@ builder.Services.AddScoped(sp =>
     )
 );
 
+// Register PaymentMethodService with logging
+builder.Services.AddScoped(sp =>
+    new PaymentMethodService(
+        sp.GetRequiredService<HttpClient>(),
+        sp.GetRequiredService<ILogger<PaymentMethodService>>()
+    )
+);
+
 await builder.Build().RunAsync();

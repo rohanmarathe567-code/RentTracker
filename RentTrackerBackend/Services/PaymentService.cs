@@ -17,6 +17,7 @@ public class PaymentService : IPaymentService
     {
         return await _context.RentalPayments
             .AsNoTracking()
+            .Include(p => p.PaymentMethod)
             .FirstOrDefaultAsync(p => p.Id == paymentId);
     }
 
@@ -38,6 +39,7 @@ public class PaymentService : IPaymentService
 
         return _context.RentalPayments
             .AsNoTracking()
+            .Include(p => p.PaymentMethod)
             .Where(p => p.RentalPropertyId == propertyId)
             .OrderByDescending(p => p.PaymentDate);
     }
@@ -57,7 +59,7 @@ public class PaymentService : IPaymentService
         existingPayment.PaymentDate = updatedPayment.PaymentDate.Kind == DateTimeKind.Utc
             ? updatedPayment.PaymentDate
             : DateTime.SpecifyKind(updatedPayment.PaymentDate, DateTimeKind.Utc);
-        existingPayment.PaymentMethod = updatedPayment.PaymentMethod;
+        existingPayment.PaymentMethodId = updatedPayment.PaymentMethodId;
         existingPayment.PaymentReference = updatedPayment.PaymentReference;
         existingPayment.Notes = updatedPayment.Notes;
         existingPayment.UpdatedAt = DateTime.UtcNow;

@@ -20,6 +20,36 @@ public class DatabaseSeeder
             return;
         }
 
+        // Create payment methods
+        var paymentMethods = new[]
+        {
+            new PaymentMethod
+            {
+                Name = "Bank Transfer",
+                Description = "Direct bank transfer payment"
+            },
+            new PaymentMethod
+            {
+                Name = "Credit Card",
+                Description = "Payment via credit card"
+            },
+            new PaymentMethod
+            {
+                Name = "Cash",
+                Description = "Cash payment"
+            },
+            new PaymentMethod
+            {
+                Name = "PayPal",
+                Description = "Payment through PayPal service"
+            }
+        };
+
+        await _context.PaymentMethods.AddRangeAsync(paymentMethods);
+        await _context.SaveChangesAsync();
+
+        var bankTransfer = paymentMethods[0]; // Keep reference for sample payments
+
         // Create sample rental properties
         var property1 = new RentalProperty
         {
@@ -60,7 +90,7 @@ public class DatabaseSeeder
                 RentalPropertyId = property1.Id,
                 Amount = 2600.00M, // 4 weeks rent
                 PaymentDate = DateTime.UtcNow.AddMonths(-5),
-                PaymentMethod = "Bank Transfer",
+                PaymentMethodId = bankTransfer.Id,
                 PaymentReference = "RENT-123456",
                 Notes = "Initial payment including bond"
             },
@@ -69,7 +99,7 @@ public class DatabaseSeeder
                 RentalPropertyId = property1.Id,
                 Amount = 1300.00M, // 2 weeks rent
                 PaymentDate = DateTime.UtcNow.AddMonths(-4),
-                PaymentMethod = "Bank Transfer",
+                PaymentMethodId = bankTransfer.Id,
                 PaymentReference = "RENT-123457"
             },
             new RentalPayment
@@ -77,7 +107,7 @@ public class DatabaseSeeder
                 RentalPropertyId = property2.Id,
                 Amount = 3800.00M, // 4 weeks rent
                 PaymentDate = DateTime.UtcNow.AddMonths(-2),
-                PaymentMethod = "Bank Transfer",
+                PaymentMethodId = bankTransfer.Id,
                 PaymentReference = "RENT-123458",
                 Notes = "Initial payment including bond"
             }

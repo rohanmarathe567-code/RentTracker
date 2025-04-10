@@ -120,9 +120,9 @@
                                 <span>@(parameters.SortDescending ? "▼" : "▲")</span>
                             }
                         </th>
-                        <th @onclick='@(() => SortTable("PaymentMethod"))' style="cursor: pointer;">
+                        <th @onclick='@(() => SortTable("paymentmethod"))' style="cursor: pointer;">
                             Method
-                            @if (parameters.SortField == "PaymentMethod")
+                            @if (parameters.SortField == "paymentmethod")
                             {
                                 <span>@(parameters.SortDescending ? "▼" : "▲")</span>
                             }
@@ -150,7 +150,7 @@
                         <tr>
                             <td>@payment.PaymentDate.ToShortDateString()</td>
                             <td>@payment.Amount.ToString("C")</td>
-                            <td>@(payment.PaymentMethod ?? "-")</td>
+                            <td>@(payment.PaymentMethod?.Name ?? "-")</td>
                             <td>@(payment.PaymentReference ?? "-")</td>
                             <td>@(payment.Notes ?? "-")</td>
                             <td>
@@ -362,7 +362,8 @@
         editingPayment = new RentalPayment
         {
             RentalPropertyId = PropertyId,
-            PaymentDate = DateTime.Today
+            PaymentDate = DateTime.Today,
+            PaymentMethodId = Guid.Empty // Initialize with empty GUID
         };
         showPaymentModal = true;
     }
@@ -374,7 +375,12 @@
             Id = payment.Id,
             Amount = payment.Amount,
             PaymentDate = payment.PaymentDate,
-            PaymentMethod = payment.PaymentMethod,
+            PaymentMethodId = payment.PaymentMethodId,
+            PaymentMethod = payment.PaymentMethod != null ? new PaymentMethod
+            {
+                Id = payment.PaymentMethod.Id,
+                Name = payment.PaymentMethod.Name
+            } : null,
             PaymentReference = payment.PaymentReference,
             Notes = payment.Notes,
             RentalPropertyId = payment.RentalPropertyId,

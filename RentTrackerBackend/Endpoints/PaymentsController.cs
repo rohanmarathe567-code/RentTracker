@@ -24,7 +24,7 @@ public static class PaymentsController
                 if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
                 {
                     query = query.Where(p =>
-                        (p.PaymentMethod != null && p.PaymentMethod.Contains(parameters.SearchTerm)) ||
+                        (p.PaymentMethod != null && p.PaymentMethod.Name.Contains(parameters.SearchTerm)) ||
                         (p.PaymentReference != null && p.PaymentReference.Contains(parameters.SearchTerm)) ||
                         (p.Notes != null && p.Notes.Contains(parameters.SearchTerm)));
                 }
@@ -41,8 +41,8 @@ public static class PaymentsController
                             ? query.OrderByDescending(p => p.Amount)
                             : query.OrderBy(p => p.Amount),
                         "paymentmethod" => parameters.SortDescending
-                            ? query.OrderByDescending(p => p.PaymentMethod)
-                            : query.OrderBy(p => p.PaymentMethod),
+                            ? query.OrderByDescending(p => p.PaymentMethod!.Name)
+                            : query.OrderBy(p => p.PaymentMethod!.Name),
                         "paymentreference" => parameters.SortDescending
                             ? query.OrderByDescending(p => p.PaymentReference)
                             : query.OrderBy(p => p.PaymentReference),

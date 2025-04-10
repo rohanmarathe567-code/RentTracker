@@ -2,6 +2,7 @@
 @using RentTrackerClient.Services
 @using Microsoft.Extensions.Logging
 @inject RentalPaymentService PaymentService
+@inject PaymentMethodService PaymentMethodService
 @inject ILogger<PaymentEdit> Logger
 
 @if (IsVisible)
@@ -29,8 +30,14 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="paymentMethod" class="form-label">Payment Method</label>
-                            <InputText id="paymentMethod" class="form-control" @bind-Value="Payment!.PaymentMethod" />
+                            <label for="paymentMethodId" class="form-label">Payment Method</label>
+                            <InputSelect id="paymentMethodId" class="form-control" @bind-Value="Payment!.PaymentMethodId">
+                                <option value="">Select a payment method</option>
+                                @foreach (var method in _paymentMethods)
+                                {
+                                    <option value="@method.Id">@method.Name</option>
+                                }
+                            </InputSelect>
                         </div>
 
                         <div class="mb-3">
@@ -59,8 +66,9 @@
     </div>
 }
 
-@code
-{
+@code {
+    private List<PaymentMethod> _paymentMethods = new();
+
     [Parameter]
     public bool IsVisible { get; set; }
 
@@ -72,6 +80,18 @@
 
     [Parameter]
     public EventCallback<RentalPayment> OnSave { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _paymentMethods = await PaymentMethodService.GetPaymentMethodsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading payment methods");
+        }
+    }
 
     private async Task HandleSubmit()
     {

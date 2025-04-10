@@ -58,6 +58,7 @@ try
 
     // Configure Swagger/OpenAPI
     // Add services to the container.
+    builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -96,12 +97,13 @@ try
         var seeder = services.GetRequiredService<DatabaseSeeder>();
         await seeder.SeedAsync();
     }
-
-    // Map API endpoints from controllers
-    app.MapHealthEndpoints();
-    app.MapPropertyEndpoints();
-    app.MapPaymentEndpoints();
-    app.MapAttachmentEndpoints();
+// Map controllers and endpoints
+app.MapControllers();
+app.MapHealthEndpoints();
+app.MapPropertyEndpoints();
+app.MapPaymentEndpoints();
+app.MapAttachmentEndpoints(); 
+app.MapPaymentMethodEndpoints();
 
     // Create uploads directory if it doesn't exist
     var uploadsDir = Path.Combine(AppContext.BaseDirectory, "uploads");

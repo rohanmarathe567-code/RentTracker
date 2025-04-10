@@ -2,6 +2,7 @@
 @using System.ComponentModel.DataAnnotations
 @inject RentalPropertyService PropertyService
 @inject RentalPaymentService PaymentService
+@inject PaymentMethodService PaymentMethodService
 @inject NavigationManager NavigationManager
 
 <h3>Bulk Payment Entry</h3>
@@ -55,7 +56,13 @@ else
                                 <InputDate @bind-Value="item.Payment.PaymentDate" class="form-control" />
                             </td>
                             <td>
-                                <InputText @bind-Value="item.Payment.PaymentMethod" class="form-control" />
+                                <InputSelect @bind-Value="item.Payment.PaymentMethodId" class="form-control">
+                                    <option value="">Select a payment method</option>
+                                    @foreach (var method in _paymentMethods)
+                                    {
+                                        <option value="@method.Id">@method.Name</option>
+                                    }
+                                </InputSelect>
                             </td>
                             <td>
                                 <InputText @bind-Value="item.Payment.PaymentReference" class="form-control" />
@@ -112,6 +119,7 @@ else
 
     private RentalProperty? property;
     private List<PaymentItem> _paymentsList = new();
+    private List<PaymentMethod> _paymentMethods = new();
     private string? errorMessage;
     private bool isProcessing;
 
@@ -128,8 +136,30 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var tasks = new Task[]
+            {
+                LoadPropertyAsync(),
+                LoadPaymentMethodsAsync()
+            };
+            await Task.WhenAll(tasks);
+            AddNewPayment(); // Add initial empty row
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading data: {ex.Message}";
+        }
+    }
+
+    private async Task LoadPropertyAsync()
+    {
         property = await PropertyService.GetPropertyAsync(PropertyId);
-        AddNewPayment(); // Add initial empty row
+    }
+
+    private async Task LoadPaymentMethodsAsync()
+    {
+        _paymentMethods = await PaymentMethodService.GetPaymentMethodsAsync();
     }
 
     private void AddNewPayment()

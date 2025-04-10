@@ -10,7 +10,8 @@ public class RentalPayment
     
     public DateTime PaymentDate { get; set; }
     
-    public string? PaymentMethod { get; set; }
+    public Guid PaymentMethodId { get; set; }
+    public PaymentMethod? PaymentMethod { get; set; }
     
     public string? PaymentReference { get; set; }
     
