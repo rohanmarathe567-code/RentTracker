@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using RentTrackerBackend.Models.Auth;
 using RentTrackerBackend.Services;
 
 namespace RentTrackerBackend.Models;
@@ -7,6 +9,11 @@ public class RentalProperty
 {
     [Key]
     public Guid Id { get; set; } = SequentialGuidGenerator.NewSequentialGuid();
+    
+    public Guid? UserId { get; set; }
+    
+    [ForeignKey(nameof(UserId))]
+    public virtual User? User { get; set; }
     
     [Required]
     [StringLength(200)]
@@ -39,5 +46,4 @@ public class RentalProperty
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    
 }

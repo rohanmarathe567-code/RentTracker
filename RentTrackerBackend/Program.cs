@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Endpoints;
+using RentTrackerBackend.Extensions;
 using Serilog;
 using Serilog.Events;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -72,6 +73,9 @@ try
     builder.Services.AddScoped<IAttachmentService, AttachmentService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
     builder.Services.AddScoped<DatabaseSeeder>();
+    
+    // Add JWT authentication
+    builder.Services.AddJwtAuthentication(builder.Configuration);
 
     var app = builder.Build();
 
@@ -84,6 +88,10 @@ try
 
     app.UseCors();
     app.UseAntiforgery();
+    
+    // Add authentication & authorization middleware
+    app.UseAuthentication();
+    app.UseAuthorization();
 
     using (var scope = app.Services.CreateScope())
     {
@@ -102,8 +110,9 @@ app.MapControllers();
 app.MapHealthEndpoints();
 app.MapPropertyEndpoints();
 app.MapPaymentEndpoints();
-app.MapAttachmentEndpoints(); 
+app.MapAttachmentEndpoints();
 app.MapPaymentMethodEndpoints();
+app.MapAuthEndpoints();
 
     // Create uploads directory if it doesn't exist
     var uploadsDir = Path.Combine(AppContext.BaseDirectory, "uploads");

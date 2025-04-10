@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RentTrackerBackend.Models;
+using RentTrackerBackend.Models.Auth;
 
 namespace RentTrackerBackend.Data;
 
@@ -14,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<RentalPayment> RentalPayments { get; set; } = null!;
     public DbSet<Attachment> Attachments { get; set; } = null!;
     public DbSet<PaymentMethod> PaymentMethods { get; set; } = null!;
+    public DbSet<User> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,5 +41,15 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Attachment>()
             .Property(a => a.RentalPaymentId)
             .IsRequired(false);
+            
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+            
+        modelBuilder.Entity<RentalProperty>()
+            .HasOne(rp => rp.User)
+            .WithMany(u => u.Properties)
+            .HasForeignKey(rp => rp.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
