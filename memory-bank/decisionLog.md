@@ -42,3 +42,47 @@ Maintain authentication within the main project rather than separating it into a
 - Need to support multiple applications
 - Separate scaling requirements
 - SSO or external auth provider implementation needs
+
+## 2025-04-12 00:23 - Redis Caching Implementation
+
+### Decision
+Implement Redis as a caching layer for backend APIs with tenant-aware caching and automatic invalidation.
+
+### Rationale
+- Improve API response times through caching
+- Ensure data isolation between tenants
+- Maintain data consistency with automatic cache invalidation
+- Support scalability and performance optimization
+
+### Implementation Details
+- Redis cache service with tenant-aware key strategy
+- Default 10-minute cache timeout for data freshness
+- Automatic cache invalidation on data modifications
+- Secure multi-tenant data isolation
+- Event-based cache updates for real-time property/payment changes
+- Detailed implementation plan available in memory-bank/redis-cache-plan.md
+
+### Key Technical Considerations
+- Cache key format: {tenantId}:{entityType}:{entityId}
+- Tenant isolation through key prefixing
+- Both time-based (10 min) and event-based cache invalidation
+- Performance monitoring and metrics collection
+
+### Performance Targets
+- Cache Hit: < 10ms response time
+- Cache Miss: < 100ms response time
+- Cache Hit Ratio: > 85%
+- Memory Usage: < 2GB
+- Error Rate: < 0.1%
+
+### Resilience Strategy
+- Circuit breaker pattern for Redis failures
+- Automatic fallback to database
+- Connection retry with exponential backoff
+- Health monitoring and alerting
+
+### Deployment Approach
+- Phased rollout starting with non-critical endpoints
+- Comprehensive monitoring during deployment
+- Backup and recovery procedures documented
+- 5-minute rollback time objective
