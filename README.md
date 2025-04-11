@@ -120,6 +120,107 @@ dotnet run
 
 ## Architecture
 
+## Database Schema
+
+The database schema represents a multi-tenant rental property management system with 5 main entities. The system supports multiple users, where each user manages their own properties and payment methods, while having access to system-wide default payment methods:
+
+1. **RentalProperty**:
+   - Core entity storing property details (address, rent amount, lease dates)
+   - Has one-to-many relationships with RentalPayment and Attachment
+
+2. **RentalPayment**:
+   - Tracks payments made for properties
+   - Connected to RentalProperty and PaymentMethod (many-to-one)
+   - Can have multiple attachments (one-to-many with Attachment)
+
+3. **PaymentMethod**:
+    - Stores different payment methods
+    - Has a one-to-many relationship with RentalPayment
+    - Can be user-specific (UserId) or system-wide (IsSystemDefault)
+
+4. **Attachment**:
+   - Handles file storage for both properties and payments
+   - Contains metadata like fileName, contentType, fileSize
+   - Links to either RentalProperty or RentalPayment through their IDs
+
+Key Relationships:
+- A RentalProperty can have many RentalPayments
+- A PaymentMethod can be used for many RentalPayments
+- Both RentalProperty and RentalPayment can have multiple Attachments
+
+All entities include standard audit fields (createdAt, updatedAt) and use UUID primary keys for identification. The multi-tenant design ensures:
+- Each user has their own set of rental properties
+- Properties are automatically deleted when a user is deleted (cascade delete)
+- Payment methods can be user-specific or system-wide defaults
+- Each user's data is isolated from other users
+
+```mermaid
+erDiagram
+    User ||--|{ RentalProperty : "owns"
+    User ||--|{ PaymentMethod : "has"
+    RentalProperty ||--|{ RentalPayment : "has"
+    PaymentMethod ||--|{ RentalPayment : "has"
+    RentalProperty ||--|{ Attachment : "has"
+    RentalPayment ||--|{ Attachment : "has"
+
+    RentalPayment {
+        uuid id
+        uuid rentalPropertyId
+        decimal amount
+        datetime paymentDate
+        uuid paymentMethodId
+        string paymentReference
+        string notes
+        datetime createdAt
+        datetime updatedAt
+    }
+    RentalProperty {
+        uuid id
+        uuid userId
+        string address
+        string suburb
+        string state
+        string postCode
+        string description
+        decimal weeklyRentAmount
+        datetime leaseStartDate
+        datetime leaseEndDate
+        string propertyManager
+        string propertyManagerContact
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    User {
+        uuid id
+        string email
+        string passwordHash
+        int userType
+        datetime createdAt
+        datetime updatedAt
+    }
+    PaymentMethod {
+        uuid id
+        string name
+        string description
+        datetime createdAt
+        datetime updatedAt
+    }
+    Attachment {
+        uuid id
+        string fileName
+        string contentType
+        string storagePath
+        bigint fileSize
+        string description
+        string entityType
+        uuid rentalPropertyId
+        uuid rentalPaymentId
+        datetime uploadDate
+        array tags
+    }
+```
+
 ### Technology Stack
 
 ```mermaid
@@ -159,8 +260,19 @@ graph TD
 
 ```mermaid
 classDiagram
+    class User {
+        +Guid Id
+        +string Email
+        +string PasswordHash
+        +UserType UserType
+        +DateTime CreatedAt
+        +DateTime UpdatedAt
+        +ICollection<RentalProperty> Properties
+    }
     class RentalProperty {
         +Guid Id
+        +Guid UserId
+        +User User
         +string Address
         +string Suburb
         +string State
@@ -190,6 +302,7 @@ classDiagram
         +string FilePath
         +string Description
     }
+    User "1" --> "*" RentalProperty
     RentalProperty "1" --> "*" RentalPayment
     RentalProperty "1" --> "*" Attachment
 ```

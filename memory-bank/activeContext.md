@@ -10,6 +10,7 @@ This file tracks the project's current status, including recent changes, current
 
 ## Recent Changes
 
+* 2025-04-11 23:28 - Consolidated database schema documentation into README.md for better maintainability
 * 2025-04-10 22:28 - Created detailed multi-tenancy implementation plan
 * 2025-04-10 22:28 - Updated system architecture to support user roles and data isolation
 
