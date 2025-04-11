@@ -18,4 +18,27 @@ Implement multi-tenancy support with two user types (Admin and Normal users) usi
 - Database schema changes to support user ownership
 - JWT-based authentication system
 - Data isolation through user context in queries
-- Detailed implementation plan created in docs/multi-tenancy-plan.md
+- Detailed implementation plan created in memory-bank/multi-tenancy-plan.md
+
+## 2025-04-12 00:07 - Authentication Architecture Decision
+
+### Decision
+Maintain authentication within the main project rather than separating it into a distinct service.
+
+### Rationale
+- Authentication is tightly integrated with multi-tenancy implementation
+- Current code organization is clean and well-structured
+- Separation would add unnecessary complexity to data access patterns
+- User entity relationships are efficiently managed within the same context
+
+### Implementation Details
+- Continue with current auth implementation in main project
+- Focus on completing pending security enhancements
+- Maintain clear boundaries and documentation for future flexibility
+- Detailed analysis available in memory-bank/auth-separation-analysis.md
+
+### Future Reconsideration Triggers
+- Increased auth complexity
+- Need to support multiple applications
+- Separate scaling requirements
+- SSO or external auth provider implementation needs

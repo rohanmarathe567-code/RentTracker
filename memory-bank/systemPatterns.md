@@ -1,137 +1,21 @@
-
-[2025-03-31 20:15:14] - Performance Testing Pattern
-- Introduced k6 performance testing framework
-- Standardized test script structure across different endpoints
-- Implemented dynamic test data generation using Faker.js
-- Configured scalable load testing scenarios
-
-## HTTP Endpoint Design Pattern [3/31/2025]
-- RESTful API design
-- GUID-based resource identification
-- Consistent CRUD operation structure
-- Multipart file upload support
-- UTC timestamp standardization
-- Nested resource relationships (e.g., payments and attachments under properties)
-- Explicit error handling and validation
-
-
-## [2025-03-31 19:45] - Pagination Pattern Implementation
-
-### Infrastructure Components
-
-1. Core Pagination Types:
-   ```csharp
-   // Models/Pagination/PaginationParameters.cs
-   public class PaginationParameters
-   - Base pagination request parameters
-   - Configurable page size limits
-   - Input validation
-
-   // Models/Pagination/PaginatedResponse.cs
-   public class PaginatedResponse<T>
-   - Generic response wrapper
-   - Metadata about pagination state
-   - Collection of items
-
-   // Extensions/PaginationExtensions.cs
-   public static class PaginationExtensions
-   - Extension methods for IQueryable<T>
-   - Standardized pagination logic
-   - Async support
-   ```
-
-### Usage Pattern
-```csharp
-// Controller usage
-var result = await dbSet.Query
-    .AsNoTracking()
-    .ToPaginatedListAsync(parameters);
-```
-
-### Benefits
-- Consistent pagination across all endpoints
-- Reduced code duplication
-- Centralized pagination configuration
-- Easy to maintain and modify
-
----
-
-
-## Sequential GUID Generation Pattern
-### Overview
-- Implemented a custom GUID generation strategy that ensures:
-  1. Globally unique identifiers
-  2. Sortability across entities
-  3. Randomness to prevent predictability
-
-### Implementation Details
-- SequentialGuidGenerator uses:
-  * Timestamp-based generation
-  * Cryptographically secure random bytes
-  * Reversing timestamp bytes for proper sorting
-
-### Affected Models
-- RentalProperty
-- RentalPayment
-- Attachment
-
-### Benefits
-- Supports distributed systems
-- Maintains data integrity
-- Enables chronological sorting
-- Provides unique identifiers across all entities
-
-## [2025-03-30] Nested Resource Endpoint Pattern for Payments
-
-### Context
-Implemented a nested resource endpoint pattern for payments within properties, following RESTful API design principles.
-
-### Pattern Description
-- Endpoint Structure: `/api/properties/{propertyId}/payments/{paymentId}`
-- Supports operations: GET, PUT, DELETE
-- Provides context-specific access to payment resources
-
-### Key Characteristics
-- Hierarchical resource representation
-- Explicit property-payment relationship
-- Enhanced security through context-based validation
-
-### Implementation Details
-- Validates payment belongs to specified property before allowing operations
-- Maintains existing service layer methods
-- Provides intuitive API navigation
-
-### Benefits
-- Improved API readability
-- Stronger data integrity
-- More precise resource management
-
-### Example
-```
-GET /api/properties/123/payments/456
-- Retrieves payment 456 specifically for property 123
-```
-
-## [2025-04-05] Theme System Implementation
-- Established CSS variable-based theming system
-- Implemented theme storage using localStorage (Phase 1)
-- Defined consistent color palette and typography scales
-- Created theme switching mechanism in shared layout
-- Standardized component-level theme application
-
-## 2025-03-30: Frontend Architecture Update
-- Introduced Blazor WebAssembly as frontend framework
-- Implemented client-side rendering with .NET 8
-- Established pattern of WebAssembly client communicating with minimal API backend
-- Maintained separation of concerns between frontend and backend
-- Leveraged .NET ecosystem for full-stack development
-- Implemented theme-aware component architecture
-- Enabled rich, interactive client-side experiences
-
 # System Patterns
 
 This file documents recurring patterns and standards used in the project.
 2025-03-29 23:11:09 - Initial file creation.
+
+## Documentation Organization Pattern [2025-04-12 00:10]
+* All project analysis, planning, and architecture documents must be stored in memory-bank/
+* Key document types:
+  - Analysis documents (e.g., auth-separation-analysis.md)
+  - Planning documents (e.g., multi-tenancy-plan.md)
+  - Architecture decisions (captured in decisionLog.md)
+  - System patterns (captured in systemPatterns.md)
+  - Active context (captured in activeContext.md)
+* Benefits:
+  - Centralized documentation
+  - Consistent location for all project knowledge
+  - Easier tracking of project evolution
+  - Simplified reference management
 
 ## Coding Patterns
 
@@ -164,7 +48,6 @@ This file documents recurring patterns and standards used in the project.
 * File type validation
 * Chunked upload support
 
-
 ### Logging Patterns
 * Structured logging with consistent levels (Trace, Debug, Info, Warning, Error, Critical)
 * Service-level logging for API operations and business logic
@@ -191,8 +74,8 @@ This file documents recurring patterns and standards used in the project.
 * Bootstrap's built-in theming capabilities
 
 ### Security
-* Token-based authentication (planned)
-* Role-based authorization (planned)
+* Token-based authentication (implemented)
+* Role-based authorization (implemented)
 * Secure file handling
 * Input validation
 
@@ -214,7 +97,7 @@ This file documents recurring patterns and standards used in the project.
 * Database testing with in-memory provider
 * API endpoint testing
 * File operation testing
-
+* Authentication testing (planned)
 
 ## Development Environment Patterns
 
@@ -224,6 +107,5 @@ This file documents recurring patterns and standards used in the project.
 * Standardized terminal usage in development workflow
 
 [2025-03-30 15:53:26] - Established PowerShell as the standard shell for running commands
-* Authentication testing (planned)
 
 [2025-03-30 16:10:47] - Command Chaining Pattern: On Windows PowerShell, commands must be chained using semicolon (;) instead of && for command chaining. Example: `cd ./some/path ; npm install` instead of `cd ./some/path && npm install`. This affects all command generation across the project.
