@@ -7,9 +7,13 @@ namespace RentTrackerClient.Services;
 
 public class RentalPaymentService : HttpClientService
 {
-    public RentalPaymentService(HttpClient httpClient, ILogger<RentalPaymentService> logger) 
-        : base(httpClient, "api/payments", logger)
+    public RentalPaymentService(
+        HttpClient httpClient,
+        ILogger<RentalPaymentService> logger,
+        IAuthenticationService authService)
+        : base(httpClient, "api/payments", logger, authService)
     {
+        _logger.LogInformation("RentalPaymentService initialized");
     }
 
 

@@ -4,6 +4,7 @@ using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Endpoints;
+using System.Security.Claims;
 using System;
 using System.Text.Json;
 
@@ -17,11 +18,35 @@ public static class AttachmentsController
         app.MapGet("/api/attachments/{attachmentId}/download", async (
             Guid attachmentId,
             ApplicationDbContext db,
-            IStorageService storageService) =>
+            IStorageService storageService,
+            ClaimsPrincipal user) =>
         {
-            var attachment = await db.Attachments.FindAsync(attachmentId);
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
+            var attachment = await db.Attachments
+                .Include(a => a.RentalProperty)
+                .Include(a => a.RentalPayment)
+                .ThenInclude(p => p.RentalProperty)
+                .FirstOrDefaultAsync(a => a.Id == attachmentId);
+
             if (attachment == null)
                 return Results.NotFound();
+
+            // Check ownership based on attachment type
+            bool hasAccess = false;
+            if (attachment.RentalProperty != null)
+            {
+                hasAccess = attachment.RentalProperty.UserId == userId;
+            }
+            else if (attachment.RentalPayment?.RentalProperty != null)
+            {
+                hasAccess = attachment.RentalPayment.RentalProperty.UserId == userId;
+            }
+
+            if (!hasAccess)
+                return Results.Forbid();
 
             try
             {
@@ -38,11 +63,35 @@ public static class AttachmentsController
         app.MapDelete("/api/attachments/{attachmentId}", async (
             Guid attachmentId,
             ApplicationDbContext db,
-            IStorageService storageService) =>
+            IStorageService storageService,
+            ClaimsPrincipal user) =>
         {
-            var attachment = await db.Attachments.FindAsync(attachmentId);
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
+            var attachment = await db.Attachments
+                .Include(a => a.RentalProperty)
+                .Include(a => a.RentalPayment)
+                .ThenInclude(p => p.RentalProperty)
+                .FirstOrDefaultAsync(a => a.Id == attachmentId);
+
             if (attachment == null)
                 return Results.NotFound();
+
+            // Check ownership based on attachment type
+            bool hasAccess = false;
+            if (attachment.RentalProperty != null)
+            {
+                hasAccess = attachment.RentalProperty.UserId == userId;
+            }
+            else if (attachment.RentalPayment?.RentalProperty != null)
+            {
+                hasAccess = attachment.RentalPayment.RentalProperty.UserId == userId;
+            }
+
+            if (!hasAccess)
+                return Results.Forbid();
 
             try
             {
@@ -58,8 +107,23 @@ public static class AttachmentsController
         });
 
         // Property Attachments
-        app.MapGet("/api/properties/{propertyId}/attachments", async (Guid propertyId, ApplicationDbContext db) =>
+        app.MapGet("/api/properties/{propertyId}/attachments", async (
+            Guid propertyId,
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
+            // Verify property ownership
+            var property = await db.RentalProperties.FindAsync(propertyId);
+            if (property == null)
+                return Results.NotFound("Property not found");
+
+            if (property.UserId != userId)
+                return Results.Forbid();
+
             var attachments = await db.Attachments
                 .Where(a => a.RentalPropertyId == propertyId)
                 .ToListAsync();
@@ -71,13 +135,21 @@ public static class AttachmentsController
             IFormFile file,
             ApplicationDbContext db,
             IStorageService storageService,
+            ClaimsPrincipal user,
             string? description = null,
             string? tags = null) =>
         {
-            // Validate property exists
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
+            // Validate property exists and user owns it
             var property = await db.RentalProperties.FindAsync(propertyId);
             if (property == null)
                 return Results.NotFound($"Property with ID {propertyId} not found.");
+
+            if (property.UserId != userId)
+                return Results.Forbid();
 
             // Validate file
             if (file == null || file.Length == 0)
@@ -124,8 +196,21 @@ public static class AttachmentsController
         app.MapGet("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
             Guid propertyId,
             Guid paymentId,
-            ApplicationDbContext db) =>
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
+            // Verify property ownership
+            var property = await db.RentalProperties.FindAsync(propertyId);
+            if (property == null)
+                return Results.NotFound("Property not found");
+
+            if (property.UserId != userId)
+                return Results.Forbid();
+
             var attachments = await db.Attachments
                 .Where(a => a.RentalPaymentId == paymentId)
                 .ToListAsync();
@@ -138,9 +223,22 @@ public static class AttachmentsController
             IFormFile file,
             ApplicationDbContext db,
             IStorageService storageService,
+            ClaimsPrincipal user,
             string? description = null,
             string? tags = null) =>
         {
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
+            // Verify property ownership first
+            var property = await db.RentalProperties.FindAsync(propertyId);
+            if (property == null)
+                return Results.NotFound("Property not found");
+
+            if (property.UserId != userId)
+                return Results.Forbid();
+
             // Validate payment exists and belongs to property
             var payment = await db.RentalPayments
                 .FirstOrDefaultAsync(p => p.Id == paymentId && p.RentalPropertyId == propertyId);

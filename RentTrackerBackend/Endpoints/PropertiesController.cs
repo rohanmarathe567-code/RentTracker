@@ -4,6 +4,8 @@ using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Extensions;
 using RentTrackerBackend.Services;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -13,10 +15,44 @@ public static class PropertiesController
     {
         // Get paginated list of properties with optional search
         app.MapGet("/api/properties", async (
-            [AsParameters] PaginationParameters parameters, 
-            ApplicationDbContext db) =>
+            [AsParameters] PaginationParameters parameters,
+            ApplicationDbContext db,
+            ClaimsPrincipal user,
+            ILogger<Program> logger) =>
         {
-            var query = db.RentalProperties.AsNoTracking();
+            try
+            {
+                parameters.Validate();
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Invalid pagination parameters: {Message}", ex.Message);
+                return Results.BadRequest($"Invalid pagination parameters: {ex.Message}");
+            }
+            
+            logger.LogInformation("GET /api/properties called with parameters: PageNumber={PageNumber}, PageSize={PageSize}",
+                parameters.PageNumber, parameters.PageSize);
+
+            // Log all claims for debugging
+            foreach (var claim in user.Claims)
+            {
+                logger.LogInformation("Claim: {Type} = {Value}", claim.Type, claim.Value);
+            }
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                logger.LogWarning("User ID claim not found");
+                return Results.Unauthorized();
+            }
+            
+            if (!Guid.TryParse(userIdString, out var userId))
+            {
+                logger.LogWarning("Invalid user ID format: {UserIdString}", userIdString);
+                return Results.Unauthorized();
+            }
+
+            var query = db.RentalProperties.AsNoTracking()
+                .Where(p => p.UserId == userId);
             
             // Optional: Add search filtering if needed
             if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
@@ -62,19 +98,28 @@ public static class PropertiesController
             var result = await query.ToPaginatedListAsync(parameters);
             
             return Results.Ok(result);
-        });
+        }).RequireAuthorization();
 
         // Get a specific property by ID
         app.MapGet("/api/properties/{id}", async (Guid id, ApplicationDbContext db) =>
             await db.RentalProperties.FindAsync(id) is RentalProperty property
                 ? Results.Ok(property)
-                : Results.NotFound());
+                : Results.NotFound()).RequireAuthorization();
 
         // Create a new property
-        app.MapPost("/api/properties", async (RentalProperty property, ApplicationDbContext db, ILogger<Program> logger) =>
+        app.MapPost("/api/properties", async (
+            RentalProperty property,
+            ApplicationDbContext db,
+            ILogger<Program> logger,
+            ClaimsPrincipal user) =>
         {
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
             try
             {
+                property.UserId = userId;
                 logger.LogInformation("Creating new property: {@Property}", property);
                 
                 // Ensure required fields are set
@@ -110,15 +155,26 @@ public static class PropertiesController
                     statusCode: 500
                 );
             }
-        });
+        }).RequireAuthorization();
 
         // Update an existing property
-        app.MapPut("/api/properties/{id}", async (Guid id, RentalProperty updatedProperty, ApplicationDbContext db) =>
+        app.MapPut("/api/properties/{id}", async (
+            Guid id,
+            RentalProperty updatedProperty,
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
             var property = await db.RentalProperties.FindAsync(id);
             
             if (property == null)
                 return Results.NotFound();
+
+            if (property.UserId != userId)
+                return Results.Forbid();
             
             property.Address = updatedProperty.Address;
             property.Suburb = updatedProperty.Suburb;
@@ -135,15 +191,25 @@ public static class PropertiesController
             await db.SaveChangesAsync();
             
             return Results.Ok(property);
-        });
+        }).RequireAuthorization();
 
         // Delete a property
-        app.MapDelete("/api/properties/{id}", async (Guid id, ApplicationDbContext db) =>
+        app.MapDelete("/api/properties/{id}", async (
+            Guid id,
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
+            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Results.Unauthorized();
+
             var property = await db.RentalProperties.FindAsync(id);
             
             if (property == null)
                 return Results.NotFound();
+            
+            if (property.UserId != userId)
+                return Results.Forbid();
             
             db.RentalProperties.Remove(property);
             await db.SaveChangesAsync();

@@ -30,7 +30,7 @@ public class AuthService : IAuthService
         {
             Email = request.Email,
             PasswordHash = HashPassword(request.Password),
-            UserType = request.UserType
+            UserType = UserType.User // Always create regular users through registration
         };
         
         _context.Users.Add(user);
@@ -82,7 +82,7 @@ public class AuthService : IAuthService
         
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role, user.UserType.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

@@ -1,11 +1,25 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Navigation
+@inject IAuthenticationService AuthService
 
 <div class="page">
 
     <div class="main">
         <div class="top-row px-4 d-flex justify-content-between align-items-center">
             <h3 class="mb-0">Rent Tracker</h3>
-            <a href="https://google.com" target="_blank">About</a>
+            <div>
+                <AuthorizeView>
+                    <Authorized>
+                        <span class="me-3">Welcome, @context.User.Identity?.Name!</span>
+                        <button class="btn btn-link" @onclick="HandleLogout">Logout</button>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="login" class="me-3">Login</a>
+                        <a href="register">Register</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
         </div>
 
         <div class="content px-4">
@@ -26,3 +40,11 @@
         </footer>
     </div>
 </div>
+
+@code {
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+}

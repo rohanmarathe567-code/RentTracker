@@ -4,29 +4,40 @@ using RentTrackerClient.Models;
 
 namespace RentTrackerClient.Services;
 
-public class PaymentMethodService
+public class PaymentMethodService : HttpClientService
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<PaymentMethodService> _logger;
-
-    public PaymentMethodService(HttpClient httpClient, ILogger<PaymentMethodService> logger)
+    public PaymentMethodService(
+        HttpClient httpClient,
+        ILogger<PaymentMethodService> logger,
+        IAuthenticationService authService)
+        : base(httpClient, "api/paymentmethods", logger, authService)
     {
-        _httpClient = httpClient;
-        _logger = logger;
+        _logger.LogInformation("PaymentMethodService initialized");
     }
 
     public async Task<List<PaymentMethod>> GetPaymentMethodsAsync()
     {
         try
         {
-            var response = await _httpClient.GetAsync("api/paymentmethods");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<List<PaymentMethod>>() ?? new List<PaymentMethod>();
+            return await GetListAsync<PaymentMethod>("");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching payment methods");
             return new List<PaymentMethod>();
+        }
+    }
+
+    public async Task<PaymentMethod?> CreatePaymentMethodAsync(PaymentMethod paymentMethod)
+    {
+        try
+        {
+            return await PostAsync<PaymentMethod>("", paymentMethod);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating payment method");
+            return null;
         }
     }
 }

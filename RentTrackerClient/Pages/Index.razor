@@ -1,9 +1,17 @@
 @page "/"
 @inject NavigationManager NavigationManager
+@inject IAuthenticationService AuthService
 
 @code {
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo("/properties");
+        if (AuthService.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/properties");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/login");
+        }
     }
 }

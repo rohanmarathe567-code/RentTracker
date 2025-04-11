@@ -8,8 +8,11 @@ namespace RentTrackerClient.Services;
 
 public class RentalPropertyService : HttpClientService
 {
-    public RentalPropertyService(HttpClient httpClient, ILogger<RentalPropertyService> logger)
-        : base(httpClient, "api/properties", logger)
+    public RentalPropertyService(
+        HttpClient httpClient,
+        ILogger<RentalPropertyService> logger,
+        IAuthenticationService authService)
+        : base(httpClient, "api/properties", logger, authService)
     {
         _logger.LogInformation("RentalPropertyService initialized with base URL: api/properties");
     }

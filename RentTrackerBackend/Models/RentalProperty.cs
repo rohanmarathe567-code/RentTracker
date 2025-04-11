@@ -44,6 +44,7 @@ public class RentalProperty
     public string? PropertyManagerContact { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public virtual ICollection<RentalPayment> RentalPayments { get; set; } = new List<RentalPayment>();
 }

@@ -10,12 +10,18 @@ public abstract class HttpClientService
     protected readonly string _baseUrl;
     protected readonly JsonSerializerOptions _jsonOptions;
     protected readonly ILogger _logger;
+    protected readonly IAuthenticationService _authService;
 
-    protected HttpClientService(HttpClient httpClient, string baseUrl, ILogger logger)
+    protected HttpClientService(
+        HttpClient httpClient,
+        string baseUrl,
+        ILogger logger,
+        IAuthenticationService authService)
     {
         _httpClient = httpClient;
         _baseUrl = baseUrl.TrimEnd('/');
         _logger = logger;
+        _authService = authService;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
@@ -24,6 +30,7 @@ public abstract class HttpClientService
 
     protected async Task<T?> GetAsync<T>(string endpoint)
     {
+        await SetAuthHeaderAsync();
         try
         {
             var fullUrl = $"{_baseUrl}{(endpoint.StartsWith("?") ? "" : "/")}{endpoint}";
@@ -61,6 +68,7 @@ public abstract class HttpClientService
 
     protected async Task<List<T>> GetListAsync<T>(string endpoint)
     {
+        await SetAuthHeaderAsync();
         try
         {
             var fullUrl = $"{_baseUrl}/{endpoint}";
@@ -99,6 +107,7 @@ public abstract class HttpClientService
     {
         try
         {
+            await SetAuthHeaderAsync();
             var fullUrl = $"{_baseUrl}/{endpoint}";
             
             // Log the request details with better formatting
@@ -174,6 +183,7 @@ public abstract class HttpClientService
     {
         try
         {
+            await SetAuthHeaderAsync();
             var fullUrl = $"{_baseUrl}/{endpoint}";
             _logger.LogDebug($"PUT Request: {fullUrl}. Data: {JsonSerializer.Serialize(data)}");
 
@@ -224,6 +234,7 @@ public abstract class HttpClientService
     {
         try
         {
+            await SetAuthHeaderAsync();
             var fullUrl = $"{_baseUrl}/{endpoint}";
             _logger.LogDebug($"DELETE Request: {fullUrl}");
 
@@ -239,6 +250,15 @@ public abstract class HttpClientService
         {
             _logger.LogError(ex, $"HTTP DELETE request failed for endpoint: {endpoint}");
             throw;
+        }
+    }
+    private async Task SetAuthHeaderAsync()
+    {
+        var token = await _authService.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+        {
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         }
     }
 }

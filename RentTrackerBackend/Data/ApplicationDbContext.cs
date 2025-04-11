@@ -23,9 +23,9 @@ public class ApplicationDbContext : DbContext
 
         // Configure relationships and delete behaviors
         modelBuilder.Entity<RentalPayment>()
-            .HasOne<RentalProperty>()
-            .WithMany()
-            .HasForeignKey(p => p.RentalPropertyId)
+            .HasOne(rp => rp.RentalProperty)
+            .WithMany(p => p.RentalPayments)
+            .HasForeignKey(rp => rp.RentalPropertyId)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<RentalPayment>()

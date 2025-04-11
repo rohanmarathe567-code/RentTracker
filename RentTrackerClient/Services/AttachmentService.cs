@@ -9,9 +9,13 @@ namespace RentTrackerClient.Services;
 
 public class AttachmentService : HttpClientService
 {
-    public AttachmentService(HttpClient httpClient, ILogger<AttachmentService> logger)
-        : base(httpClient, "/api", logger)  // Use '/api' as base path to align with backend routes
+    public AttachmentService(
+        HttpClient httpClient,
+        ILogger<AttachmentService> logger,
+        IAuthenticationService authService)
+        : base(httpClient, "/api", logger, authService)
     {
+        _logger.LogInformation("AttachmentService initialized");
     }
 
     public async Task<List<Attachment>> GetAllAttachmentsAsync()
@@ -59,6 +63,14 @@ public class AttachmentService : HttpClientService
 
         try
         {
+            // Get auth token and add it to the request
+            var token = await _authService.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
+
             var response = await _httpClient.PostAsync($"{_baseUrl}/properties/{propertyId}/attachments", content);
             response.EnsureSuccessStatusCode();
 
@@ -122,6 +134,14 @@ public class AttachmentService : HttpClientService
 
         try
         {
+            // Get auth token and add it to the request
+            var token = await _authService.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
+
             var response = await _httpClient.PostAsync($"{_baseUrl}/properties/{propertyId}/payments/{paymentId}/attachments", content);
             response.EnsureSuccessStatusCode();
 
@@ -167,6 +187,14 @@ public class AttachmentService : HttpClientService
 
         try
         {
+            // Get auth token and add it to the request
+            var token = await _authService.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
+
             var response = await _httpClient.GetAsync($"{_baseUrl}/attachments/{id}/download");
             response.EnsureSuccessStatusCode();
 

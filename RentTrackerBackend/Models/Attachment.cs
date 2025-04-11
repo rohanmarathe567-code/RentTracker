@@ -35,9 +35,12 @@ public class Attachment
     
     public string[]? Tags { get; set; }
     
-    // Can be associated with either a property or a payment
+    // Navigation properties for relationships
     public Guid? RentalPropertyId { get; set; }
+    [ForeignKey("RentalPropertyId")]
+    public RentalProperty? RentalProperty { get; set; }
     
     public Guid? RentalPaymentId { get; set; }
-    
+    [ForeignKey("RentalPaymentId")]
+    public RentalPayment? RentalPayment { get; set; }
 }

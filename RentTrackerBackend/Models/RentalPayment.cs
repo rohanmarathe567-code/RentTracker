@@ -10,7 +10,9 @@ public class RentalPayment
     public Guid Id { get; set; } = SequentialGuidGenerator.NewSequentialGuid();
     
     [Required]
+    [ForeignKey(nameof(RentalProperty))]
     public Guid RentalPropertyId { get; set; }
+    public virtual RentalProperty RentalProperty { get; set; } = null!;
     
     [Required]
     [Column(TypeName = "decimal(18,2)")]
@@ -20,9 +22,9 @@ public class RentalPayment
     public DateTime PaymentDate { get; set; }
     
     [Required]
+    [ForeignKey(nameof(PaymentMethod))]
     public Guid PaymentMethodId { get; set; }
-    
-    public PaymentMethod? PaymentMethod { get; set; }
+    public virtual PaymentMethod? PaymentMethod { get; set; }
     
     [StringLength(100)]
     public string? PaymentReference { get; set; }

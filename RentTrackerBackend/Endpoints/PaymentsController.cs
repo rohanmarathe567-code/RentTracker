@@ -3,6 +3,8 @@ using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Extensions;
 using RentTrackerBackend.Services;
+using RentTrackerBackend.Data;
+using System.Security.Claims;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -12,12 +14,26 @@ public static class PaymentsController
     {
         // Get paginated payments for a specific property
         app.MapGet("/api/properties/{propertyId}/payments", async (
-            Guid propertyId, 
-            [AsParameters] PaginationParameters parameters, 
-            IPaymentService paymentService) =>
+            Guid propertyId,
+            [AsParameters] PaginationParameters parameters,
+            IPaymentService paymentService,
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
             try
             {
+                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                    return Results.Unauthorized();
+
+                // Verify property ownership
+                var property = await db.RentalProperties.FindAsync(propertyId);
+                if (property == null)
+                    return Results.NotFound("Property not found");
+
+                if (property.UserId != userId)
+                    return Results.Forbid();
+
                 var query = await paymentService.GetPaymentsByPropertyQueryAsync(propertyId);
                 
                 // Optional: Add search filtering if needed
@@ -69,12 +85,26 @@ public static class PaymentsController
 
         // Get a specific payment by ID for a specific property
         app.MapGet("/api/properties/{propertyId}/payments/{paymentId}", async (
-            Guid propertyId, 
-            Guid paymentId, 
-            IPaymentService paymentService) =>
+            Guid propertyId,
+            Guid paymentId,
+            IPaymentService paymentService,
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
             try
             {
+                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                    return Results.Unauthorized();
+
+                // Verify property ownership
+                var property = await db.RentalProperties.FindAsync(propertyId);
+                if (property == null)
+                    return Results.NotFound("Property not found");
+
+                if (property.UserId != userId)
+                    return Results.Forbid();
+
                 var payment = await paymentService.GetPaymentByIdAsync(paymentId);
                 
                 // Additional validation to ensure payment belongs to the specified property
@@ -93,13 +123,27 @@ public static class PaymentsController
 
         // Update an existing payment for a specific property
         app.MapPut("/api/properties/{propertyId}/payments/{paymentId}", async (
-            Guid propertyId, 
-            Guid paymentId, 
-            RentalPayment updatedPayment, 
-            IPaymentService paymentService) =>
+            Guid propertyId,
+            Guid paymentId,
+            RentalPayment updatedPayment,
+            IPaymentService paymentService,
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
             try
             {
+                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                    return Results.Unauthorized();
+
+                // Verify property ownership
+                var property = await db.RentalProperties.FindAsync(propertyId);
+                if (property == null)
+                    return Results.NotFound("Property not found");
+
+                if (property.UserId != userId)
+                    return Results.Forbid();
+
                 // Validate that the payment belongs to the specified property
                 var existingPayment = await paymentService.GetPaymentByIdAsync(paymentId);
                 if (existingPayment == null || existingPayment.RentalPropertyId != propertyId)
@@ -127,12 +171,26 @@ public static class PaymentsController
 
         // Delete a payment for a specific property
         app.MapDelete("/api/properties/{propertyId}/payments/{paymentId}", async (
-            Guid propertyId, 
-            Guid paymentId, 
-            IPaymentService paymentService) =>
+            Guid propertyId,
+            Guid paymentId,
+            IPaymentService paymentService,
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
             try
             {
+                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                    return Results.Unauthorized();
+
+                // Verify property ownership
+                var property = await db.RentalProperties.FindAsync(propertyId);
+                if (property == null)
+                    return Results.NotFound("Property not found");
+
+                if (property.UserId != userId)
+                    return Results.Forbid();
+
                 // Validate that the payment belongs to the specified property
                 var existingPayment = await paymentService.GetPaymentByIdAsync(paymentId);
                 if (existingPayment == null || existingPayment.RentalPropertyId != propertyId)
@@ -155,10 +213,24 @@ public static class PaymentsController
         app.MapPost("/api/properties/{propertyId}/payments", async (
             Guid propertyId,
             RentalPayment payment,
-            IPaymentService paymentService) =>
+            IPaymentService paymentService,
+            ApplicationDbContext db,
+            ClaimsPrincipal user) =>
         {
             try
             {
+                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                    return Results.Unauthorized();
+
+                // Verify property ownership
+                var property = await db.RentalProperties.FindAsync(propertyId);
+                if (property == null)
+                    return Results.NotFound("Property not found");
+
+                if (property.UserId != userId)
+                    return Results.Forbid();
+
                 // Ensure the payment is associated with the correct property
                 payment.RentalPropertyId = propertyId;
                 

@@ -26,22 +26,26 @@ public class DatabaseSeeder
             new PaymentMethod
             {
                 Name = "Bank Transfer",
-                Description = "Direct bank transfer payment"
+                Description = "Direct bank transfer payment",
+                IsSystemDefault = true
             },
             new PaymentMethod
             {
                 Name = "Credit Card",
-                Description = "Payment via credit card"
+                Description = "Payment via credit card",
+                IsSystemDefault = true
             },
             new PaymentMethod
             {
                 Name = "Cash",
-                Description = "Cash payment"
+                Description = "Cash payment",
+                IsSystemDefault = true
             },
             new PaymentMethod
             {
                 Name = "PayPal",
-                Description = "Payment through PayPal service"
+                Description = "Payment through PayPal service",
+                IsSystemDefault = true
             }
         };
 
