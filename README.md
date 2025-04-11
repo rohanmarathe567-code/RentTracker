@@ -4,11 +4,11 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![.NET Build](https://github.com/yourusername/RentTracker/workflows/build/badge.svg)](https://github.com/yourusername/RentTracker/actions)
 
-A comprehensive rental property management system for tracking payments and managing property-related documents.
+A comprehensive multi-tenant rental property management system for tracking payments and managing property-related documents.
 
 ## Overview
 
-RentTracker is a modern property management solution built with ASP.NET Core and Blazor WebAssembly that helps landlords efficiently manage their rental properties, track payments, and handle property-related documents. The system provides an intuitive web application with a robust backend API for property management operations while maintaining secure data storage and file handling capabilities.
+RentTracker is a modern property management solution built with ASP.NET Core and Blazor WebAssembly that helps landlords efficiently manage their rental properties, track payments, and handle property-related documents. The system provides an intuitive web application with a robust backend API for property management operations while maintaining secure data storage, multi-tenancy support, and file handling capabilities.
 
 ## Getting Started
 
@@ -35,6 +35,11 @@ dotnet run
 ## Features
 
 ### Existing Features
+* Multi-tenancy Support
+  - Role-based access control with Admin and Normal user types
+  - JWT-based authentication
+  - Data isolation between users
+  - User-specific property and payment management
 * Property Management
   - Add, edit, and delete rental properties with server-side ID generation
   - Store property details (address, rent amount, lease dates)
@@ -49,16 +54,12 @@ dotnet run
   - Upload and store property-related documents
   - Secure file storage and retrieval
   - Support for various document types
+  - Document tagging and categorization
 * Enhanced Property Management
   - Comprehensive property information storage
   - Lease agreement tracking
   - Property manager contact details
   - Improved navigation between properties and payments
-* Modern Web Interface
-  - Responsive Blazor WebAssembly client with optimized UI
-  - Full-screen layout with efficient navigation
-  - Real-time data updates with pagination support
-  - Dedicated components for property listing and editing
 
 ### RentTrackerClient Features
 * Modern Component Architecture
@@ -82,8 +83,7 @@ dotnet run
   - Minimal client-side processing
 
 ### Planned Features
-* Multi-tenancy Support with Authentication
-* Docker Containerization
+* Docker Containerization with CI/CD Pipeline
 * Enhanced Reporting
   - Financial analysis tools
   - Custom report generation
@@ -102,30 +102,39 @@ dotnet run
 - [x] Document Storage System
 - [x] Improved Client Architecture
 - [x] Performance Optimizations
-- [ ] Multi-tenancy Support
+- [x] Multi-tenancy Support Implementation
+- [ ] Docker Containerization
 - [ ] Advanced Reporting
 - [ ] Payment Reminder System
 
 ### Recent Achievements
-- ✅ Implemented optimized payment endpoints
-- ✅ Added pagination support for properties and payments
-- ✅ Enhanced client-side architecture with modular components
-- ✅ Improved query performance with lazy loading
-- ✅ Updated navigation and UI components
+- ✅ Implemented multi-tenancy with JWT authentication
+- ✅ Added role-based access control
+- ✅ Enhanced data isolation between users
+- ✅ Improved query performance with user context
+- ✅ Updated client architecture for multi-tenant support
 
 ### Upcoming Milestones
-1. Q2 2025: Implement Multi-tenancy
+1. Q2 2025: Docker Containerization and CI/CD Pipeline
 2. Q3 2025: Enhanced Reporting Features
-3. Q4 2025: Docker Containerization and CI/CD Pipeline
+3. Q4 2025: Advanced Analytics and Payment Reminders
 
 ## Architecture
+
+[Additional architecture details available in docs/multi-tenancy-plan.md]
 
 ## Database Schema
 
 The database schema represents a multi-tenant rental property management system with 5 main entities. The system supports multiple users, where each user manages their own properties and payment methods, while having access to system-wide default payment methods:
 
-1. **RentalProperty**:
-   - Core entity storing property details (address, rent amount, lease dates)
+1. **User**:
+   - Core entity for authentication and authorization
+   - Supports multiple user types (Admin/Normal)
+   - Controls access to properties and payments
+
+2. **RentalProperty**:
+   - Core entity storing property details
+   - Linked to specific users for multi-tenancy
    - Has one-to-many relationships with RentalPayment and Attachment
 
 2. **RentalPayment**:
@@ -244,14 +253,15 @@ graph TD
     E --> E1[File Service]
     E --> E2[Secure Storage]
 ```
-
 * **Backend Framework**: ASP.NET Core minimal API (.NET 8)
 * **Frontend Framework**: Blazor WebAssembly (.NET 8)
+* **Authentication**: JWT-based authentication
 * **ORM**: Entity Framework Core with optimized query patterns
 * **Database**: PostgreSQL
 * **Architecture Pattern**: RESTful API with nested endpoints
 * **File Management**: Custom FileService implementation
 * **UI Components**: Modular Razor Components
+* **Client Architecture**: Service-based with typed HTTP clients
 * **Client Architecture**: Service-based with typed HTTP clients
 
 ### Backend Implementation
@@ -260,14 +270,19 @@ graph TD
 
 ```mermaid
 classDiagram
+    class BaseEntity {
+        +Guid Id
+        +DateTime CreatedAt
+        +DateTime UpdatedAt
+    }
     class User {
+        <<extends BaseEntity>>
         +Guid Id
         +string Email
         +string PasswordHash
         +UserType UserType
-        +DateTime CreatedAt
-        +DateTime UpdatedAt
         +ICollection<RentalProperty> Properties
+        +ICollection<PaymentMethod> PaymentMethods
     }
     class RentalProperty {
         +Guid Id
@@ -302,7 +317,12 @@ classDiagram
         +string FilePath
         +string Description
     }
+    BaseEntity <|-- User
+    BaseEntity <|-- RentalProperty
+    BaseEntity <|-- RentalPayment
+    BaseEntity <|-- Attachment
     User "1" --> "*" RentalProperty
+    User "1" --> "*" PaymentMethod
     RentalProperty "1" --> "*" RentalPayment
     RentalProperty "1" --> "*" Attachment
 ```
@@ -356,6 +376,46 @@ graph TD
 
 ## API Documentation
 
+### Authentication and Authorization
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Auth API
+    participant Token Service
+    participant Database
+    
+    Client->>+Auth API: POST /api/auth/register
+    Auth API->>+Database: Create User
+    Database-->>-Auth API: User Created
+    Auth API-->>-Client: Success Response
+    
+    Client->>+Auth API: POST /api/auth/login
+    Auth API->>+Database: Validate Credentials
+    Database-->>-Auth API: User Valid
+    Auth API->>+Token Service: Generate JWT
+    Token Service-->>-Auth API: JWT Token
+    Auth API-->>-Client: JWT Token Response
+    
+    Note over Client,Auth API: All subsequent requests include JWT
+```
+
+#### Authentication Endpoints
+
+| Method | Endpoint | Description | Request Body | Response |
+|--------|----------|-------------|--------------|-----------|
+| POST | `/api/auth/register` | Register new user | `{ "email": string, "password": string, "confirmPassword": string, "userType": "User"⎮"Admin" }` | Created user details |
+| POST | `/api/auth/login` | Login user | `{ "email": string, "password": string }` | JWT token |
+
+#### Multi-Tenancy Implementation
+
+- All endpoints require JWT authentication token in the `Authorization: Bearer <token>` header
+- User data is isolated using the `userId` from the JWT token
+- Admin users can access system-wide resources
+- Normal users can only access their own resources
+- Property endpoints filter results by the authenticated user's ID
+- System-wide payment methods are accessible to all users, while user-specific methods are isolated
+
 ### Property Management
 
 #### Endpoints
@@ -394,13 +454,13 @@ sequenceDiagram
     API-->>-Client: Success Response
 ```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/properties` | List all properties |
-| GET | `/api/properties/{id}` | Get property details |
-| POST | `/api/properties` | Create new property |
-| PUT | `/api/properties/{id}` | Update property |
-| DELETE | `/api/properties/{id}` | Delete property |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/properties` | List user's properties | `Bearer JWT` Required |
+| GET | `/api/properties/{id}` | Get property details | `Bearer JWT` Required, Owner Only |
+| POST | `/api/properties` | Create new property | `Bearer JWT` Required |
+| PUT | `/api/properties/{id}` | Update property | `Bearer JWT` Required, Owner Only |
+| DELETE | `/api/properties/{id}` | Delete property | `Bearer JWT` Required, Owner Only |
 
 ### Payment Management
 
@@ -439,13 +499,13 @@ sequenceDiagram
     API-->>-Client: Success Response
 ```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/properties/{propertyId}/payments?page={page}&pageSize={size}` | List paginated payments for a property |
-| GET | `/api/properties/{propertyId}/payments/{paymentId}` | Get specific payment details (optimized query) |
-| POST | `/api/properties/{propertyId}/payments` | Record new payment with backend-generated ID |
-| PUT | `/api/properties/{propertyId}/payments/{paymentId}` | Update payment details |
-| DELETE | `/api/properties/{propertyId}/payments/{paymentId}` | Delete payment record |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/properties/{propertyId}/payments?page={page}&pageSize={size}` | List paginated payments for a property | `Bearer JWT` Required, Property Owner Only |
+| GET | `/api/properties/{propertyId}/payments/{paymentId}` | Get specific payment details | `Bearer JWT` Required, Property Owner Only |
+| POST | `/api/properties/{propertyId}/payments` | Record new payment | `Bearer JWT` Required, Property Owner Only |
+| PUT | `/api/properties/{propertyId}/payments/{paymentId}` | Update payment details | `Bearer JWT` Required, Property Owner Only |
+| DELETE | `/api/properties/{propertyId}/payments/{paymentId}` | Delete payment record | `Bearer JWT` Required, Property Owner Only |
 
 ### Document Management
 
@@ -469,12 +529,12 @@ sequenceDiagram
     API-->>-Client: Attachment List
 ```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/properties/{id}/attachments` | List property attachments |
-| POST | `/api/properties/{id}/attachments` | Upload attachment |
-| GET | `/api/attachments/{id}` | Download attachment |
-| DELETE | `/api/attachments/{id}` | Delete attachment |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/properties/{id}/attachments` | List property attachments | `Bearer JWT` Required, Property Owner Only |
+| POST | `/api/properties/{id}/attachments` | Upload attachment | `Bearer JWT` Required, Property Owner Only |
+| GET | `/api/attachments/{id}` | Download attachment | `Bearer JWT` Required, Owner Only |
+| DELETE | `/api/attachments/{id}` | Delete attachment | `Bearer JWT` Required, Owner Only |
 
 ## Setup Guide
 
@@ -483,6 +543,8 @@ sequenceDiagram
 - PostgreSQL database server (13.0 or higher)
 - Storage location for file uploads (with proper permissions)
 - Visual Studio Code (recommended) or Visual Studio 2022
+- Git for version control
+- Node.js and npm for frontend development tools
 
 ### Database Setup and Seeding
 The application uses Entity Framework Core for database management and includes automatic migrations and data seeding:
@@ -546,15 +608,22 @@ Create or update `RentTrackerBackend/appsettings.json`:
 {
   "ConnectionStrings": {
     "DefaultConnection": "Host=localhost;Database=renttracker;Username=your_username;Password=your_password"
+  },
+  "JwtSettings": {
+    "SecretKey": "your-secret-key-here",
+    "Issuer": "renttracker",
+    "Audience": "renttracker-client",
+    "ExpiryInMinutes": 60
   }
 }
 ```
 
-For development, you can use user secrets to store the connection string:
+For development, you can use user secrets to store sensitive configuration:
 ```bash
 cd RentTrackerBackend
 dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=renttracker;Username=your_username;Password=your_password"
+dotnet user-secrets set "JwtSettings:SecretKey" "your-secret-key-here"
 ```
 
 3. Verify database setup:
@@ -569,6 +638,7 @@ The application will automatically:
 - Apply any pending migrations
 - Create required directories for file uploads
 - Seed sample data if the database is empty
+- Create a default admin user if none exists
 
 3. Run database migrations:
 ```bash
@@ -595,6 +665,7 @@ The backend API will be available at `https://localhost:5001`, and the frontend 
 - Utilize the built-in debugger for both backend and frontend
 - Configure user secrets for sensitive configuration
 - Follow the code style and organization patterns
+- Review multi-tenancy documentation in docs/multi-tenancy-plan.md
 
 ### Performance Considerations
 - Backend Optimizations:
@@ -621,7 +692,9 @@ The backend API will be available at `https://localhost:5001`, and the frontend 
 
 ## Support and Contact
 
-If you encounter any issues or have questions, please [open an issue](https://github.com/yourusername/RentTracker/issues) on GitHub.
+For technical questions or issues, please [open an issue](https://github.com/yourusername/RentTracker/issues) on GitHub.
+
+For documentation on multi-tenancy implementation, refer to docs/multi-tenancy-plan.md.
 
 For commercial support or custom development, contact: support@renttracker.com
 
