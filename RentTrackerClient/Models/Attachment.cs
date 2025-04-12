@@ -2,25 +2,29 @@ namespace RentTrackerClient.Models;
 
 public class Attachment
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     
     public string FileName { get; set; } = string.Empty;
     
-    public string? ContentType { get; set; }
+    public string ContentType { get; set; } = string.Empty;
     
-    public string? FilePath { get; set; }
+    public string StoragePath { get; set; } = string.Empty;
     
     public long FileSize { get; set; }
     
     public string? Description { get; set; }
     
-    public DateTime UploadDate { get; set; }
+    public string EntityType { get; set; } = string.Empty;
     
-    public Guid? RentalPropertyId { get; set; }
+    public DateTime UploadDate { get; set; } = DateTime.UtcNow;
     
-    public Guid? RentalPaymentId { get; set; }
+    public string[]? Tags { get; set; }
+    
+    public string? RentalPropertyId { get; set; }
     
     public RentalProperty? RentalProperty { get; set; }
+    
+    public string? RentalPaymentId { get; set; }
     
     public RentalPayment? RentalPayment { get; set; }
 }

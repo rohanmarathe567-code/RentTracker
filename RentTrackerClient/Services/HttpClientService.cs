@@ -24,7 +24,11 @@ public abstract class HttpClientService
         _authService = authService;
         _jsonOptions = new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
         };
     }
 
@@ -111,11 +115,7 @@ public abstract class HttpClientService
             var fullUrl = $"{_baseUrl}/{endpoint}";
             
             // Log the request details with better formatting
-            var requestJson = JsonSerializer.Serialize(data, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNameCaseInsensitive = true
-            });
+            var requestJson = JsonSerializer.Serialize(data, _jsonOptions);
             _logger.LogDebug($"POST Request: {fullUrl}\nRequest Data: {requestJson}");
 
             var startTime = DateTime.UtcNow;

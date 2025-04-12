@@ -1,22 +1,27 @@
-using Microsoft.EntityFrameworkCore;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Endpoints;
 using RentTrackerBackend.Models;
+using MongoDB.Driver;
 
 namespace RentTrackerBackend.Services;
 
 public class AttachmentService : IAttachmentService
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IMongoCollection<Attachment> _attachments;
+    private readonly IMongoCollection<RentalProperty> _properties;
+    private readonly IMongoCollection<RentalPayment> _payments;
     private readonly ILogger<AttachmentService> _logger;
     private readonly IStorageService _storageService;
 
     public AttachmentService(
-        ApplicationDbContext context,
+        IMongoClient mongoClient,
         IStorageService storageService,
         ILogger<AttachmentService> logger)
     {
-        _context = context;
+        var database = mongoClient.GetDatabase("renttracker");
+        _attachments = database.GetCollection<Attachment>(nameof(Attachment));
+        _properties = database.GetCollection<RentalProperty>(nameof(RentalProperty));
+        _payments = database.GetCollection<RentalPayment>(nameof(RentalPayment));
         _storageService = storageService;
         _logger = logger;
     }
@@ -24,7 +29,7 @@ public class AttachmentService : IAttachmentService
     public async Task<Attachment> SaveAttachmentAsync(
         IFormFile file,
         RentalAttachmentType attachmentType,
-        Guid parentId,
+        string parentId,
         string? description = null,
         string[]? tags = null)
     {
@@ -32,12 +37,12 @@ public class AttachmentService : IAttachmentService
         switch (attachmentType)
         {
             case RentalAttachmentType.Property:
-                var property = await _context.RentalProperties.FindAsync(parentId);
+                var property = await _properties.Find(p => p.Id.ToString() == parentId).FirstOrDefaultAsync();
                 if (property == null)
                     throw new ArgumentException($"Property with ID {parentId} not found.");
                 break;
             case RentalAttachmentType.Payment:
-                var payment = await _context.RentalPayments.FindAsync(parentId);
+                var payment = await _payments.Find(p => p.Id.ToString() == parentId).FirstOrDefaultAsync();
                 if (payment == null)
                     throw new ArgumentException($"Payment with ID {parentId} not found.");
                 break;
@@ -69,16 +74,15 @@ public class AttachmentService : IAttachmentService
             RentalPaymentId = attachmentType == RentalAttachmentType.Payment ? parentId : null
         };
 
-        _context.Attachments.Add(attachment);
-        await _context.SaveChangesAsync();
+        await _attachments.InsertOneAsync(attachment);
 
         _logger.LogInformation($"Attachment saved: {attachment.FileName}");
         return attachment;
     }
 
-    public async Task<(Stream FileStream, string ContentType, string FileName)> DownloadAttachmentAsync(Guid attachmentId)
+    public async Task<(Stream FileStream, string ContentType, string FileName)> DownloadAttachmentAsync(string attachmentId)
     {
-        var attachment = await _context.Attachments.FindAsync(attachmentId);
+        var attachment = await _attachments.Find(a => a.Id.ToString() == attachmentId).FirstOrDefaultAsync();
         if (attachment == null)
             throw new FileNotFoundException($"Attachment with ID {attachmentId} not found.");
 
@@ -86,9 +90,9 @@ public class AttachmentService : IAttachmentService
         return (stream, attachment.ContentType, attachment.FileName);
     }
 
-    public async Task DeleteAttachmentAsync(Guid attachmentId)
+    public async Task DeleteAttachmentAsync(string attachmentId)
     {
-        var attachment = await _context.Attachments.FindAsync(attachmentId);
+        var attachment = await _attachments.Find(a => a.Id.ToString() == attachmentId).FirstOrDefaultAsync();
         if (attachment == null)
             throw new FileNotFoundException($"Attachment with ID {attachmentId} not found.");
 
@@ -96,18 +100,17 @@ public class AttachmentService : IAttachmentService
         await _storageService.DeleteFileAsync(attachment.StoragePath);
 
         // Remove the database record
-        _context.Attachments.Remove(attachment);
-        await _context.SaveChangesAsync();
+        await _attachments.DeleteOneAsync(a => a.Id.ToString() == attachmentId);
 
         _logger.LogInformation($"Attachment deleted: {attachmentId}");
     }
 
-    public async Task<IEnumerable<Attachment>> GetAttachmentsForEntityAsync(RentalAttachmentType entityType, Guid entityId)
+    public async Task<IEnumerable<Attachment>> GetAttachmentsForEntityAsync(RentalAttachmentType entityType, string entityId)
     {
-        return await _context.Attachments
-            .Where(a =>
-                (entityType == RentalAttachmentType.Property && a.RentalPropertyId == entityId) ||
-                (entityType == RentalAttachmentType.Payment && a.RentalPaymentId == entityId))
-            .ToListAsync();
+        var filter = entityType == RentalAttachmentType.Property
+            ? Builders<Attachment>.Filter.Eq(a => a.RentalPropertyId, entityId)
+            : Builders<Attachment>.Filter.Eq(a => a.RentalPaymentId, entityId);
+
+        return await _attachments.Find(filter).ToListAsync();
     }
 }

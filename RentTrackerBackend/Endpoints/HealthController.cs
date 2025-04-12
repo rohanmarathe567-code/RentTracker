@@ -1,3 +1,4 @@
+using MongoDB.Driver;
 using RentTrackerBackend.Data;
 
 namespace RentTrackerBackend.Endpoints;
@@ -6,11 +7,11 @@ public static class HealthController
 {
     public static void MapHealthEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/health", async (ApplicationDbContext db) =>
+        app.MapGet("/api/health", async (IMongoClient mongoClient) =>
         {
             try
             {
-                await db.Database.CanConnectAsync();
+                await mongoClient.ListDatabaseNamesAsync();
                 return Results.Ok(new { Status = "Healthy", Database = "Connected" });
             }
             catch (Exception ex)

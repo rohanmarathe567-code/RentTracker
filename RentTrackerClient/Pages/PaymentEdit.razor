@@ -11,7 +11,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@(Payment?.Id != Guid.Empty ? "Edit" : "Add") Payment</h5>
+                    <h5 class="modal-title">@(string.IsNullOrEmpty(Payment?.Id) ? "Add" : "Edit") Payment</h5>
                     <button type="button" class="btn-close" @onclick="OnClose"></button>
                 </div>
                 <EditForm Model="@Payment" OnValidSubmit="HandleSubmit">
@@ -31,7 +31,7 @@
 
                         <div class="mb-3">
                             <label for="paymentMethodId" class="form-label">Payment Method</label>
-                            <InputSelect id="paymentMethodId" class="form-control" @bind-Value="Payment!.PaymentMethodId">
+                            <InputSelect id="paymentMethodId" class="form-control" @bind-Value="Payment!.PaymentMethodId" @bind-Value:after="OnPaymentMethodChanged">
                                 <option value="">Select a payment method</option>
                                 @foreach (var method in _paymentMethods)
                                 {
@@ -69,6 +69,26 @@
 @code {
     private List<PaymentMethod> _paymentMethods = new();
 
+    private void OnPaymentMethodChanged()
+    {
+        if (string.IsNullOrEmpty(Payment?.PaymentMethodId))
+        {
+            Payment!.PaymentMethod = null;
+        }
+        else
+        {
+            var selectedMethod = _paymentMethods.FirstOrDefault(m => m.Id == Payment!.PaymentMethodId);
+            if (selectedMethod != null)
+            {
+                Payment!.PaymentMethod = new PaymentMethod
+                {
+                    Id = selectedMethod.Id,
+                    Name = selectedMethod.Name
+                };
+            }
+        }
+    }
+
     [Parameter]
     public bool IsVisible { get; set; }
 
@@ -103,7 +123,7 @@
             Payment.PaymentDate = DateTime.SpecifyKind(Payment.PaymentDate, DateTimeKind.Utc);
 
             // Set or update timestamps
-            if (Payment.Id != Guid.Empty)
+            if (!string.IsNullOrEmpty(Payment.Id))
             {
                 // Update the UpdatedAt timestamp
                 Payment.UpdatedAt = DateTime.UtcNow;

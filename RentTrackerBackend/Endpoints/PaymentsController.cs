@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
-using RentTrackerBackend.Extensions;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Data;
 using System.Security.Claims;
+using MongoDB.Driver;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -14,68 +13,73 @@ public static class PaymentsController
     {
         // Get paginated payments for a specific property
         app.MapGet("/api/properties/{propertyId}/payments", async (
-            Guid propertyId,
+            string propertyId,
             [AsParameters] PaginationParameters parameters,
             IPaymentService paymentService,
-            ApplicationDbContext db,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user) =>
         {
             try
             {
-                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(tenantId))
                     return Results.Unauthorized();
 
                 // Verify property ownership
-                var property = await db.RentalProperties.FindAsync(propertyId);
+                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
-                if (property.UserId != userId)
-                    return Results.Forbid();
-
-                var query = await paymentService.GetPaymentsByPropertyQueryAsync(propertyId);
+                var payments = await paymentService.GetPaymentsByPropertyAsync(tenantId, propertyId);
                 
-                // Optional: Add search filtering if needed
+                // Manual filtering
+                var filteredPayments = payments.AsQueryable();
                 if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
                 {
-                    query = query.Where(p =>
+                    filteredPayments = filteredPayments.Where(p =>
                         (p.PaymentMethod != null && p.PaymentMethod.Name.Contains(parameters.SearchTerm)) ||
                         (p.PaymentReference != null && p.PaymentReference.Contains(parameters.SearchTerm)) ||
                         (p.Notes != null && p.Notes.Contains(parameters.SearchTerm)));
                 }
 
-                // Apply sorting if specified
+                // Apply sorting
                 if (!string.IsNullOrWhiteSpace(parameters.SortField))
                 {
-                    query = parameters.SortField.ToLower() switch
+                    filteredPayments = parameters.SortField.ToLower() switch
                     {
                         "paymentdate" => parameters.SortDescending
-                            ? query.OrderByDescending(p => p.PaymentDate)
-                            : query.OrderBy(p => p.PaymentDate),
+                            ? filteredPayments.OrderByDescending(p => p.PaymentDate)
+                            : filteredPayments.OrderBy(p => p.PaymentDate),
                         "amount" => parameters.SortDescending
-                            ? query.OrderByDescending(p => p.Amount)
-                            : query.OrderBy(p => p.Amount),
+                            ? filteredPayments.OrderByDescending(p => p.Amount)
+                            : filteredPayments.OrderBy(p => p.Amount),
                         "paymentmethod" => parameters.SortDescending
-                            ? query.OrderByDescending(p => p.PaymentMethod!.Name)
-                            : query.OrderBy(p => p.PaymentMethod!.Name),
+                            ? filteredPayments.OrderByDescending(p => p.PaymentMethod!.Name)
+                            : filteredPayments.OrderBy(p => p.PaymentMethod!.Name),
                         "paymentreference" => parameters.SortDescending
-                            ? query.OrderByDescending(p => p.PaymentReference)
-                            : query.OrderBy(p => p.PaymentReference),
+                            ? filteredPayments.OrderByDescending(p => p.PaymentReference)
+                            : filteredPayments.OrderBy(p => p.PaymentReference),
                         "notes" => parameters.SortDescending
-                            ? query.OrderByDescending(p => p.Notes)
-                            : query.OrderBy(p => p.Notes),
-                        _ => query.OrderByDescending(p => p.PaymentDate) // Default sort by payment date descending
+                            ? filteredPayments.OrderByDescending(p => p.Notes)
+                            : filteredPayments.OrderBy(p => p.Notes),
+                        _ => filteredPayments.OrderByDescending(p => p.PaymentDate)
                     };
                 }
-                
-                var payments = await query.ToPaginatedListAsync(parameters);
-                
-                return Results.Ok(payments);
-            }
-            catch (ArgumentException ex)
-            {
-                return Results.NotFound(ex.Message);
+
+                // Manual pagination
+                var totalCount = filteredPayments.Count();
+                var items = filteredPayments
+                    .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                    .Take(parameters.PageSize)
+                    .ToList();
+
+                var result = PaginatedResponse<RentalPayment>.Create(
+                    items,
+                    totalCount,
+                    parameters.PageNumber,
+                    parameters.PageSize);
+
+                return Results.Ok(result);
             }
             catch (Exception ex)
             {
@@ -85,34 +89,29 @@ public static class PaymentsController
 
         // Get a specific payment by ID for a specific property
         app.MapGet("/api/properties/{propertyId}/payments/{paymentId}", async (
-            Guid propertyId,
-            Guid paymentId,
+            string propertyId,
+            string paymentId,
             IPaymentService paymentService,
-            ApplicationDbContext db,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user) =>
         {
             try
             {
-                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(tenantId))
                     return Results.Unauthorized();
 
                 // Verify property ownership
-                var property = await db.RentalProperties.FindAsync(propertyId);
+                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
-                if (property.UserId != userId)
-                    return Results.Forbid();
-
-                var payment = await paymentService.GetPaymentByIdAsync(paymentId);
-                
-                // Additional validation to ensure payment belongs to the specified property
+                var payment = await paymentService.GetPaymentByIdAsync(tenantId, paymentId);
                 if (payment == null || payment.RentalPropertyId != propertyId)
                 {
                     return Results.NotFound($"Payment with ID {paymentId} not found for property {propertyId}");
                 }
-                
+
                 return Results.Ok(payment);
             }
             catch (Exception ex)
@@ -123,45 +122,37 @@ public static class PaymentsController
 
         // Update an existing payment for a specific property
         app.MapPut("/api/properties/{propertyId}/payments/{paymentId}", async (
-            Guid propertyId,
-            Guid paymentId,
+            string propertyId,
+            string paymentId,
             RentalPayment updatedPayment,
             IPaymentService paymentService,
-            ApplicationDbContext db,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user) =>
         {
             try
             {
-                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(tenantId))
                     return Results.Unauthorized();
 
                 // Verify property ownership
-                var property = await db.RentalProperties.FindAsync(propertyId);
+                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
-                if (property.UserId != userId)
-                    return Results.Forbid();
-
-                // Validate that the payment belongs to the specified property
-                var existingPayment = await paymentService.GetPaymentByIdAsync(paymentId);
+                var existingPayment = await paymentService.GetPaymentByIdAsync(tenantId, paymentId);
                 if (existingPayment == null || existingPayment.RentalPropertyId != propertyId)
                 {
                     return Results.NotFound($"Payment with ID {paymentId} not found for property {propertyId}");
                 }
 
-                // Ensure the updated payment is for the correct property
                 updatedPayment.RentalPropertyId = propertyId;
+                updatedPayment.TenantId = tenantId;
 
-                var payment = await paymentService.UpdatePaymentAsync(paymentId, updatedPayment);
+                var payment = await paymentService.UpdatePaymentAsync(tenantId, paymentId, updatedPayment);
                 return payment != null
                     ? Results.NoContent()
                     : Results.NotFound($"Payment with ID {paymentId} not found");
-            }
-            catch (ArgumentException ex)
-            {
-                return Results.BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
@@ -171,34 +162,30 @@ public static class PaymentsController
 
         // Delete a payment for a specific property
         app.MapDelete("/api/properties/{propertyId}/payments/{paymentId}", async (
-            Guid propertyId,
-            Guid paymentId,
+            string propertyId,
+            string paymentId,
             IPaymentService paymentService,
-            ApplicationDbContext db,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user) =>
         {
             try
             {
-                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(tenantId))
                     return Results.Unauthorized();
 
                 // Verify property ownership
-                var property = await db.RentalProperties.FindAsync(propertyId);
+                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
-                if (property.UserId != userId)
-                    return Results.Forbid();
-
-                // Validate that the payment belongs to the specified property
-                var existingPayment = await paymentService.GetPaymentByIdAsync(paymentId);
+                var existingPayment = await paymentService.GetPaymentByIdAsync(tenantId, paymentId);
                 if (existingPayment == null || existingPayment.RentalPropertyId != propertyId)
                 {
                     return Results.NotFound($"Payment with ID {paymentId} not found for property {propertyId}");
                 }
 
-                var deleted = await paymentService.DeletePaymentAsync(paymentId);
+                var deleted = await paymentService.DeletePaymentAsync(tenantId, paymentId);
                 return deleted
                     ? Results.NoContent()
                     : Results.NotFound($"Payment with ID {paymentId} not found");
@@ -211,36 +198,29 @@ public static class PaymentsController
 
         // Create a new payment for a specific property
         app.MapPost("/api/properties/{propertyId}/payments", async (
-            Guid propertyId,
+            string propertyId,
             RentalPayment payment,
             IPaymentService paymentService,
-            ApplicationDbContext db,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user) =>
         {
             try
             {
-                var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(tenantId))
                     return Results.Unauthorized();
 
                 // Verify property ownership
-                var property = await db.RentalProperties.FindAsync(propertyId);
+                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
-                if (property.UserId != userId)
-                    return Results.Forbid();
-
-                // Ensure the payment is associated with the correct property
                 payment.RentalPropertyId = propertyId;
-                
+                payment.TenantId = tenantId;
+
                 var createdPayment = await paymentService.CreatePaymentAsync(payment);
                 
                 return Results.Created($"/api/properties/{propertyId}/payments/{createdPayment.Id}", createdPayment);
-            }
-            catch (ArgumentException ex)
-            {
-                return Results.BadRequest(ex.Message);
             }
             catch (Exception ex)
             {

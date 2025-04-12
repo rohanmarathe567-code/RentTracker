@@ -54,26 +54,35 @@ try
     {
         options.SerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter());
     });
 
     // Configure Swagger/OpenAPI
-    // Add services to the container.
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
-    // Configure MongoDB
+    // Configure MongoDB and Redis
     builder.Services.AddMongoDb(builder.Configuration);
+    builder.Services.AddRedisCache(builder.Configuration);
 
     // Register Services
     builder.Services.AddScoped<IStorageService, FileService>();
     builder.Services.AddScoped<IAttachmentService, AttachmentService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
     
     // Add JWT authentication
     builder.Services.AddJwtAuthentication(builder.Configuration);
 
     var app = builder.Build();
+
+    // Seed the database
+    using (var scope = app.Services.CreateScope())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        await seeder.SeedAsync();
+    }
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
@@ -88,14 +97,15 @@ try
     // Add authentication & authorization middleware
     app.UseAuthentication();
     app.UseAuthorization();
-// Map controllers and endpoints
-app.MapControllers();
-app.MapHealthEndpoints();
-app.MapPropertyEndpoints();
-app.MapPaymentEndpoints();
-app.MapAttachmentEndpoints();
-app.MapPaymentMethodEndpoints();
-app.MapAuthEndpoints();
+
+    // Map controllers and endpoints
+    app.MapControllers();
+    app.MapHealthEndpoints();
+    app.MapPropertyEndpoints();
+    app.MapPaymentEndpoints();
+    app.MapAttachmentEndpoints();
+    app.MapPaymentMethodEndpoints();
+    app.MapAuthEndpoints();
 
     // Create uploads directory if it doesn't exist
     var uploadsDir = Path.Combine(AppContext.BaseDirectory, "uploads");

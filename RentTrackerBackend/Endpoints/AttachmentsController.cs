@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
-using RentTrackerBackend.Endpoints;
+using RentTrackerBackend.Data;
 using System.Security.Claims;
-using System;
 using System.Text.Json;
+using MongoDB.Driver;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -16,283 +14,176 @@ public static class AttachmentsController
     {
         // Download attachment
         app.MapGet("/api/attachments/{attachmentId}/download", async (
-            Guid attachmentId,
-            ApplicationDbContext db,
-            IStorageService storageService,
+            string attachmentId,
+            IAttachmentService attachmentService,
+            ILogger<Program> logger,
             ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
-
-            var attachment = await db.Attachments
-                .Include(a => a.RentalProperty)
-                .Include(a => a.RentalPayment)
-                .ThenInclude(p => p.RentalProperty)
-                .FirstOrDefaultAsync(a => a.Id == attachmentId);
-
-            if (attachment == null)
-                return Results.NotFound();
-
-            // Check ownership based on attachment type
-            bool hasAccess = false;
-            if (attachment.RentalProperty != null)
-            {
-                hasAccess = attachment.RentalProperty.UserId == userId;
-            }
-            else if (attachment.RentalPayment?.RentalProperty != null)
-            {
-                hasAccess = attachment.RentalPayment.RentalProperty.UserId == userId;
-            }
-
-            if (!hasAccess)
-                return Results.Forbid();
 
             try
             {
-                var stream = await storageService.DownloadFileAsync(attachment.StoragePath);
-                return Results.File(stream, attachment.ContentType, attachment.FileName);
+                var (stream, contentType, fileName) = await attachmentService.DownloadAttachmentAsync(attachmentId);
+                return Results.File(stream, contentType, fileName);
+            }
+            catch (FileNotFoundException)
+            {
+                return Results.NotFound();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error downloading attachment {Id}", attachmentId);
                 return Results.BadRequest($"File download failed: {ex.Message}");
             }
         });
 
         // Delete attachment
         app.MapDelete("/api/attachments/{attachmentId}", async (
-            Guid attachmentId,
-            ApplicationDbContext db,
-            IStorageService storageService,
+            string attachmentId,
+            IAttachmentService attachmentService,
+            ILogger<Program> logger,
             ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
-
-            var attachment = await db.Attachments
-                .Include(a => a.RentalProperty)
-                .Include(a => a.RentalPayment)
-                .ThenInclude(p => p.RentalProperty)
-                .FirstOrDefaultAsync(a => a.Id == attachmentId);
-
-            if (attachment == null)
-                return Results.NotFound();
-
-            // Check ownership based on attachment type
-            bool hasAccess = false;
-            if (attachment.RentalProperty != null)
-            {
-                hasAccess = attachment.RentalProperty.UserId == userId;
-            }
-            else if (attachment.RentalPayment?.RentalProperty != null)
-            {
-                hasAccess = attachment.RentalPayment.RentalProperty.UserId == userId;
-            }
-
-            if (!hasAccess)
-                return Results.Forbid();
 
             try
             {
-                await storageService.DeleteFileAsync(attachment.StoragePath);
-                db.Attachments.Remove(attachment);
-                await db.SaveChangesAsync();
+                await attachmentService.DeleteAttachmentAsync(attachmentId);
                 return Results.NoContent();
+            }
+            catch (FileNotFoundException)
+            {
+                return Results.NotFound();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Forbid();
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error deleting attachment {Id}", attachmentId);
                 return Results.BadRequest($"File deletion failed: {ex.Message}");
             }
         });
 
         // Property Attachments
         app.MapGet("/api/properties/{propertyId}/attachments", async (
-            Guid propertyId,
-            ApplicationDbContext db,
+            string propertyId,
+            IAttachmentService attachmentService,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
-            // Verify property ownership
-            var property = await db.RentalProperties.FindAsync(propertyId);
+            var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
             if (property == null)
                 return Results.NotFound("Property not found");
 
-            if (property.UserId != userId)
-                return Results.Forbid();
-
-            var attachments = await db.Attachments
-                .Where(a => a.RentalPropertyId == propertyId)
-                .ToListAsync();
+            var attachments = await attachmentService.GetAttachmentsForEntityAsync(RentalAttachmentType.Property, propertyId);
             return Results.Ok(attachments);
         });
 
         app.MapPost("/api/properties/{propertyId}/attachments", async (
-            Guid propertyId,
+            string propertyId,
             IFormFile file,
-            ApplicationDbContext db,
-            IStorageService storageService,
+            IAttachmentService attachmentService,
+            IMongoRepository<RentalProperty> propertyRepository,
+            ILogger<Program> logger,
             ClaimsPrincipal user,
             string? description = null,
             string? tags = null) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
-            // Validate property exists and user owns it
-            var property = await db.RentalProperties.FindAsync(propertyId);
+            var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
             if (property == null)
-                return Results.NotFound($"Property with ID {propertyId} not found.");
-
-            if (property.UserId != userId)
-                return Results.Forbid();
-
-            // Validate file
-            if (file == null || file.Length == 0)
-                return Results.BadRequest("No file uploaded.");
-
-            // Check file size (50MB limit)
-            if (file.Length > 52428800)
-                return Results.BadRequest("File size exceeds 50MB limit.");
-
-            // Validate content type
-            if (!storageService.ValidateFileType(file.ContentType, file.FileName))
-                return Results.BadRequest($"Invalid file type. Allowed file types: .pdf, .jpg, .jpeg, .png, .gif, .doc, .docx, .xls, .xlsx, .txt");
+                return Results.NotFound("Property not found");
 
             try
             {
-                // Upload file to storage
-                var storagePath = await storageService.UploadFileAsync(file);
-
-                // Create attachment record
-                var attachment = new Attachment
-                {
-                    FileName = file.FileName,
-                    ContentType = file.ContentType,
-                    StoragePath = storagePath,
-                    FileSize = file.Length,
-                    Description = description,
-                    Tags = tags != null ? JsonSerializer.Deserialize<string[]>(tags) : null,
-                    EntityType = "Property",
-                    RentalPropertyId = propertyId
-                };
-
-                db.Attachments.Add(attachment);
-                await db.SaveChangesAsync();
-
+                var parsedTags = tags != null ? JsonSerializer.Deserialize<string[]>(tags) : null;
+                var attachment = await attachmentService.SaveAttachmentAsync(file, RentalAttachmentType.Property, propertyId, description, parsedTags);
                 return Results.Created($"/api/attachments/{attachment.Id}", attachment);
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error uploading attachment for property {Id}", propertyId);
                 return Results.BadRequest($"File upload failed: {ex.Message}");
             }
         }).DisableAntiforgery();
 
         // Payment Attachments
         app.MapGet("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
-            Guid propertyId,
-            Guid paymentId,
-            ApplicationDbContext db,
+            string propertyId,
+            string paymentId,
+            IAttachmentService attachmentService,
+            IMongoRepository<RentalProperty> propertyRepository,
+            IMongoRepository<RentalPayment> paymentRepository,
             ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
-            // Verify property ownership
-            var property = await db.RentalProperties.FindAsync(propertyId);
+            var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
             if (property == null)
                 return Results.NotFound("Property not found");
 
-            if (property.UserId != userId)
-                return Results.Forbid();
+            var payment = await paymentRepository.GetByIdAsync(tenantId, paymentId);
+            if (payment == null || payment.RentalPropertyId != propertyId)
+                return Results.NotFound("Payment not found");
 
-            var attachments = await db.Attachments
-                .Where(a => a.RentalPaymentId == paymentId)
-                .ToListAsync();
+            var attachments = await attachmentService.GetAttachmentsForEntityAsync(RentalAttachmentType.Payment, paymentId);
             return Results.Ok(attachments);
         });
 
         app.MapPost("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
-            Guid propertyId,
-            Guid paymentId,
+            string propertyId,
+            string paymentId,
             IFormFile file,
-            ApplicationDbContext db,
-            IStorageService storageService,
+            IAttachmentService attachmentService,
+            IMongoRepository<RentalProperty> propertyRepository,
+            IMongoRepository<RentalPayment> paymentRepository,
+            ILogger<Program> logger,
             ClaimsPrincipal user,
             string? description = null,
             string? tags = null) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
-            // Verify property ownership first
-            var property = await db.RentalProperties.FindAsync(propertyId);
+            var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
             if (property == null)
                 return Results.NotFound("Property not found");
 
-            if (property.UserId != userId)
-                return Results.Forbid();
-
-            // Validate payment exists and belongs to property
-            var payment = await db.RentalPayments
-                .FirstOrDefaultAsync(p => p.Id == paymentId && p.RentalPropertyId == propertyId);
-            
-            if (payment == null)
-                return Results.NotFound($"Payment with ID {paymentId} for Property {propertyId} not found.");
-
-            // Validate file
-            if (file == null || file.Length == 0)
-                return Results.BadRequest("No file uploaded.");
-
-            // Check file size (50MB limit)
-            if (file.Length > 52428800)
-                return Results.BadRequest("File size exceeds 50MB limit.");
-
-            // Validate content type
-            if (!storageService.ValidateFileType(file.ContentType, file.FileName))
-                return Results.BadRequest($"Invalid file type. Allowed file types: .pdf, .jpg, .jpeg, .png, .gif, .doc, .docx, .xls, .xlsx, .txt");
+            var payment = await paymentRepository.GetByIdAsync(tenantId, paymentId);
+            if (payment == null || payment.RentalPropertyId != propertyId)
+                return Results.NotFound("Payment not found");
 
             try
             {
-                // Upload file to storage
-                var storagePath = await storageService.UploadFileAsync(file);
-
-                // Create attachment record
-                var attachment = new Attachment
-                {
-                    FileName = file.FileName,
-                    ContentType = file.ContentType,
-                    StoragePath = storagePath,
-                    FileSize = file.Length,
-                    Description = description,
-                    Tags = tags != null ? JsonSerializer.Deserialize<string[]>(tags) : null,
-                    EntityType = "Payment",
-                    RentalPaymentId = paymentId
-                };
-
-                db.Attachments.Add(attachment);
-                await db.SaveChangesAsync();
-
+                var parsedTags = tags != null ? JsonSerializer.Deserialize<string[]>(tags) : null;
+                var attachment = await attachmentService.SaveAttachmentAsync(file, RentalAttachmentType.Payment, paymentId, description, parsedTags);
                 return Results.Created($"/api/attachments/{attachment.Id}", attachment);
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error uploading attachment for payment {Id}", paymentId);
                 return Results.BadRequest($"File upload failed: {ex.Message}");
             }
         }).DisableAntiforgery();
-
     }
-}
-
-// Enum to specify attachment type
-public enum RentalAttachmentType
-{
-    Property,
-    Payment
 }

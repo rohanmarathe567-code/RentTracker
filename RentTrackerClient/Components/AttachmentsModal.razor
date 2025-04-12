@@ -156,10 +156,10 @@
     public bool IsVisible { get; set; }
 
     [Parameter]
-    public Guid PropertyId { get; set; }
+    public string PropertyId { get; set; } = string.Empty;
 
     [Parameter]
-    public Guid? PaymentId { get; set; }
+    public string? PaymentId { get; set; }
 
     [Parameter]
     public EventCallback OnClose { get; set; }
@@ -171,7 +171,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsVisible && PropertyId != Guid.Empty)
+        if (IsVisible && !string.IsNullOrEmpty(PropertyId))
         {
             await LoadAttachments();
         }
@@ -181,9 +181,9 @@
     {
         try
         {
-            if (PaymentId.HasValue)
+            if (!string.IsNullOrEmpty(PaymentId))
             {
-                attachments = await AttachmentService.GetAttachmentsByPaymentAsync(PropertyId, PaymentId.Value);
+                attachments = await AttachmentService.GetAttachmentsByPaymentAsync(PropertyId, PaymentId);
             }
             else
             {
@@ -212,9 +212,9 @@
         {
             foreach (var file in files)
             {
-                if (PaymentId.HasValue)
+                if (!string.IsNullOrEmpty(PaymentId))
                 {
-                    await AttachmentService.UploadAttachmentToPaymentAsync(PropertyId, PaymentId.Value, file);
+                    await AttachmentService.UploadAttachmentToPaymentAsync(PropertyId, PaymentId, file);
                 }
                 else
                 {

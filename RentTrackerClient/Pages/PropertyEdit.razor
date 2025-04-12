@@ -1,5 +1,5 @@
 @page "/properties/add"
-@page "/properties/{Id:guid}"
+@page "/properties/{Id}"
 @using RentTrackerClient.Models
 @using RentTrackerClient.Services
 @using Microsoft.AspNetCore.Components.Forms
@@ -14,7 +14,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">@(Id == Guid.Empty ? "Add New Property" : "Edit Property")</h5>
+                <h5 class="modal-title">@(string.IsNullOrEmpty(Id) ? "Add New Property" : "Edit Property")</h5>
                 <button type="button" class="btn-close" @onclick="NavigateToList"></button>
             </div>
             @if (isLoading)
@@ -48,24 +48,27 @@
 
                         <div class="row mb-3">
                             <div class="col-12">
-                                <label for="address" class="form-label">Address</label>
-                                <InputText id="address" class="form-control" @bind-Value="property.Address" />
-                                <ValidationMessage For="@(() => property.Address)" />
+                                <label for="street" class="form-label">Street Address</label>
+                                <InputText id="street" class="form-control" @bind-Value="property.Address.Street" />
+                                <ValidationMessage For="@(() => property.Address.Street)" />
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <label for="suburb" class="form-label">Suburb</label>
-                                <InputText id="suburb" class="form-control" @bind-Value="property.Suburb" />
+                                <label for="city" class="form-label">City/Suburb</label>
+                                <InputText id="city" class="form-control" @bind-Value="property.Address.City" />
+                                <ValidationMessage For="@(() => property.Address.City)" />
                             </div>
                             <div class="col-md-4">
                                 <label for="state" class="form-label">State</label>
-                                <InputText id="state" class="form-control" @bind-Value="property.State" />
+                                <InputText id="state" class="form-control" @bind-Value="property.Address.State" />
+                                <ValidationMessage For="@(() => property.Address.State)" />
                             </div>
                             <div class="col-md-4">
-                                <label for="postCode" class="form-label">Post Code</label>
-                                <InputText id="postCode" class="form-control" @bind-Value="property.PostCode" />
+                                <label for="zipCode" class="form-label">Post Code</label>
+                                <InputText id="zipCode" class="form-control" @bind-Value="property.Address.ZipCode" />
+                                <ValidationMessage For="@(() => property.Address.ZipCode)" />
                             </div>
                         </div>
 
@@ -79,26 +82,26 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label for="weeklyRent" class="form-label">Weekly Rent Amount</label>
-                                <InputNumber id="weeklyRent" class="form-control" @bind-Value="property.WeeklyRentAmount" />
+                                <InputNumber id="weeklyRent" class="form-control" @bind-Value="property.RentAmount" />
                             </div>
                             <div class="col-md-4">
                                 <label for="leaseStart" class="form-label">Lease Start Date</label>
-                                <InputDate id="leaseStart" class="form-control" @bind-Value="property.LeaseStartDate" />
+                                <InputDate id="leaseStart" class="form-control" @bind-Value="property.LeaseDates.StartDate" />
                             </div>
                             <div class="col-md-4">
                                 <label for="leaseEnd" class="form-label">Lease End Date</label>
-                                <InputDate id="leaseEnd" class="form-control" @bind-Value="property.LeaseEndDate" />
+                                <InputDate id="leaseEnd" class="form-control" @bind-Value="property.LeaseDates.EndDate" />
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="propertyManager" class="form-label">Property Manager</label>
-                                <InputText id="propertyManager" class="form-control" @bind-Value="property.PropertyManager" />
+                                <label for="propertyManagerName" class="form-label">Property Manager Name</label>
+                                <InputText id="propertyManagerName" class="form-control" @bind-Value="property.PropertyManager.Name" />
                             </div>
                             <div class="col-md-6">
                                 <label for="propertyManagerContact" class="form-label">Property Manager Contact</label>
-                                <InputText id="propertyManagerContact" class="form-control" @bind-Value="property.PropertyManagerContact" />
+                                <InputText id="propertyManagerContact" class="form-control" @bind-Value="property.PropertyManager.Contact" />
                             </div>
                         </div>
 
@@ -124,7 +127,7 @@
 
 @code {
     [Parameter]
-    public Guid Id { get; set; } = Guid.Empty;
+    public string Id { get; set; } = string.Empty;
 
     private RentalProperty? property;
     private bool isLoading = true;
@@ -136,7 +139,7 @@
         {
             isLoading = true;
             
-            if (Id != Guid.Empty)
+            if (!string.IsNullOrEmpty(Id))
             {
                 property = await PropertyService.GetPropertyAsync(Id);
                 
@@ -147,7 +150,11 @@
             }
             else
             {
-                property = new RentalProperty();
+                property = new RentalProperty
+                {
+                    Address = new Address(),
+                    PropertyManager = new PropertyManager()
+                };
             }
         }
         catch (Exception ex)
@@ -172,28 +179,26 @@ private async Task HandleValidSubmit()
         errorMessage = null;
         
         // Ensure required fields are set
-        if (string.IsNullOrWhiteSpace(property.Address))
+        if (string.IsNullOrWhiteSpace(property.Address?.Street))
         {
-            errorMessage = "Address is required";
+            errorMessage = "Street address is required";
             return;
         }
         
         // Ensure all DateTime properties are in UTC format
         // Convert LeaseStartDate to UTC if it has a value
-        if (property.LeaseStartDate.HasValue)
-        {
-            property.LeaseStartDate = DateTime.SpecifyKind(property.LeaseStartDate.Value, DateTimeKind.Utc);
-        }
+        // Convert lease dates to UTC
+        property.LeaseDates.StartDate = DateTime.SpecifyKind(property.LeaseDates.StartDate, DateTimeKind.Utc);
         
         // Convert LeaseEndDate to UTC if it has a value
-        if (property.LeaseEndDate.HasValue)
-        {
-            property.LeaseEndDate = DateTime.SpecifyKind(property.LeaseEndDate.Value, DateTimeKind.Utc);
-        }
+        property.LeaseDates.EndDate = DateTime.SpecifyKind(property.LeaseDates.EndDate, DateTimeKind.Utc);
         
-        if (Id != Guid.Empty)
+        if (!string.IsNullOrEmpty(Id))
         {
-            // Always update the UpdatedAt timestamp
+            // Version is already tracked from when we loaded the property
+            // No need to fetch it again as that would create a race condition
+            
+            // Update the timestamp
             property.UpdatedAt = DateTime.UtcNow;
             
             var updatedProperty = await PropertyService.UpdatePropertyAsync(Id, property);
@@ -226,6 +231,11 @@ private async Task HandleValidSubmit()
                 errorMessage = "Failed to create property. Please try again.";
             }
         }
+    }
+    catch (InvalidOperationException ex) when (ex.Message.Contains("Concurrency conflict") || ex.Message.Contains("modified by another user"))
+    {
+        errorMessage = "Another user has modified this property while you were editing. Please reload the page to get the latest version.";
+        Console.WriteLine($"Concurrency conflict: {ex}");
     }
     catch (Exception ex)
     {

@@ -1,107 +1,94 @@
-using Microsoft.EntityFrameworkCore;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
+using MongoDB.Driver;
 
-namespace RentTrackerBackend.Services;
-
-public class PaymentService : IPaymentService
+namespace RentTrackerBackend.Services
 {
-    private readonly ApplicationDbContext _context;
-
-    public PaymentService(ApplicationDbContext context)
+    public interface IPaymentService
     {
-        _context = context;
+        Task<RentalPayment?> GetPaymentByIdAsync(string tenantId, string paymentId);
+        Task<IEnumerable<RentalPayment>> GetPaymentsByPropertyAsync(string tenantId, string propertyId);
+        Task<RentalPayment?> UpdatePaymentAsync(string tenantId, string paymentId, RentalPayment updatedPayment);
+        Task<bool> DeletePaymentAsync(string tenantId, string paymentId);
+        Task<RentalPayment> CreatePaymentAsync(RentalPayment payment);
     }
 
-    public async Task<RentalPayment?> GetPaymentByIdAsync(Guid paymentId)
+    public class PaymentService : IPaymentService
     {
-        return await _context.RentalPayments
-            .AsNoTracking()
-            .Include(p => p.PaymentMethod)
-            .FirstOrDefaultAsync(p => p.Id == paymentId);
-    }
+        private readonly IPaymentRepository _paymentRepository;
+        private readonly IMongoRepository<RentalProperty> _propertyRepository;
 
-    private async Task ValidatePropertyExistsAsync(Guid propertyId)
-    {
-        var exists = await _context.RentalProperties
-            .AsNoTracking()
-            .AnyAsync(p => p.Id == propertyId);
-
-        if (!exists)
+        public PaymentService(IPaymentRepository paymentRepository, IMongoRepository<RentalProperty> propertyRepository)
         {
-            throw new ArgumentException($"Property with ID {propertyId} not found.");
-        }
-    }
-
-    public async Task<IQueryable<RentalPayment>> GetPaymentsByPropertyQueryAsync(Guid propertyId)
-    {
-        await ValidatePropertyExistsAsync(propertyId);
-
-        return _context.RentalPayments
-            .AsNoTracking()
-            .Include(p => p.PaymentMethod)
-            .Where(p => p.RentalPropertyId == propertyId)
-            .OrderByDescending(p => p.PaymentDate);
-    }
-
-    public async Task<RentalPayment?> UpdatePaymentAsync(Guid paymentId, RentalPayment updatedPayment)
-    {
-        var existingPayment = await _context.RentalPayments
-            .FirstOrDefaultAsync(p => p.Id == paymentId);
-
-        if (existingPayment == null)
-        {
-            return null;
+            _paymentRepository = paymentRepository;
+            _propertyRepository = propertyRepository;
         }
 
-        // Update only the modifiable fields
-        existingPayment.Amount = updatedPayment.Amount;
-        existingPayment.PaymentDate = updatedPayment.PaymentDate.Kind == DateTimeKind.Utc
-            ? updatedPayment.PaymentDate
-            : DateTime.SpecifyKind(updatedPayment.PaymentDate, DateTimeKind.Utc);
-        existingPayment.PaymentMethodId = updatedPayment.PaymentMethodId;
-        existingPayment.PaymentReference = updatedPayment.PaymentReference;
-        existingPayment.Notes = updatedPayment.Notes;
-        existingPayment.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-        return existingPayment;
-    }
-
-    public async Task<bool> DeletePaymentAsync(Guid paymentId)
-    {
-        var payment = await _context.RentalPayments
-            .FirstOrDefaultAsync(p => p.Id == paymentId);
-
-        if (payment == null)
+        public async Task<RentalPayment?> GetPaymentByIdAsync(string tenantId, string paymentId)
         {
-            return false;
+            return await _paymentRepository.GetByIdAsync(tenantId, paymentId);
         }
 
-        _context.RentalPayments.Remove(payment);
-        await _context.SaveChangesAsync();
-        return true;
-    }
+        private async Task ValidatePropertyExistsAsync(string tenantId, string propertyId)
+        {
+            var property = await _propertyRepository.GetByIdAsync(tenantId, propertyId);
+            if (property == null)
+            {
+                throw new ArgumentException($"Property with ID {propertyId} not found.");
+            }
+        }
 
-    public async Task<RentalPayment> CreatePaymentAsync(RentalPayment payment)
-    {
-        await ValidatePropertyExistsAsync(payment.RentalPropertyId);
-// Always generate a new ID for new payments, regardless of what's provided
-payment.Id = SequentialGuidGenerator.NewSequentialGuid();
+        public async Task<IEnumerable<RentalPayment>> GetPaymentsByPropertyAsync(string tenantId, string propertyId)
+        {
+            await ValidatePropertyExistsAsync(tenantId, propertyId);
+            return await _paymentRepository.GetAllAsync(tenantId);
+        }
 
+        public async Task<RentalPayment?> UpdatePaymentAsync(string tenantId, string paymentId, RentalPayment updatedPayment)
+        {
+            var existingPayment = await _paymentRepository.GetByIdAsync(tenantId, paymentId);
+            if (existingPayment == null)
+            {
+                return null;
+            }
 
-        // Ensure PaymentDate is in UTC
-        payment.PaymentDate = payment.PaymentDate.Kind == DateTimeKind.Utc
-            ? payment.PaymentDate
-            : DateTime.SpecifyKind(payment.PaymentDate, DateTimeKind.Utc);
+            // Update only the modifiable fields
+            existingPayment.Amount = updatedPayment.Amount;
+            existingPayment.PaymentDate = updatedPayment.PaymentDate.Kind == DateTimeKind.Utc
+                ? updatedPayment.PaymentDate
+                : DateTime.SpecifyKind(updatedPayment.PaymentDate, DateTimeKind.Utc);
+            existingPayment.PaymentMethodId = updatedPayment.PaymentMethodId;
+            existingPayment.PaymentReference = updatedPayment.PaymentReference;
+            existingPayment.Notes = updatedPayment.Notes;
+            existingPayment.UpdatedAt = DateTime.UtcNow;
 
-        // Set timestamps
-        payment.CreatedAt = DateTime.UtcNow;
-        payment.UpdatedAt = DateTime.UtcNow;
+            await _paymentRepository.UpdateAsync(tenantId, paymentId, existingPayment);
+            return existingPayment;
+        }
 
-        _context.RentalPayments.Add(payment);
-        await _context.SaveChangesAsync();
-        
-        return payment;
+        public async Task<bool> DeletePaymentAsync(string tenantId, string paymentId)
+        {
+            try
+            {
+                await _paymentRepository.DeleteAsync(tenantId, paymentId);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<RentalPayment> CreatePaymentAsync(RentalPayment payment)
+        {
+            await ValidatePropertyExistsAsync(payment.TenantId, payment.RentalPropertyId);
+
+            // Ensure PaymentDate is in UTC
+            payment.PaymentDate = payment.PaymentDate.Kind == DateTimeKind.Utc
+                ? payment.PaymentDate
+                : DateTime.SpecifyKind(payment.PaymentDate, DateTimeKind.Utc);
+
+            return await _paymentRepository.CreateAsync(payment);
+        }
     }
 }

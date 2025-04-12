@@ -1,7 +1,9 @@
 @page "/login"
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.ComponentModel.DataAnnotations
+@using Microsoft.Extensions.Logging
 @inject IAuthenticationService AuthService
+@inject ILogger<Login> Logger
 @inject NavigationManager Navigation
 
 <PageTitle>Login</PageTitle>
@@ -92,6 +94,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error during login attempt");
             errorMessage = "An error occurred during login. Please try again.";
         }
         finally

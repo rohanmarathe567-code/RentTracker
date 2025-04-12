@@ -1,3 +1,23 @@
+[2025-04-12 22:22] - Fixed property update issues with version handling
+
+- Changed: Modified property update logic to properly handle optimistic concurrency
+- Rationale: Updates were failing silently due to incorrect version handling
+- Changes made:
+  * Now using database version instead of client-provided version
+  * Properly preserving CreatedAt timestamp
+  * Correctly setting UpdatedAt for current update
+- Impact: All property fields (including PropertyManagerName and Description) will now update correctly
+
+[2025-04-12 22:17] - Added PropertyManagerName and PropertyManagerContact fields to RentalProperty
+
+- Changed: Moved property manager information from Attributes dictionary to dedicated model fields
+- Rationale: Improve data structure and ensure consistent storage of property manager information
+- Changes made:
+  * Added fields to RentalProperty model
+  * Updated property creation and update endpoints
+  * Modified search functionality to use new fields
+- Impact: Provides more reliable storage and retrieval of property manager information
+
 # Decision Log
 
 This file records architectural and implementation decisions using a list format.

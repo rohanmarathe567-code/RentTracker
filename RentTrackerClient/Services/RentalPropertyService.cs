@@ -57,7 +57,7 @@ public class RentalPropertyService : HttpClientService
         return result;
     }
 
-    public async Task<RentalProperty?> GetPropertyAsync(Guid id)
+    public async Task<RentalProperty?> GetPropertyAsync(string id)
     {
         _logger.LogInformation($"Fetching rental property with ID: {id}");
         var property = await GetAsync<RentalProperty>($"{id}");
@@ -81,26 +81,35 @@ public class RentalPropertyService : HttpClientService
             _logger.LogInformation("Creating new rental property");
             
             // Enhanced JSON serialization logging
-            var serializedProperty = System.Text.Json.JsonSerializer.Serialize(property, new System.Text.Json.JsonSerializerOptions
+            var options = new System.Text.Json.JsonSerializerOptions
             {
                 WriteIndented = true,
-                PropertyNameCaseInsensitive = true
-            });
+                PropertyNameCaseInsensitive = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            };
+            var serializedProperty = System.Text.Json.JsonSerializer.Serialize(property, options);
             
             _logger.LogDebug($"Serialized Property JSON: {serializedProperty}");
             
             // Log individual property values for more detailed debugging
             _logger.LogDebug($"Property Validation: " +
                 $"Id={property.Id}, " +
-                $"Address={property.Address}, " +
-                $"WeeklyRentAmount={property.WeeklyRentAmount}, " +
+                $"Address={property.Address?.Street}, " +
+                $"City={property.Address?.City}, " +
+                $"State={property.Address?.State}, " +
+                $"ZipCode={property.Address?.ZipCode}, " +
+                $"RentAmount={property.RentAmount}, " +
+                $"LeaseStartDate={property.LeaseDates?.StartDate}, " +
+                $"LeaseEndDate={property.LeaseDates?.EndDate}, " +
+                $"PropertyManager={property.PropertyManager?.Name}, " +
+                $"PropertyManagerContact={property.PropertyManager?.Contact}, " +
                 $"CreatedAt={property.CreatedAt}, " +
                 $"UpdatedAt={property.UpdatedAt}");
             
             // Ensure required fields are set
-            if (string.IsNullOrWhiteSpace(property.Address))
+            if (string.IsNullOrWhiteSpace(property.Address?.Street))
             {
-                _logger.LogWarning("Cannot create property: Address is required");
+                _logger.LogWarning("Cannot create property: Street address is required");
                 return null;
             }
             
@@ -124,42 +133,58 @@ public class RentalPropertyService : HttpClientService
         }
     }
 
-    public async Task<RentalProperty?> UpdatePropertyAsync(Guid id, RentalProperty property)
+    public async Task<RentalProperty?> UpdatePropertyAsync(string id, RentalProperty property)
     {
-        _logger.LogInformation($"Updating rental property with ID: {id}");
+        _logger.LogInformation($"Updating rental property with ID: {id}, Version: {property.Version}");
         
-        // Enhanced JSON serialization logging
-        var serializedProperty = System.Text.Json.JsonSerializer.Serialize(property, new System.Text.Json.JsonSerializerOptions
+        try
         {
-            WriteIndented = true,
-            PropertyNameCaseInsensitive = true
-        });
-        
-        _logger.LogDebug($"Serialized Property JSON: {serializedProperty}");
-        
-        // Log individual property values for more detailed debugging
-        _logger.LogDebug($"Property Validation: " +
-            $"Id={property.Id}, " +
-            $"Address={property.Address}, " +
-            $"WeeklyRentAmount={property.WeeklyRentAmount}, " +
-            $"CreatedAt={property.CreatedAt}, " +
-            $"UpdatedAt={property.UpdatedAt}");
-        
-        var updatedProperty = await PutAsync<RentalProperty>($"{id}", property);
-        
-        if (updatedProperty != null)
-        {
-            _logger.LogInformation($"Successfully updated rental property with ID: {id}");
-        }
-        else
-        {
-            _logger.LogWarning($"Failed to update rental property with ID: {id}");
-        }
+            // Enhanced JSON serialization logging
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNameCaseInsensitive = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            };
+            var serializedProperty = System.Text.Json.JsonSerializer.Serialize(property, options);
+            
+            _logger.LogDebug($"Serialized Property JSON: {serializedProperty}");
+            
+            // Log individual property values for more detailed debugging
+            _logger.LogDebug($"Property Validation: " +
+                $"Id={property.Id}, " +
+                $"Address={property.Address?.Street}, " +
+                $"City={property.Address?.City}, " +
+                $"State={property.Address?.State}, " +
+                $"ZipCode={property.Address?.ZipCode}, " +
+                $"RentAmount={property.RentAmount}, " +
+                $"LeaseStartDate={property.LeaseDates?.StartDate}, " +
+                $"LeaseEndDate={property.LeaseDates?.EndDate}, " +
+                $"PropertyManager={property.PropertyManager?.Name}, " +
+                $"PropertyManagerContact={property.PropertyManager?.Contact}, " +
+                $"CreatedAt={property.CreatedAt}, " +
+                $"UpdatedAt={property.UpdatedAt}, " +
+                $"Version={property.Version}");
 
-        return updatedProperty;
+            var updatedProperty = await PutAsync<RentalProperty>($"{id}", property);
+            
+            if (updatedProperty != null)
+            {
+                _logger.LogInformation($"Successfully updated rental property with ID: {id}");
+                return updatedProperty;
+            }
+            
+            _logger.LogWarning($"Failed to update rental property with ID: {id}");
+            return null;
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("Concurrency conflict"))
+        {
+            _logger.LogWarning($"Concurrency conflict detected while updating property {id}. Version: {property.Version}");
+            throw new InvalidOperationException("This property has been modified by another user. Please refresh and try again.", ex);
+        }
     }
 
-    public async Task DeletePropertyAsync(Guid id)
+    public async Task DeletePropertyAsync(string id)
     {
         _logger.LogInformation($"Deleting rental property with ID: {id}");
         
@@ -175,7 +200,7 @@ public class RentalPropertyService : HttpClientService
         }
     }
 
-    public async Task<PaginatedResponse<RentalPayment>> GetPropertyPaymentsAsync(Guid id, PaginationParameters? parameters = null)
+    public async Task<PaginatedResponse<RentalPayment>> GetPropertyPaymentsAsync(string id, PaginationParameters? parameters = null)
     {
         _logger.LogInformation($"Fetching payments for rental property with ID: {id}");
         
@@ -188,6 +213,7 @@ public class RentalPropertyService : HttpClientService
                 var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
                 query["pageNumber"] = parameters.PageNumber.ToString();
                 query["pageSize"] = parameters.PageSize.ToString();
+                query["include"] = "PaymentMethod"; // Add include parameter for PaymentMethod
                 
                 if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
                 {
@@ -224,7 +250,7 @@ public class RentalPropertyService : HttpClientService
         }
     }
 
-    public async Task<List<Attachment>> GetPropertyAttachmentsAsync(Guid id)
+    public async Task<List<Attachment>> GetPropertyAttachmentsAsync(string id)
     {
         _logger.LogInformation($"Fetching attachments for rental property with ID: {id}");
         

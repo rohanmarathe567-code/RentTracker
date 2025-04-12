@@ -60,13 +60,19 @@
                             <div class="card-body">
                                 <div class="card-text mb-3">
                                     <div class="d-flex justify-content-between mb-2">
-                                        <span><i class="bi bi-geo-alt me-2"></i>@property.Suburb, @property.State</span>
+                                        <span><i class="bi bi-geo-alt me-2"></i>@property.Address</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2">
-                                        <span><i class="bi bi-cash me-2"></i>@(property.WeeklyRentAmount.HasValue ? $"${property.WeeklyRentAmount.Value:N2}/week" : "-")</span>
+                                        <span><i class="bi bi-cash me-2"></i>$@(property.RentAmount.ToString("N2"))/week</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span><i class="bi bi-person me-2"></i>@(property.PropertyManager.Name)</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span><i class="bi bi-telephone me-2"></i>@(property.PropertyManager.Contact)</span>
                                     </div>
                                     <div class="d-flex justify-content-between">
-                                        <span><i class="bi bi-calendar-event me-2"></i>Lease ends: @(property.LeaseEndDate.HasValue ? property.LeaseEndDate.Value.ToShortDateString() : "-")</span>
+                                        <span><i class="bi bi-calendar-event me-2"></i>Lease ends: @(property.LeaseDates.EndDate.ToShortDateString())</span>
                                     </div>
                                 </div>
                                 <div class="d-flex gap-2 justify-content-end" @onclick:stopPropagation="true">
@@ -136,7 +142,7 @@
                 <button type="button" class="btn-close" @onclick="CancelDelete" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete the property at @(propertyToDelete?.Address), @(propertyToDelete?.Suburb)?</p>
+                <p>Are you sure you want to delete the property at @(propertyToDelete?.Address))?</p>
                 <p class="text-danger">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
@@ -177,7 +183,7 @@
     private bool isDeleteModalVisible = false;
     private RentalProperty? propertyToDelete;
     private bool isAttachmentsModalVisible = false;
-    private Guid selectedPropertyId;
+    private string selectedPropertyId = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -242,12 +248,12 @@ private async Task OnSearchInput()
         NavigationManager.NavigateTo("/properties/add");
     }
 
-    private void NavigateToEditProperty(Guid id)
+    private void NavigateToEditProperty(string id)
     {
         NavigationManager.NavigateTo($"/properties/{id}");
     }
 
-    private void NavigateToPayments(Guid id)
+    private void NavigateToPayments(string id)
     {
         NavigationManager.NavigateTo($"/payments/{id}");
     }
@@ -297,7 +303,7 @@ private async Task OnSearchInput()
     }
 
 
-    private void ShowAttachments(Guid propertyId)
+    private void ShowAttachments(string propertyId)
     {
         selectedPropertyId = propertyId;
         isAttachmentsModalVisible = true;
@@ -306,6 +312,6 @@ private async Task OnSearchInput()
     private void HideAttachments()
     {
         isAttachmentsModalVisible = false;
-        selectedPropertyId = Guid.Empty;
+        selectedPropertyId = string.Empty;
     }
 }

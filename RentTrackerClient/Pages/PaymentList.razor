@@ -1,4 +1,4 @@
-@page "/payments/{PropertyId:guid}"
+@page "/payments/{PropertyId}"
 @using RentTrackerClient.Models
 @using RentTrackerClient.Models.Pagination
 @using RentTrackerClient.Services
@@ -19,7 +19,7 @@
             Rental Payments
             @if (property != null)
             {
-                <span class="fs-6 ms-1">for @property.Address, @property.Suburb</span>
+                <span class="fs-6 ms-1">for @property.Address</span>
             }
         </h4>
         <div>
@@ -120,9 +120,9 @@
                                 <span>@(parameters.SortDescending ? "▼" : "▲")</span>
                             }
                         </th>
-                        <th @onclick='@(() => SortTable("paymentmethod"))' style="cursor: pointer;">
+                        <th @onclick='@(() => SortTable("PaymentMethod"))' style="cursor: pointer;">
                             Method
-                            @if (parameters.SortField == "paymentmethod")
+                            @if (parameters.SortField == "PaymentMethod")
                             {
                                 <span>@(parameters.SortDescending ? "▼" : "▲")</span>
                             }
@@ -254,7 +254,7 @@
 @code
 {
     [Parameter]
-    public required Guid PropertyId { get; set; }
+    public required string PropertyId { get; set; }
 
     private PaginatedResponse<RentalPayment> paymentsResponse = new()
     {
@@ -272,7 +272,7 @@
     private bool showPaymentModal;
     private bool isDeleteModalVisible;
     private bool showAttachmentsModal;
-    private Guid? selectedPaymentId;
+    private string? selectedPaymentId;
     private string? errorMessage;
     private string? searchTerm;
 
@@ -363,7 +363,7 @@
         {
             RentalPropertyId = PropertyId,
             PaymentDate = DateTime.Today,
-            PaymentMethodId = Guid.Empty // Initialize with empty GUID
+            PaymentMethodId = string.Empty // Initialize with empty string
         };
         showPaymentModal = true;
     }

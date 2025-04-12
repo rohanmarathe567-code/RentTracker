@@ -1,4 +1,4 @@
-@page "/bulk-payments/{PropertyId:guid}"
+@page "/bulk-payments/{PropertyId}"
 @using System.ComponentModel.DataAnnotations
 @inject RentalPropertyService PropertyService
 @inject RentalPaymentService PaymentService
@@ -20,7 +20,7 @@ else
 {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4>
-            <span class="fs-6">for @property.Address, @property.Suburb</span>
+            <span class="fs-6">for @property.Address</span>
         </h4>
         <button class="btn btn-sm btn-outline-secondary" @onclick="NavigateBack">
             <i class="bi bi-arrow-left"></i>
@@ -115,7 +115,7 @@ else
 
 @code {
     [Parameter]
-    public required Guid PropertyId { get; set; }
+    public required string PropertyId { get; set; }
 
     private RentalProperty? property;
     private List<PaymentItem> _paymentsList = new();

@@ -2,27 +2,17 @@ namespace RentTrackerClient.Models;
 
 public class RentalProperty
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     
-    public string Address { get; set; } = string.Empty;
-    
-    public string? Suburb { get; set; }
-    
-    public string? State { get; set; }
-    
-    public string? PostCode { get; set; }
+    public Address Address { get; set; } = new();
     
     public string? Description { get; set; }
     
-    public decimal? WeeklyRentAmount { get; set; }
+    public decimal RentAmount { get; set; }
     
-    public DateTime? LeaseStartDate { get; set; }
+    public LeaseDates LeaseDates { get; set; } = new();
     
-    public DateTime? LeaseEndDate { get; set; }
-    
-    public string? PropertyManager { get; set; }
-    
-    public string? PropertyManagerContact { get; set; }
+    public PropertyManager PropertyManager { get; set; } = new();
     
     public DateTime CreatedAt { get; set; }
     
@@ -31,4 +21,14 @@ public class RentalProperty
     public List<RentalPayment> RentalPayments { get; set; } = new();
     
     public List<Attachment> Attachments { get; set; } = new();
+
+    public Dictionary<string, object> Attributes { get; set; } = new();
+    
+    public int Version { get; set; }
+}
+
+public class LeaseDates
+{
+    public DateTime StartDate { get; set; } = DateTime.UtcNow;
+    public DateTime EndDate { get; set; } = DateTime.UtcNow.AddYears(1);
 }

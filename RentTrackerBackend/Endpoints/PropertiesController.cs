@@ -1,11 +1,10 @@
-using Microsoft.EntityFrameworkCore;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Extensions;
-using RentTrackerBackend.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using MongoDB.Driver;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -16,7 +15,7 @@ public static class PropertiesController
         // Get paginated list of properties with optional search
         app.MapGet("/api/properties", async (
             [AsParameters] PaginationParameters parameters,
-            ApplicationDbContext db,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user,
             ILogger<Program> logger) =>
         {
@@ -33,39 +32,28 @@ public static class PropertiesController
             logger.LogInformation("GET /api/properties called with parameters: PageNumber={PageNumber}, PageSize={PageSize}",
                 parameters.PageNumber, parameters.PageSize);
 
-            // Log all claims for debugging
-            foreach (var claim in user.Claims)
-            {
-                logger.LogInformation("Claim: {Type} = {Value}", claim.Type, claim.Value);
-            }
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
             {
                 logger.LogWarning("User ID claim not found");
                 return Results.Unauthorized();
             }
-            
-            if (!Guid.TryParse(userIdString, out var userId))
-            {
-                logger.LogWarning("Invalid user ID format: {UserIdString}", userIdString);
-                return Results.Unauthorized();
-            }
 
-            var query = db.RentalProperties.AsNoTracking()
-                .Where(p => p.UserId == userId);
+            var properties = await propertyRepository.GetAllAsync(tenantId);
+            var query = properties.AsQueryable();
             
             // Optional: Add search filtering if needed
             if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
             {
                 var searchTerm = parameters.SearchTerm.ToLower();
                 query = query.Where(p =>
-                    p.Address.ToLower().Contains(searchTerm) ||
-                    (p.Suburb != null && p.Suburb.ToLower().Contains(searchTerm)) ||
-                    (p.State != null && p.State.ToLower().Contains(searchTerm)) ||
-                    (p.PostCode != null && p.PostCode.Contains(searchTerm)) ||
-                    (p.Description != null && p.Description.ToLower().Contains(searchTerm)) ||
-                    (p.PropertyManager != null && p.PropertyManager.ToLower().Contains(searchTerm)) ||
-                    (p.PropertyManagerContact != null && p.PropertyManagerContact.ToLower().Contains(searchTerm)));
+                    p.Address.Street.ToLower().Contains(searchTerm) ||
+                    p.Address.City.ToLower().Contains(searchTerm) ||
+                    p.Address.State.ToLower().Contains(searchTerm) ||
+                    p.Address.ZipCode.Contains(searchTerm) ||
+                    p.PropertyManager.Name.ToLower().Contains(searchTerm) ||
+                    p.PropertyManager.Contact.ToLower().Contains(searchTerm) ||
+                    (p.Attributes.ContainsKey("Description") && p.Attributes["Description"].ToString()!.ToLower().Contains(searchTerm)));
             }
 
             // Apply sorting if specified
@@ -74,77 +62,83 @@ public static class PropertiesController
                 query = parameters.SortField.ToLower() switch
                 {
                     "address" => parameters.SortDescending
-                        ? query.OrderByDescending(p => p.Address)
-                        : query.OrderBy(p => p.Address),
-                    "suburb" => parameters.SortDescending
-                        ? query.OrderByDescending(p => p.Suburb)
-                        : query.OrderBy(p => p.Suburb),
+                        ? query.OrderByDescending(p => p.Address.Street)
+                        : query.OrderBy(p => p.Address.Street),
+                    "city" => parameters.SortDescending
+                        ? query.OrderByDescending(p => p.Address.City)
+                        : query.OrderBy(p => p.Address.City),
                     "state" => parameters.SortDescending
-                        ? query.OrderByDescending(p => p.State)
-                        : query.OrderBy(p => p.State),
-                    "weeklyrentamount" => parameters.SortDescending
-                        ? query.OrderByDescending(p => p.WeeklyRentAmount)
-                        : query.OrderBy(p => p.WeeklyRentAmount),
+                        ? query.OrderByDescending(p => p.Address.State)
+                        : query.OrderBy(p => p.Address.State),
+                    "rentamount" => parameters.SortDescending
+                        ? query.OrderByDescending(p => p.RentAmount)
+                        : query.OrderBy(p => p.RentAmount),
                     "leasestartdate" => parameters.SortDescending
-                        ? query.OrderByDescending(p => p.LeaseStartDate)
-                        : query.OrderBy(p => p.LeaseStartDate),
+                        ? query.OrderByDescending(p => p.LeaseDates.StartDate)
+                        : query.OrderBy(p => p.LeaseDates.StartDate),
                     "leaseenddate" => parameters.SortDescending
-                        ? query.OrderByDescending(p => p.LeaseEndDate)
-                        : query.OrderBy(p => p.LeaseEndDate),
-                    _ => query.OrderBy(p => p.Address) // Default sort
+                        ? query.OrderByDescending(p => p.LeaseDates.EndDate)
+                        : query.OrderBy(p => p.LeaseDates.EndDate),
+                    _ => query.OrderBy(p => p.Address.Street) // Default sort
                 };
             }
             
-            var result = await query.ToPaginatedListAsync(parameters);
+            var result = query.ToPaginatedList(parameters);
             
             return Results.Ok(result);
         }).RequireAuthorization();
 
         // Get a specific property by ID
-        app.MapGet("/api/properties/{id}", async (Guid id, ApplicationDbContext db) =>
-            await db.RentalProperties.FindAsync(id) is RentalProperty property
-                ? Results.Ok(property)
-                : Results.NotFound()).RequireAuthorization();
+        app.MapGet("/api/properties/{id}", async (
+            string id,
+            IMongoRepository<RentalProperty> propertyRepository,
+            ClaimsPrincipal user) =>
+        {
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
+                return Results.Unauthorized();
+
+            var property = await propertyRepository.GetByIdAsync(tenantId, id);
+            return property != null ? Results.Ok(property) : Results.NotFound();
+        }).RequireAuthorization();
 
         // Create a new property
         app.MapPost("/api/properties", async (
             RentalProperty property,
-            ApplicationDbContext db,
+            IMongoRepository<RentalProperty> propertyRepository,
             ILogger<Program> logger,
             ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
             try
             {
-                property.UserId = userId;
-                logger.LogInformation("Creating new property: {@Property}", property);
+                // Create a new property instance to ensure we don't use any client-provided IDs
+                var newProperty = new RentalProperty
+                {
+                    TenantId = tenantId,
+                    Address = property.Address,
+                    RentAmount = property.RentAmount,
+                    LeaseDates = property.LeaseDates,
+                    PropertyManager = property.PropertyManager,
+                    Attributes = property.Attributes
+                };
+                
+                logger.LogInformation("Creating new property: {@Property}", newProperty);
                 
                 // Ensure required fields are set
-                if (string.IsNullOrWhiteSpace(property.Address))
+                if (string.IsNullOrWhiteSpace(property.Address.Street))
                 {
                     logger.LogWarning("Property creation failed: Address is required");
                     return Results.BadRequest("Address is required");
                 }
+
+                var createdProperty = await propertyRepository.CreateAsync(newProperty);
+                logger.LogInformation("Property created successfully with ID: {Id}", createdProperty.FormattedId);
                 
-                // Set default values for CreatedAt and UpdatedAt
-                property.CreatedAt = DateTime.UtcNow;
-                property.UpdatedAt = DateTime.UtcNow;
-                
-                // Always generate a new ID for new properties
-                property.Id = SequentialGuidGenerator.NewSequentialGuid();
-                
-                // No need to initialize navigation properties as they've been removed
-                
-                logger.LogDebug("Adding property to database: {@Property}", property);
-                db.RentalProperties.Add(property);
-                
-                await db.SaveChangesAsync();
-                logger.LogInformation("Property created successfully with ID: {Id}", property.Id);
-                
-                return Results.Created($"/api/properties/{property.Id}", property);
+                return Results.Created($"/api/properties/{createdProperty.Id}", createdProperty);
             }
             catch (Exception ex)
             {
@@ -159,62 +153,60 @@ public static class PropertiesController
 
         // Update an existing property
         app.MapPut("/api/properties/{id}", async (
-            Guid id,
+            string id,
             RentalProperty updatedProperty,
-            ApplicationDbContext db,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
-            var property = await db.RentalProperties.FindAsync(id);
+            var property = await propertyRepository.GetByIdAsync(tenantId, id);
             
             if (property == null)
                 return Results.NotFound();
 
-            if (property.UserId != userId)
-                return Results.Forbid();
+            // Create new property instance with existing ID
+            var propertyToUpdate = new RentalProperty
+            {
+                Id = property.Id,
+                TenantId = tenantId,
+                CreatedAt = property.CreatedAt,          // Preserve original creation time
+                UpdatedAt = DateTime.UtcNow,             // Set new update time
+                Version = property.Version,              // Use current version from DB, not client
+                Address = updatedProperty.Address,
+                RentAmount = updatedProperty.RentAmount,
+                LeaseDates = updatedProperty.LeaseDates,
+                PropertyManager = updatedProperty.PropertyManager,
+                Attributes = updatedProperty.Attributes,
+                PaymentIds = property.PaymentIds,        // Preserve existing payment references
+                AttachmentIds = property.AttachmentIds  // Preserve existing attachment references
+            };
             
-            property.Address = updatedProperty.Address;
-            property.Suburb = updatedProperty.Suburb;
-            property.State = updatedProperty.State;
-            property.PostCode = updatedProperty.PostCode;
-            property.Description = updatedProperty.Description;
-            property.WeeklyRentAmount = updatedProperty.WeeklyRentAmount;
-            property.LeaseStartDate = updatedProperty.LeaseStartDate;
-            property.LeaseEndDate = updatedProperty.LeaseEndDate;
-            property.PropertyManager = updatedProperty.PropertyManager;
-            property.PropertyManagerContact = updatedProperty.PropertyManagerContact;
-            property.UpdatedAt = DateTime.UtcNow;
+            await propertyRepository.UpdateAsync(tenantId, id, propertyToUpdate);
             
-            await db.SaveChangesAsync();
-            
-            return Results.Ok(property);
+            return Results.Ok(propertyToUpdate);
         }).RequireAuthorization();
 
         // Delete a property
         app.MapDelete("/api/properties/{id}", async (
-            Guid id,
-            ApplicationDbContext db,
+            string id,
+            IMongoRepository<RentalProperty> propertyRepository,
             ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
-            var property = await db.RentalProperties.FindAsync(id);
+            var property = await propertyRepository.GetByIdAsync(tenantId, id);
             
             if (property == null)
                 return Results.NotFound();
             
-            if (property.UserId != userId)
-                return Results.Forbid();
-            
-            db.RentalProperties.Remove(property);
-            await db.SaveChangesAsync();
+            await propertyRepository.DeleteAsync(tenantId, id);
             
             return Results.NoContent();
-        });
+        }).RequireAuthorization();
     }
 }

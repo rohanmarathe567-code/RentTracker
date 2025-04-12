@@ -1,21 +1,22 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models.Auth;
+using MongoDB.Driver;
 
 namespace RentTrackerBackend.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IMongoCollection<User> _users;
     private readonly JwtConfig _jwtConfig;
     
-    public AuthService(ApplicationDbContext context, JwtConfig jwtConfig)
+    public AuthService(IMongoClient client, JwtConfig jwtConfig)
     {
-        _context = context;
+        var database = client.GetDatabase("renttracker");
+        _users = database.GetCollection<User>(nameof(User));
         _jwtConfig = jwtConfig;
     }
     
@@ -28,19 +29,19 @@ public class AuthService : IAuthService
         
         var user = new User
         {
+            TenantId = request.Email, // Using email as tenant ID for simplicity
             Email = request.Email,
             PasswordHash = HashPassword(request.Password),
             UserType = UserType.User // Always create regular users through registration
         };
         
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        await _users.InsertOneAsync(user);
         
         var token = GenerateToken(user);
         
         return new AuthResponse
         {
-            UserId = user.Id,
+            UserId = user.Id.ToString(),
             Email = user.Email,
             UserType = user.UserType,
             Token = token,
@@ -50,8 +51,7 @@ public class AuthService : IAuthService
     
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await _users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
             
         if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
         {
@@ -62,7 +62,7 @@ public class AuthService : IAuthService
         
         return new AuthResponse
         {
-            UserId = user.Id,
+            UserId = user.Id.ToString(),
             Email = user.Email,
             UserType = user.UserType,
             Token = token,
@@ -72,7 +72,7 @@ public class AuthService : IAuthService
     
     public async Task<bool> IsEmailUniqueAsync(string email)
     {
-        return !await _context.Users.AnyAsync(u => u.Email == email);
+        return await _users.Find(u => u.Email == email).CountDocumentsAsync() == 0;
     }
     
     public string GenerateToken(User user)

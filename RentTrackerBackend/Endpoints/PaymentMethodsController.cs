@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using System.Security.Claims;
+using MongoDB.Driver;
 
 namespace RentTrackerBackend.Endpoints;
 
@@ -11,16 +11,21 @@ public static class PaymentMethodsController
     public static void MapPaymentMethodEndpoints(this WebApplication app)
     {
         // Get all payment methods
-        app.MapGet("/api/paymentmethods", async (ApplicationDbContext context, ClaimsPrincipal user) =>
+        app.MapGet("/api/paymentmethods", async (
+            IMongoRepository<PaymentMethod> repository,
+            ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
-            var paymentMethods = await context.PaymentMethods
-                .Where(p => p.IsSystemDefault || p.UserId == userId)
+            // Get system defaults and user's custom payment methods
+            var systemDefaults = await repository.GetAllAsync("system");
+            var userMethods = await repository.GetAllAsync(tenantId);
+
+            var paymentMethods = systemDefaults.Union(userMethods)
                 .OrderBy(p => p.Name)
-                .ToListAsync();
+                .ToList();
                 
             return Results.Ok(paymentMethods);
         })
@@ -29,35 +34,32 @@ public static class PaymentMethodsController
 
         // Create a new payment method
         app.MapPost("/api/paymentmethods", async (
-            ApplicationDbContext context,
+            IMongoRepository<PaymentMethod> repository,
             PaymentMethod paymentMethod,
             ClaimsPrincipal user) =>
         {
-            var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(tenantId))
                 return Results.Unauthorized();
 
             // Only admins can create system-wide payment methods
             if (paymentMethod.IsSystemDefault && !user.IsInRole("Admin"))
                 return Results.Forbid();
 
-            paymentMethod.UserId = paymentMethod.IsSystemDefault ? null : userId;
+            // Set the appropriate tenant ID based on whether it's a system default
+            paymentMethod.TenantId = paymentMethod.IsSystemDefault ? "system" : tenantId;
+            paymentMethod.UserId = tenantId;
 
-            paymentMethod.CreatedAt = DateTime.UtcNow;
-            paymentMethod.UpdatedAt = DateTime.UtcNow;
-
-            context.PaymentMethods.Add(paymentMethod);
-            await context.SaveChangesAsync();
+            var createdMethod = await repository.CreateAsync(paymentMethod);
 
             return Results.CreatedAtRoute(
                 "GetPaymentMethods",
-                new { id = paymentMethod.Id },
-                paymentMethod
+                new { id = createdMethod.Id.ToString() },
+                createdMethod
             );
         })
         .WithName("CreatePaymentMethod")
         .Produces<PaymentMethod>(StatusCodes.Status201Created)
         .Produces(StatusCodes.Status400BadRequest);
     }
-
 }

@@ -33,19 +33,19 @@ namespace RentTrackerBackend.Data
             _collection.Indexes.CreateMany(indexes);
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync(string tenantId)
+        public virtual async Task<IEnumerable<T>> GetAllAsync(string tenantId)
         {
             return await _collection.Find(x => x.TenantId == tenantId).ToListAsync();
         }
 
-        public async Task<T> GetByIdAsync(string tenantId, string id)
+        public virtual async Task<T> GetByIdAsync(string tenantId, string id)
         {
-            return await _collection.Find(x => 
-                x.TenantId == tenantId && 
+            return await _collection.Find(x =>
+                x.TenantId == tenantId &&
                 x.Id == ObjectId.Parse(id)).FirstOrDefaultAsync();
         }
 
-        public async Task<T> CreateAsync(T entity)
+        public virtual async Task<T> CreateAsync(T entity)
         {
             entity.CreatedAt = DateTime.UtcNow;
             entity.UpdatedAt = DateTime.UtcNow;
@@ -53,15 +53,25 @@ namespace RentTrackerBackend.Data
             return entity;
         }
 
-        public async Task UpdateAsync(string tenantId, string id, T entity)
+        public virtual async Task UpdateAsync(string tenantId, string id, T entity)
         {
             entity.UpdatedAt = DateTime.UtcNow;
-            await _collection.ReplaceOneAsync(
-                x => x.TenantId == tenantId && x.Id == ObjectId.Parse(id),
+            var currentVersion = entity.Version;
+            entity.Version++;
+
+            var result = await _collection.ReplaceOneAsync(
+                x => x.TenantId == tenantId &&
+                     x.Id == ObjectId.Parse(id) &&
+                     x.Version == currentVersion,
                 entity);
+
+            if (result.ModifiedCount == 0)
+            {
+                throw new InvalidOperationException("Concurrency conflict - the document has been modified by another user.");
+            }
         }
 
-        public async Task DeleteAsync(string tenantId, string id)
+        public virtual async Task DeleteAsync(string tenantId, string id)
         {
             await _collection.DeleteOneAsync(
                 x => x.TenantId == tenantId && x.Id == ObjectId.Parse(id));

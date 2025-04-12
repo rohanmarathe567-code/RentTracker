@@ -17,7 +17,7 @@ public class RentalPaymentService : HttpClientService
     }
 
 
-    public async Task<RentalPayment?> GetPaymentAsync(Guid id)
+    public async Task<RentalPayment?> GetPaymentAsync(string id)
     {
         _logger.LogInformation($"Fetching rental payment with ID: {id}");
         var payment = await GetAsync<RentalPayment>($"{id}");
@@ -54,7 +54,7 @@ public class RentalPaymentService : HttpClientService
         return createdPayment;
     }
 
-    public async Task<RentalPayment?> UpdatePaymentAsync(Guid propertyId, Guid id, RentalPayment payment)
+    public async Task<RentalPayment?> UpdatePaymentAsync(string propertyId, string id, RentalPayment payment)
     {
         _logger.LogInformation($"Updating rental payment with ID: {id} for property {propertyId}");
         _logger.LogDebug($"Updated payment details: {System.Text.Json.JsonSerializer.Serialize(payment)}");
@@ -73,7 +73,7 @@ public class RentalPaymentService : HttpClientService
         return updatedPayment;
     }
 
-    public async Task DeletePaymentAsync(Guid propertyId, Guid id)
+    public async Task DeletePaymentAsync(string propertyId, string id)
     {
         _logger.LogInformation($"Deleting rental payment with ID: {id} for property {propertyId}");
         
@@ -89,7 +89,7 @@ public class RentalPaymentService : HttpClientService
         }
     }
 
-    public async Task<List<RentalPayment>> GetPaymentsByPropertyAsync(Guid propertyId)
+    public async Task<List<RentalPayment>> GetPaymentsByPropertyAsync(string propertyId)
     {
         _logger.LogInformation($"Fetching payments for property with ID: {propertyId}");
         
@@ -109,7 +109,7 @@ public class RentalPaymentService : HttpClientService
         }
     }
 
-    public async Task<decimal> GetTotalPaymentsForPropertyAsync(Guid propertyId)
+    public async Task<decimal> GetTotalPaymentsForPropertyAsync(string propertyId)
     {
         _logger.LogInformation($"Calculating total payments for property with ID: {propertyId}");
         

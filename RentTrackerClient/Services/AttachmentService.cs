@@ -43,7 +43,7 @@ public class AttachmentService : HttpClientService
         return attachment;
     }
 
-    public async Task<Attachment?> UploadAttachmentAsync(Guid propertyId, IBrowserFile file, string? description = null, string[]? tags = null)
+    public async Task<Attachment?> UploadAttachmentAsync(string propertyId, IBrowserFile file, string? description = null, string[]? tags = null)
     {
         _logger.LogInformation($"Uploading attachment for property ID: {propertyId}");
         _logger.LogDebug($"Attachment filename: {file.Name}");
@@ -94,7 +94,7 @@ public class AttachmentService : HttpClientService
         }
     }
 
-    public async Task<List<Attachment>> GetAttachmentsByPropertyAsync(Guid propertyId)
+    public async Task<List<Attachment>> GetAttachmentsByPropertyAsync(string propertyId)
     {
         _logger.LogInformation($"Fetching attachments for property with ID: {propertyId}");
         
@@ -104,7 +104,7 @@ public class AttachmentService : HttpClientService
         return attachments;
     }
 
-    public async Task<List<Attachment>> GetAttachmentsByPaymentAsync(Guid propertyId, Guid paymentId)
+    public async Task<List<Attachment>> GetAttachmentsByPaymentAsync(string propertyId, string paymentId)
     {
         _logger.LogInformation($"Fetching attachments for property ID: {propertyId}, payment ID: {paymentId}");
         
@@ -114,7 +114,7 @@ public class AttachmentService : HttpClientService
         return attachments;
     }
 
-    public async Task<Attachment?> UploadAttachmentToPaymentAsync(Guid propertyId, Guid paymentId, IBrowserFile file, string? description = null, string[]? tags = null)
+    public async Task<Attachment?> UploadAttachmentToPaymentAsync(string propertyId, string paymentId, IBrowserFile file, string? description = null, string[]? tags = null)
     {
         _logger.LogInformation($"Uploading attachment for property ID: {propertyId}, payment ID: {paymentId}");
         _logger.LogDebug($"Attachment filename: {file.Name}");
@@ -165,7 +165,7 @@ public class AttachmentService : HttpClientService
         }
     }
 
-    public async Task DeleteAttachmentAsync(Guid id)
+    public async Task DeleteAttachmentAsync(string id)
     {
         _logger.LogInformation($"Deleting attachment with ID: {id}");
         
@@ -181,7 +181,7 @@ public class AttachmentService : HttpClientService
         }
     }
 
-    public async Task<Stream> DownloadAttachmentAsync(Guid id)
+    public async Task<Stream> DownloadAttachmentAsync(string id)
     {
         _logger.LogInformation($"Downloading attachment with ID: {id}");
 

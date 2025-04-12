@@ -1,22 +1,23 @@
-using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using RentTrackerBackend.Models.Pagination;
 
 namespace RentTrackerBackend.Extensions;
 
 public static class PaginationExtensions
 {
-    public static async Task<PaginatedResponse<T>> ToPaginatedListAsync<T>(
-        this IQueryable<T> query, 
+    public static PaginatedResponse<T> ToPaginatedList<T>(
+        this IEnumerable<T> source, 
         PaginationParameters parameters)
     {
         parameters.Validate();
         
-        var totalCount = await query.CountAsync();
+        var enumerable = source.ToList();
+        var totalCount = enumerable.Count;
         
-        var items = await query
+        var items = enumerable
             .Skip((parameters.PageNumber - 1) * parameters.PageSize)
             .Take(parameters.PageSize)
-            .ToListAsync();
+            .ToList();
         
         return PaginatedResponse<T>.Create(
             items, 
@@ -25,13 +26,13 @@ public static class PaginationExtensions
             parameters.PageSize);
     }
     
-    public static IQueryable<T> ApplyPagination<T>(
-        this IQueryable<T> query, 
+    public static IEnumerable<T> ApplyPagination<T>(
+        this IEnumerable<T> source, 
         PaginationParameters parameters)
     {
         parameters.Validate();
         
-        return query
+        return source
             .Skip((parameters.PageNumber - 1) * parameters.PageSize)
             .Take(parameters.PageSize);
     }
