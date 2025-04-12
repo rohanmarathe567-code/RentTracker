@@ -26,11 +26,17 @@ This file provides a high-level overview of the project and the expected product
 * Improved data export functionality
 * Advanced search and filtering options
 * Enhanced API documentation and testing
+* Flexible property attributes support
+* Custom fields for properties
+* Extended metadata support
 
 ## Overall Architecture
 
 * ASP.NET Core minimal API (.NET 6+)
-* Entity Framework Core with PostgreSQL database
-* Three main models: RentalProperty, RentalPayment, and Attachment
+* MongoDB database with flexible document schema
+* Document-based models with embedded payments and attachments
 * RESTful API endpoints for CRUD operations
 * FileService for handling file uploads and downloads
+* Redis caching layer for performance optimization
+
+2025-04-12 09:17 - Updated architecture to use MongoDB for better schema flexibility and document-based structure

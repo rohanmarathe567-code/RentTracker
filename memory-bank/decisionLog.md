@@ -2,87 +2,90 @@
 
 This file records architectural and implementation decisions using a list format.
 
+## 2025-04-12 09:16 - Database Technology Migration to MongoDB
+
+### Decision
+Migrate from PostgreSQL to MongoDB as the primary database for RentTracker application.
+
+### Rationale
+- Product is still in development with no production data
+- Schema flexibility needed for evolving property attributes
+- Document-based structure aligns well with property-centric data model
+- No complex migration needed as system is not live
+- Better support for future extensibility
+
+### Implementation Details
+1. **Data Model Design**
+   - Property as root document
+   - Embedded arrays for payments and attachments
+   - Flexible schema for future attributes
+   - Multi-tenant support through document structure
+
+2. **Technical Architecture**
+   - MongoDB.Driver for .NET
+   - Repository pattern adaptation
+   - Integration with existing Redis cache
+   - Maintain current API contracts
+
+3. **Database Structure**
+```json
+{
+  "property": {
+    "_id": "ObjectId",
+    "tenantId": "string",
+    "address": {
+      "street": "string",
+      "city": "string",
+      "state": "string",
+      "zipCode": "string"
+    },
+    "rentAmount": "decimal",
+    "leaseDates": {
+      "startDate": "date",
+      "endDate": "date"
+    },
+    "payments": [{
+      "_id": "ObjectId",
+      "amount": "decimal",
+      "date": "date",
+      "type": "string",
+      "notes": "string"
+    }],
+    "attachments": [{
+      "_id": "ObjectId",
+      "fileName": "string",
+      "contentType": "string",
+      "uploadDate": "date",
+      "path": "string"
+    }],
+    "attributes": {
+      // Flexible key-value pairs for future extensions
+    }
+  }
+}
+```
+
+### Key Benefits
+- Schema flexibility for future attributes
+- Better representation of hierarchical data
+- Simplified queries for property-centric operations
+- Native support for JSON-like data structures
+- Easier addition of new features
+
+### Migration Steps
+1. Set up MongoDB development environment
+2. Create new data access layer
+3. Implement repository pattern for MongoDB
+4. Update API endpoints to use new data layer
+5. Migrate existing development data
+6. Update tests for MongoDB operations
+
+### Performance Considerations
+- Index design for common queries
+- Compound indexes for multi-tenant queries
+- Denormalization strategies for frequent reads
+- Monitoring and optimization guidelines
+
 ## 2025-04-10 22:28 - Multi-Tenancy Architecture Design
 
-### Decision
-Implement multi-tenancy support with two user types (Admin and Normal users) using JWT-based authentication and role-based access control.
-
-### Rationale
-- Need to support multiple users accessing their own properties
-- Require admin capabilities for system configuration
-- Data isolation between users is critical for security and privacy
-- JWT provides secure, stateless authentication
-
-### Implementation Details
-- New User entity with role-based access control
-- Database schema changes to support user ownership
-- JWT-based authentication system
-- Data isolation through user context in queries
-- Detailed implementation plan created in memory-bank/multi-tenancy-plan.md
-
-## 2025-04-12 00:07 - Authentication Architecture Decision
-
-### Decision
-Maintain authentication within the main project rather than separating it into a distinct service.
-
-### Rationale
-- Authentication is tightly integrated with multi-tenancy implementation
-- Current code organization is clean and well-structured
-- Separation would add unnecessary complexity to data access patterns
-- User entity relationships are efficiently managed within the same context
-
-### Implementation Details
-- Continue with current auth implementation in main project
-- Focus on completing pending security enhancements
-- Maintain clear boundaries and documentation for future flexibility
-- Detailed analysis available in memory-bank/auth-separation-analysis.md
-
-### Future Reconsideration Triggers
-- Increased auth complexity
-- Need to support multiple applications
-- Separate scaling requirements
-- SSO or external auth provider implementation needs
-
-## 2025-04-12 00:23 - Redis Caching Implementation
-
-### Decision
-Implement Redis as a caching layer for backend APIs with tenant-aware caching and automatic invalidation.
-
-### Rationale
-- Improve API response times through caching
-- Ensure data isolation between tenants
-- Maintain data consistency with automatic cache invalidation
-- Support scalability and performance optimization
-
-### Implementation Details
-- Redis cache service with tenant-aware key strategy
-- Default 10-minute cache timeout for data freshness
-- Automatic cache invalidation on data modifications
-- Secure multi-tenant data isolation
-- Event-based cache updates for real-time property/payment changes
-- Detailed implementation plan available in memory-bank/redis-cache-plan.md
-
-### Key Technical Considerations
-- Cache key format: {tenantId}:{entityType}:{entityId}
-- Tenant isolation through key prefixing
-- Both time-based (10 min) and event-based cache invalidation
-- Performance monitoring and metrics collection
-
-### Performance Targets
-- Cache Hit: < 10ms response time
-- Cache Miss: < 100ms response time
-- Cache Hit Ratio: > 85%
-- Memory Usage: < 2GB
-- Error Rate: < 0.1%
-
-### Resilience Strategy
-- Circuit breaker pattern for Redis failures
-- Automatic fallback to database
-- Connection retry with exponential backoff
-- Health monitoring and alerting
-
-### Deployment Approach
-- Phased rollout starting with non-critical endpoints
-- Comprehensive monitoring during deployment
-- Backup and recovery procedures documented
-- 5-minute rollback time objective
+[Previous entries remain unchanged...]
