@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Services;
@@ -62,17 +61,14 @@ try
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    {
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        options.UseNpgsql(connectionString);
-    });
 
-    // Register Storage and Attachment Services
+    // Configure MongoDB
+    builder.Services.AddMongoDb(builder.Configuration);
+
+    // Register Services
     builder.Services.AddScoped<IStorageService, FileService>();
     builder.Services.AddScoped<IAttachmentService, AttachmentService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
-    builder.Services.AddScoped<DatabaseSeeder>();
     
     // Add JWT authentication
     builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -92,19 +88,6 @@ try
     // Add authentication & authorization middleware
     app.UseAuthentication();
     app.UseAuthorization();
-
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        
-        // Apply migrations
-        await dbContext.Database.MigrateAsync();
-        
-        // Seed initial data
-        var seeder = services.GetRequiredService<DatabaseSeeder>();
-        await seeder.SeedAsync();
-    }
 // Map controllers and endpoints
 app.MapControllers();
 app.MapHealthEndpoints();

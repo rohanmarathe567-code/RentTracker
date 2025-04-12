@@ -1,39 +1,25 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using RentTrackerBackend.Services;
+using MongoDB.Bson.Serialization.Attributes;
 
-namespace RentTrackerBackend.Models;
-
-public class RentalPayment
+namespace RentTrackerBackend.Models
 {
-    [Key]
-    public Guid Id { get; set; } = SequentialGuidGenerator.NewSequentialGuid();
-    
-    [Required]
-    [ForeignKey(nameof(RentalProperty))]
-    public Guid RentalPropertyId { get; set; }
-    public virtual RentalProperty RentalProperty { get; set; } = null!;
-    
-    [Required]
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal Amount { get; set; }
-    
-    [Required]
-    public DateTime PaymentDate { get; set; }
-    
-    [Required]
-    [ForeignKey(nameof(PaymentMethod))]
-    public Guid PaymentMethodId { get; set; }
-    public virtual PaymentMethod? PaymentMethod { get; set; }
-    
-    [StringLength(100)]
-    public string? PaymentReference { get; set; }
-    
-    [StringLength(500)]
-    public string? Notes { get; set; }
-    
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    
+    public class RentalPayment : BaseDocument
+    {
+        public string RentalPropertyId { get; set; } = string.Empty;
+        
+        [BsonIgnore]
+        public RentalProperty? RentalProperty { get; set; }
+        
+        public decimal Amount { get; set; }
+        
+        public DateTime PaymentDate { get; set; }
+        
+        public string? PaymentMethodId { get; set; }
+        
+        [BsonIgnore]
+        public PaymentMethod? PaymentMethod { get; set; }
+        
+        public string? PaymentReference { get; set; }
+        
+        public string? Notes { get; set; }
+    }
 }
