@@ -22,6 +22,8 @@ public class AuthenticationService : IAuthenticationService
     private string? _authToken;
     private readonly AuthenticationStateProvider _authStateProvider;
     private readonly ILogger<AuthenticationService> _logger;
+    private readonly ILocalStorageService _localStorage;
+    private const string TokenKey = "authToken";
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(_authToken);
 
@@ -29,16 +31,20 @@ public class AuthenticationService : IAuthenticationService
         HttpClient httpClient, 
         string baseUrl, 
         AuthenticationStateProvider authStateProvider,
-        ILogger<AuthenticationService> logger)
+        ILogger<AuthenticationService> logger,
+        ILocalStorageService localStorage)
     {
         _httpClient = httpClient;
         _baseUrl = baseUrl.TrimEnd('/');
         _authStateProvider = authStateProvider;
         _logger = logger;
+        _localStorage = localStorage;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         };
+        
+        // Note: Initialization will happen when GetTokenAsync is first called
     }
 
     public async Task<bool> LoginAsync(string email, string password)
@@ -67,6 +73,9 @@ public class AuthenticationService : IAuthenticationService
             _authToken = loginResponse.Token;
             _httpClient.DefaultRequestHeaders.Authorization = 
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authToken);
+
+            // Store token in localStorage
+            await _localStorage.SetItemAsync(TokenKey, _authToken);
 
             // Force auth state to update
             if (_authStateProvider is CustomAuthenticationStateProvider customProvider)
@@ -108,6 +117,7 @@ public class AuthenticationService : IAuthenticationService
     {
         _authToken = null;
         _httpClient.DefaultRequestHeaders.Authorization = null;
+        await _localStorage.RemoveItemAsync(TokenKey);
 
         // Force auth state to update
         if (_authStateProvider is CustomAuthenticationStateProvider customProvider)
@@ -116,9 +126,45 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public Task<string?> GetTokenAsync()
+    private bool _initialized;
+    private Task? _initializationTask;
+
+    public async Task<string?> GetTokenAsync()
     {
-        return Task.FromResult(_authToken);
+        if (!_initialized)
+        {
+            if (_initializationTask == null)
+            {
+                _initializationTask = InitializeAuthTokenAsync();
+            }
+            await _initializationTask;
+            _initialized = true;
+        }
+        return _authToken;
+    }
+
+    private async Task InitializeAuthTokenAsync()
+    {
+        try
+        {
+            var token = await _localStorage.GetItemAsync(TokenKey);
+            if (!string.IsNullOrEmpty(token))
+            {
+                _authToken = token;
+                _httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authToken);
+
+                // Force auth state to update if needed
+                if (_authStateProvider is CustomAuthenticationStateProvider customProvider)
+                {
+                    await customProvider.UpdateAuthenticationState(token);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize auth token");
+        }
     }
 }
 

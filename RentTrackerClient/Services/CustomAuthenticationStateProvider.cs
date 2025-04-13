@@ -7,16 +7,16 @@ namespace RentTrackerClient.Services;
 
 public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
-    private readonly IJSRuntime _jsRuntime;
+    private readonly ILocalStorageService _localStorage;
     private ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
     private ClaimsPrincipal? _currentUser;
     private const string TokenKey = "authToken";
 
     private bool _isInitialized;
 
-    public CustomAuthenticationStateProvider(IJSRuntime jsRuntime)
+    public CustomAuthenticationStateProvider(ILocalStorageService localStorage)
     {
-        _jsRuntime = jsRuntime;
+        _localStorage = localStorage;
     }
 
     private async Task InitializeAuthenticationStateAsync()
@@ -40,32 +40,18 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     private async Task<string?> GetPersistedTokenAsync()
     {
-        try
-        {
-            return await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", TokenKey);
-        }
-        catch
-        {
-            return null;
-        }
+        return await _localStorage.GetItemAsync(TokenKey);
     }
 
     private async Task PersistTokenAsync(string? token)
     {
-        try
+        if (token == null)
         {
-            if (token == null)
-            {
-                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", TokenKey);
-            }
-            else
-            {
-                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", TokenKey, token);
-            }
+            await _localStorage.RemoveItemAsync(TokenKey);
         }
-        catch
+        else
         {
-            // Handle or log any localStorage errors
+            await _localStorage.SetItemAsync(TokenKey, token);
         }
     }
 

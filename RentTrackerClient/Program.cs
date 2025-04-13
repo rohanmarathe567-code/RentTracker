@@ -19,6 +19,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://
 // Add Authentication Services
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 
 // Add Authentication Service
 builder.Services.AddScoped(sp =>
@@ -26,7 +27,8 @@ builder.Services.AddScoped(sp =>
         sp.GetRequiredService<HttpClient>(),
         "http://localhost:7000",
         sp.GetRequiredService<AuthenticationStateProvider>(),
-        sp.GetRequiredService<ILogger<AuthenticationService>>()
+        sp.GetRequiredService<ILogger<AuthenticationService>>(),
+        sp.GetRequiredService<ILocalStorageService>()
     )
 );
 builder.Services.AddScoped<IAuthenticationService>(sp => sp.GetRequiredService<AuthenticationService>());
