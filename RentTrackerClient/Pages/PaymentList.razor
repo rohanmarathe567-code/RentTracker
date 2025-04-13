@@ -6,6 +6,7 @@
 @using RentTrackerClient.Components
 @using Microsoft.Extensions.Logging
 @inject RentalPaymentService PaymentService
+@inject PaymentMethodService PaymentMethodService
 @inject RentalPropertyService PropertyService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
@@ -27,7 +28,7 @@
                 <i class="bi bi-arrow-left"></i>
                 <span class="ms-1">Back</span>
             </button>
-            <button class="btn btn-sm btn-primary" @onclick="ShowAddPaymentModal">
+            <button class="btn btn-sm btn-primary" @onclick="async () => await ShowAddPaymentModal()">
                 <i class="bi bi-plus-lg"></i>
                 <span class="ms-1">Add Payment</span>
             </button>
@@ -357,13 +358,22 @@
         NavigationManager.NavigateTo($"/bulk-payments/{PropertyId}");
     }
 
-    private void ShowAddPaymentModal()
+    private async Task ShowAddPaymentModal()
     {
+        // Get payment methods to set a default
+        var paymentMethods = await PaymentMethodService.GetPaymentMethodsAsync();
+        var defaultMethod = paymentMethods.FirstOrDefault();
+
         editingPayment = new RentalPayment
         {
             RentalPropertyId = PropertyId,
             PaymentDate = DateTime.Today,
-            PaymentMethodId = string.Empty // Initialize with empty string
+            PaymentMethodId = defaultMethod?.Id ?? string.Empty,
+            PaymentMethod = defaultMethod != null ? new PaymentMethod
+            {
+                Id = defaultMethod.Id,
+                Name = defaultMethod.Name
+            } : null
         };
         showPaymentModal = true;
     }

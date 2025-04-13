@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace RentTrackerClient.Models;
 
 public class RentalProperty
@@ -6,7 +8,7 @@ public class RentalProperty
     
     public Address Address { get; set; } = new();
     
-    public string? Description { get; set; }
+    public string Description { get; set; } = string.Empty;
     
     public decimal RentAmount { get; set; }
     

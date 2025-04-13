@@ -7,6 +7,7 @@ namespace RentTrackerBackend.Models
     public class RentalProperty : BaseDocument
     {
         public Address Address { get; set; } = new Address();
+        public string Description { get; set; } = string.Empty;
         public PropertyManager PropertyManager { get; set; } = new PropertyManager();
         public decimal RentAmount { get; set; }
         public LeaseDates LeaseDates { get; set; } = new LeaseDates();

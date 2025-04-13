@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using RentTrackerClient.Models;
 using RentTrackerClient.Models.Pagination;
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Web;
 using System;
 
@@ -213,7 +215,8 @@ public class RentalPropertyService : HttpClientService
                 var query = System.Web.HttpUtility.ParseQueryString(string.Empty);
                 query["pageNumber"] = parameters.PageNumber.ToString();
                 query["pageSize"] = parameters.PageSize.ToString();
-                query["include"] = "PaymentMethod"; // Add include parameter for PaymentMethod
+                parameters.Include = "PaymentMethod"; // Set include parameter for PaymentMethod
+                query["include"] = parameters.Include;
                 
                 if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
                 {
@@ -230,7 +233,21 @@ public class RentalPropertyService : HttpClientService
             }
             
             // Use GetAsync instead of GetListAsync to get the paginated response
-            var paginatedResponse = await GetAsync<PaginatedResponse<RentalPayment>>($"{id}/payments{queryString}");
+            var fullUrl = $"{_baseUrl}/{id}/payments{queryString}";
+            var response = await _httpClient.GetAsync(fullUrl);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            _logger.LogDebug($"Raw Response: {responseContent}");
+            
+            response.EnsureSuccessStatusCode();
+            var paginatedResponse = JsonSerializer.Deserialize<PaginatedResponse<RentalPayment>>(responseContent, _jsonOptions);
+
+            if (paginatedResponse != null)
+            {
+                foreach (var payment in paginatedResponse.Items)
+                {
+                    _logger.LogDebug($"Payment {payment.Id}: Method=[{payment.PaymentMethodId}], PaymentMethod={JsonSerializer.Serialize(payment.PaymentMethod)}");
+                }
+            }
             
             if (paginatedResponse != null)
             {

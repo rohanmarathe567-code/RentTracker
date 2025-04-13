@@ -20,6 +20,11 @@ public class PaginationParameters
     
     public bool SortDescending { get; set; }
     
+    /// <summary>
+    /// Comma-separated list of related entities to include in the response
+    /// </summary>
+    public string? Include { get; set; }
+    
     
     public void Validate()
     {

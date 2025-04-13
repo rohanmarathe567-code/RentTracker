@@ -53,7 +53,7 @@ public static class PropertiesController
                     p.Address.ZipCode.Contains(searchTerm) ||
                     p.PropertyManager.Name.ToLower().Contains(searchTerm) ||
                     p.PropertyManager.Contact.ToLower().Contains(searchTerm) ||
-                    (p.Attributes.ContainsKey("Description") && p.Attributes["Description"].ToString()!.ToLower().Contains(searchTerm)));
+                    p.Description.ToLower().Contains(searchTerm));
             }
 
             // Apply sorting if specified
@@ -120,10 +120,10 @@ public static class PropertiesController
                 {
                     TenantId = tenantId,
                     Address = property.Address,
+                    Description = property.Description,
                     RentAmount = property.RentAmount,
                     LeaseDates = property.LeaseDates,
-                    PropertyManager = property.PropertyManager,
-                    Attributes = property.Attributes
+                    PropertyManager = property.PropertyManager
                 };
                 
                 logger.LogInformation("Creating new property: {@Property}", newProperty);
@@ -176,6 +176,7 @@ public static class PropertiesController
                 UpdatedAt = DateTime.UtcNow,             // Set new update time
                 Version = property.Version,              // Use current version from DB, not client
                 Address = updatedProperty.Address,
+                Description = updatedProperty.Description,
                 RentAmount = updatedProperty.RentAmount,
                 LeaseDates = updatedProperty.LeaseDates,
                 PropertyManager = updatedProperty.PropertyManager,

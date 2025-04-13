@@ -7,7 +7,7 @@ namespace RentTrackerBackend.Services
     public interface IPaymentService
     {
         Task<RentalPayment?> GetPaymentByIdAsync(string tenantId, string paymentId);
-        Task<IEnumerable<RentalPayment>> GetPaymentsByPropertyAsync(string tenantId, string propertyId);
+        Task<IEnumerable<RentalPayment>> GetPaymentsByPropertyAsync(string tenantId, string propertyId, string[]? includes = null);
         Task<RentalPayment?> UpdatePaymentAsync(string tenantId, string paymentId, RentalPayment updatedPayment);
         Task<bool> DeletePaymentAsync(string tenantId, string paymentId);
         Task<RentalPayment> CreatePaymentAsync(RentalPayment payment);
@@ -38,10 +38,11 @@ namespace RentTrackerBackend.Services
             }
         }
 
-        public async Task<IEnumerable<RentalPayment>> GetPaymentsByPropertyAsync(string tenantId, string propertyId)
+        public async Task<IEnumerable<RentalPayment>> GetPaymentsByPropertyAsync(string tenantId, string propertyId, string[]? includes = null)
         {
             await ValidatePropertyExistsAsync(tenantId, propertyId);
-            return await _paymentRepository.GetAllAsync(tenantId);
+            var payments = await _paymentRepository.GetAllAsync(tenantId, includes);
+            return payments.Where(p => p.RentalPropertyId == propertyId);
         }
 
         public async Task<RentalPayment?> UpdatePaymentAsync(string tenantId, string paymentId, RentalPayment updatedPayment)

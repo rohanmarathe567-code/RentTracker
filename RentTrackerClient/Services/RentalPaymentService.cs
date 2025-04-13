@@ -40,7 +40,11 @@ public class RentalPaymentService : HttpClientService
         _logger.LogDebug($"Payment details: {System.Text.Json.JsonSerializer.Serialize(payment)}");
         
         // Use the nested resource endpoint pattern: /api/properties/{propertyId}/payments
-        var createdPayment = await PostAsync<RentalPayment>($"../properties/{payment.RentalPropertyId}/payments", payment);
+        // Don't include query string in endpoint, pass it separately to construct the URL properly
+        var query = HttpUtility.ParseQueryString(string.Empty);
+        query["include"] = "PaymentMethod";
+        var endpoint = $"../properties/{payment.RentalPropertyId}/payments?{query}";
+        var createdPayment = await PostAsync<RentalPayment>(endpoint, payment);
         
         if (createdPayment != null)
         {
@@ -59,7 +63,11 @@ public class RentalPaymentService : HttpClientService
         _logger.LogInformation($"Updating rental payment with ID: {id} for property {propertyId}");
         _logger.LogDebug($"Updated payment details: {System.Text.Json.JsonSerializer.Serialize(payment)}");
         
-        var updatedPayment = await PutAsync<RentalPayment>($"../properties/{propertyId}/payments/{id}", payment);
+        // Don't include query string in endpoint, pass it separately to construct the URL properly
+        var query = HttpUtility.ParseQueryString(string.Empty);
+        query["include"] = "PaymentMethod";
+        var endpoint = $"../properties/{propertyId}/payments/{id}?{query}";
+        var updatedPayment = await PutAsync<RentalPayment>(endpoint, payment);
         
         if (updatedPayment != null)
         {

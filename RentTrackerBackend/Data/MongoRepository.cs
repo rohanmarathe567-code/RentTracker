@@ -7,7 +7,7 @@ namespace RentTrackerBackend.Data
 {
     public interface IMongoRepository<T> where T : BaseDocument
     {
-        Task<IEnumerable<T>> GetAllAsync(string tenantId);
+        Task<IEnumerable<T>> GetAllAsync(string tenantId, string[]? includes = null);
         Task<T> GetByIdAsync(string tenantId, string id);
         Task<T> CreateAsync(T entity);
         Task UpdateAsync(string tenantId, string id, T entity);
@@ -33,9 +33,17 @@ namespace RentTrackerBackend.Data
             _collection.Indexes.CreateMany(indexes);
         }
 
-        public virtual async Task<IEnumerable<T>> GetAllAsync(string tenantId)
+        public virtual async Task<IEnumerable<T>> GetAllAsync(string tenantId, string[]? includes = null)
         {
-            return await _collection.Find(x => x.TenantId == tenantId).ToListAsync();
+            var items = await _collection.Find(x => x.TenantId == tenantId).ToListAsync();
+            return await IncludeRelatedDataAsync(items, includes);
+        }
+
+        protected virtual async Task<IEnumerable<T>> IncludeRelatedDataAsync(IEnumerable<T> items, string[]? includes)
+        {
+            // Base implementation does nothing with includes
+            // Derived classes should override this to handle specific includes
+            return items;
         }
 
         public virtual async Task<T> GetByIdAsync(string tenantId, string id)

@@ -30,7 +30,14 @@ public static class PaymentsController
                 if (property == null)
                     return Results.NotFound("Property not found");
 
-                var payments = await paymentService.GetPaymentsByPropertyAsync(tenantId, propertyId);
+                // Parse the include parameter from query string
+                string[]? includes = null;
+                if (parameters.Include != null)
+                {
+                    includes = parameters.Include.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                }
+
+                var payments = await paymentService.GetPaymentsByPropertyAsync(tenantId, propertyId, includes);
                 
                 // Manual filtering
                 var filteredPayments = payments.AsQueryable();
