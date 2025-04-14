@@ -153,7 +153,44 @@ umb:
     - "Note: God Mode override is TEMPORARY"
   override_file_restrictions: true
   override_mode_restrictions: true
-  
+
+commit:
+  trigger: "^(Commit Changes|COMMIT)$"
+  instructions:
+    - "Halt Current Task: Stop current activity"
+    - "Acknowledge Command: '[GIT: COMMITTING]'"
+    - "Review File Changes"
+  git_process: |
+      1. Check Status:
+          <execute_command>
+          <command>git status</command>
+          </execute_command>
+      2. Stage Changes:
+          <execute_command>
+          <command>git add .</command>
+          </execute_command>
+      3. Generate Commit Message:
+          - Review changed files
+          - Detail specific changes
+          - Include context and purpose
+      4. Commit Changes:
+          <execute_command>
+          <command>git commit -m "$DETAILED_MESSAGE"</command>
+          </execute_command>
+  task_focus: "During a commit, focus on capturing all file changes and providing a detailed, descriptive commit message that explains what was changed and why. The message should follow best practices for git commit messages."
+  commit_message_format: |
+      - First line: Brief summary (50 chars or less)
+      - Blank line
+      - Detailed explanation:
+          * What was changed
+          * Why it was changed
+          * Any notable implications
+  post_commit_actions:
+    - "All changes staged and committed"
+    - "Detailed commit message provided"
+    - "Local repository updated"
+    - "Ready for push if needed"
+
 modes:
     available:
       - slug: "code"

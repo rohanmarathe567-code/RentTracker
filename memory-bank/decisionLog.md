@@ -108,3 +108,36 @@ This approach:
 - Handles data relationships at the data layer
 - Follows REST principles for related data
 - Is more performant and scalable
+
+[2025-04-14 21:33:13] - TenantId Implementation Change
+
+## Decision
+Change TenantId from using email to using MongoDB ObjectId.
+
+## Rationale
+1. Previous implementation (email-based):
+   - Easily guessable tenant IDs
+   - Potential security risk
+   - Exposed user information in system identifiers
+
+2. New implementation (ObjectId-based):
+   - More secure (non-guessable IDs)
+   - Follows MongoDB best practices
+   - Maintains data privacy
+   - Consistent with database ID usage
+
+## Implementation Details
+1. Modified AuthService:
+   - Changed TenantId assignment to use Id.ToString() instead of email
+   - Updated JWT claims to include both Id and email
+   - Added explicit userId claim for better clarity
+
+2. Updated DatabaseSeeder:
+   - Changed system user creation to use ObjectId for TenantId
+   - Updated all dependent entities to use the new TenantId format
+
+## Impact
+- Improved security through non-guessable tenant IDs
+- Better alignment with MongoDB patterns
+- No functional changes to existing relationships
+- Maintains backward compatibility with string-based TenantId

@@ -29,11 +29,12 @@ public class AuthService : IAuthService
         
         var user = new User
         {
-            TenantId = request.Email, // Using email as tenant ID for simplicity
             Email = request.Email,
             PasswordHash = HashPassword(request.Password),
             UserType = UserType.User // Always create regular users through registration
         };
+        // Set TenantId to the MongoDB Id after initializing other properties
+        user.TenantId = user.Id.ToString();
         
         await _users.InsertOneAsync(user);
         
@@ -82,10 +83,11 @@ public class AuthService : IAuthService
         
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, user.TenantId),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role, user.UserType.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("userId", user.Id.ToString()) // Add explicit userId claim
         };
         
         var token = new JwtSecurityToken(

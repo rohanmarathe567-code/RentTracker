@@ -1,8 +1,9 @@
-using RentTrackerBackend.Models;
-using RentTrackerBackend.Models.Auth;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
 using BCrypt.Net;
+using RentTrackerBackend.Models;
+using RentTrackerBackend.Models.Auth;
 
 namespace RentTrackerBackend.Data;
 
@@ -28,8 +29,8 @@ public class BCryptPasswordHasher : IPasswordHasher
 public class DatabaseSeeder
 {
     private readonly IMongoDatabase _database;
-    private readonly string _systemTenantId = "admin@abc.com"; // Match the email for consistency
     private readonly string _systemEmail = "admin@abc.com";
+    private ObjectId _systemUserId; // Will be set after creating the admin user
     private readonly string _systemPassword = "test1234";
     private readonly IPasswordHasher _passwordHasher;
 
@@ -71,12 +72,14 @@ public class DatabaseSeeder
         var usersCollection = _database.GetCollection<User>(nameof(User));
         var systemUser = new User
         {
-            TenantId = _systemTenantId,
             Email = _systemEmail,
             PasswordHash = _passwordHasher.HashPassword(_systemPassword),
             UserType = UserType.Admin
         };
         await usersCollection.InsertOneAsync(systemUser);
+        _systemUserId = systemUser.Id; // Store the admin's Id for use as TenantId
+        systemUser.TenantId = _systemUserId.ToString();
+        await usersCollection.ReplaceOneAsync(x => x.Id == systemUser.Id, systemUser);
 
         // Get collection references for other data
         var propertiesCollection = _database.GetCollection<RentalProperty>(nameof(RentalProperty));
@@ -87,31 +90,31 @@ public class DatabaseSeeder
         {
             new PaymentMethod
             {
-                TenantId = _systemTenantId,
                 Name = "Bank Transfer",
                 Description = "Direct bank transfer payment",
-                IsSystemDefault = true
+                IsSystemDefault = true,
+                TenantId = _systemUserId.ToString()
             },
             new PaymentMethod
             {
-                TenantId = _systemTenantId,
                 Name = "Credit Card",
                 Description = "Payment via credit card",
-                IsSystemDefault = true
+                IsSystemDefault = true,
+                TenantId = _systemUserId.ToString()
             },
             new PaymentMethod
             {
-                TenantId = _systemTenantId,
                 Name = "Cash",
                 Description = "Cash payment",
-                IsSystemDefault = true
+                IsSystemDefault = true,
+                TenantId = _systemUserId.ToString()
             },
             new PaymentMethod
             {
-                TenantId = _systemTenantId,
                 Name = "PayPal",
                 Description = "Payment through PayPal service",
-                IsSystemDefault = true
+                IsSystemDefault = true,
+                TenantId = _systemUserId.ToString()
             }
         };
 
@@ -122,7 +125,7 @@ public class DatabaseSeeder
         // Create sample rental properties
         var property1 = new RentalProperty
         {
-            TenantId = _systemTenantId,
+            TenantId = _systemUserId.ToString(),
             Address = new Address
             {
                 Street = "123 Main Street",
@@ -146,7 +149,7 @@ public class DatabaseSeeder
 
         var property2 = new RentalProperty
         {
-            TenantId = _systemTenantId,
+            TenantId = _systemUserId.ToString(),
             Address = new Address
             {
                 Street = "45 Beach Road",
@@ -178,7 +181,7 @@ public class DatabaseSeeder
         {
             new RentalPayment
             {
-                TenantId = _systemTenantId,
+                TenantId = _systemUserId.ToString(),
                 RentalPropertyId = property1.Id.ToString(),
                 Amount = 2600.00M, // 4 weeks rent
                 PaymentDate = DateTime.UtcNow.AddMonths(-5),
@@ -188,7 +191,7 @@ public class DatabaseSeeder
             },
             new RentalPayment
             {
-                TenantId = _systemTenantId,
+                TenantId = _systemUserId.ToString(),
                 RentalPropertyId = property1.Id.ToString(),
                 Amount = 1300.00M, // 2 weeks rent
                 PaymentDate = DateTime.UtcNow.AddMonths(-4),
@@ -197,7 +200,7 @@ public class DatabaseSeeder
             },
             new RentalPayment
             {
-                TenantId = _systemTenantId,
+                TenantId = _systemUserId.ToString(),
                 RentalPropertyId = property2.Id.ToString(),
                 Amount = 3800.00M, // 4 weeks rent
                 PaymentDate = DateTime.UtcNow.AddMonths(-2),
@@ -215,7 +218,7 @@ public class DatabaseSeeder
         {
             new Attachment
             {
-                TenantId = _systemTenantId,
+                TenantId = _systemUserId.ToString(),
                 FileName = "lease_agreement.pdf",
                 ContentType = "application/pdf",
                 StoragePath = "/storage/property/lease_agreement.pdf",
@@ -227,7 +230,7 @@ public class DatabaseSeeder
             },
             new Attachment
             {
-                TenantId = _systemTenantId,
+                TenantId = _systemUserId.ToString(),
                 FileName = "payment_receipt.pdf",
                 ContentType = "application/pdf",
                 StoragePath = "/storage/payment/receipt.pdf",
