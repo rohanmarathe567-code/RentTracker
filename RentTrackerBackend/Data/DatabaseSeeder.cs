@@ -139,11 +139,11 @@ public class DatabaseSeeder
                 StartDate = DateTime.UtcNow.AddMonths(-6),
                 EndDate = DateTime.UtcNow.AddMonths(6)
             },
-            Attributes = new Dictionary<string, object>
+            Description = "Modern 2 bedroom apartment in the heart of Sydney",
+            PropertyManager = new PropertyManager
             {
-                { "PropertyManager", "John Smith" },
-                { "PropertyManagerContact", "john.smith@realestate.com" },
-                { "Description", "Modern 2 bedroom apartment in the heart of Sydney" }
+                Name = "John Smith",
+                Contact = "john.smith@realestate.com"
             }
         };
 
@@ -163,11 +163,11 @@ public class DatabaseSeeder
                 StartDate = DateTime.UtcNow.AddMonths(-2),
                 EndDate = DateTime.UtcNow.AddMonths(10)
             },
-            Attributes = new Dictionary<string, object>
+            Description = "Spacious 3 bedroom house with ocean views",
+            PropertyManager = new PropertyManager
             {
-                { "PropertyManager", "Sarah Johnson" },
-                { "PropertyManagerContact", "sarah.j@realestate.com" },
-                { "Description", "Spacious 3 bedroom house with ocean views" }
+                Name = "Sarah Johnson",
+                Contact = "sarah.j@realestate.com"
             }
         };
 

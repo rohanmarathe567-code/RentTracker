@@ -141,3 +141,37 @@ Change TenantId from using email to using MongoDB ObjectId.
 - Better alignment with MongoDB patterns
 - No functional changes to existing relationships
 - Maintains backward compatibility with string-based TenantId
+
+[2025-04-15 00:12:31] - Property Attributes Refactoring
+
+## Decision
+Move PropertyManager and Description from Attributes dictionary to dedicated model properties.
+
+## Rationale
+1. Previous implementation:
+   - Stored PropertyManager and Description in generic Attributes dictionary
+   - Reduced type safety and validation
+   - Inconsistent with object-oriented design
+   - Harder to maintain and query
+
+2. New implementation:
+   - Dedicated PropertyManager class with Name and Contact properties
+   - Description as a first-class property
+   - Better type safety and validation
+   - Improved code maintainability and readability
+
+## Implementation Details
+1. Updated RentalProperty model:
+   - Added Description property
+   - Added PropertyManager class with Name and Contact properties
+   - Maintains Attributes dictionary for truly dynamic properties
+
+2. Updated DatabaseSeeder:
+   - Removed PropertyManager and Description from Attributes dictionary
+   - Uses proper model properties instead
+
+## Impact
+- Improved type safety and validation
+- Better code maintainability
+- Clearer data structure
+- More consistent with object-oriented principles
