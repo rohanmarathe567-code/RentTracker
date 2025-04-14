@@ -33,19 +33,24 @@ public class AttachmentService : IAttachmentService
         string? description = null,
         string[]? tags = null)
     {
-        // Verify parent entity exists
+        // Verify parent entity exists and get TenantId
+        string tenantId;
         switch (attachmentType)
         {
             case RentalAttachmentType.Property:
                 var property = await _properties.Find(p => p.Id.ToString() == parentId).FirstOrDefaultAsync();
                 if (property == null)
                     throw new ArgumentException($"Property with ID {parentId} not found.");
+                tenantId = property.TenantId;
                 break;
             case RentalAttachmentType.Payment:
                 var payment = await _payments.Find(p => p.Id.ToString() == parentId).FirstOrDefaultAsync();
                 if (payment == null)
                     throw new ArgumentException($"Payment with ID {parentId} not found.");
+                tenantId = payment.TenantId;
                 break;
+            default:
+                throw new ArgumentException($"Invalid attachment type: {attachmentType}");
         }
 
         // Validate and store the file
@@ -71,7 +76,8 @@ public class AttachmentService : IAttachmentService
             Tags = tags,
             EntityType = attachmentType.ToString(),
             RentalPropertyId = attachmentType == RentalAttachmentType.Property ? parentId : null,
-            RentalPaymentId = attachmentType == RentalAttachmentType.Payment ? parentId : null
+            RentalPaymentId = attachmentType == RentalAttachmentType.Payment ? parentId : null,
+            TenantId = tenantId
         };
 
         await _attachments.InsertOneAsync(attachment);
