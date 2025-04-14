@@ -26,19 +26,28 @@ This file documents recurring patterns and standards used in the project.
 * Standard HTTP methods usage
 
 ### Data Access
-* Entity Framework Core repository pattern
+* MongoDB repository pattern implementation
 * Asynchronous database operations
 * Structured error handling
 * Data validation practices
-* Explicit lazy loading for navigation properties
+* Document-based data modeling
 * Query optimization patterns:
-  - Use AsNoTracking() for read-only operations
-  - Load only required navigation properties
-  - Avoid unnecessary eager loading
-* Entity relationship best practices:
-  - Clear separation of concerns in data loading
-  - Proper foreign key relationships
-  - Strategic use of navigation properties
+  - Use proper MongoDB indexing
+  - Leverage MongoDB projection for field selection
+  - Implement efficient MongoDB filters
+  - Use MongoDB aggregation pipelines for complex queries
+* Document relationship best practices:
+  - Strategic use of embedded documents
+  - References for large or frequently changing data
+  - Denormalization for read performance
+  - Proper index design for relationships
+* MongoDB specific patterns:
+  - Atomic operations for consistency
+  - Bulk write operations for performance
+  - Change streams for real-time updates
+  - Proper connection and transaction handling
+
+[2025-04-14 20:20] - Updated data access patterns for MongoDB
 
 [2025-04-03 20:22:44] - Added query optimization and entity relationship patterns
 

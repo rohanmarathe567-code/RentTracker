@@ -2,6 +2,44 @@
 
 This file tracks the project's progress using a task list format.
 
+## [2025-04-14] MongoDB Migration and Backend API Enhancement
+### Completed Tasks
+- [x] Migrated from PostgreSQL to MongoDB for better schema flexibility
+- [x] Updated repository pattern implementation for MongoDB
+- [x] Implemented MongoDB-specific query optimizations
+- [x] Added support for embedded documents in MongoDB collections
+- [x] Enhanced API endpoints to leverage MongoDB features
+- [x] Updated PaymentMethod includes implementation for MongoDB
+- [x] Implemented proper MongoDB indices for performance
+- [x] Updated data models for document-based structure
+
+### Implementation Details
+- Converted Entity Framework models to MongoDB document models
+- Implemented MongoDB repository pattern with proper abstractions
+- Enhanced query performance with MongoDB indexing
+- Updated services to leverage MongoDB's document capabilities
+- Implemented proper MongoDB connection handling
+- Added support for MongoDB transactions where needed
+
+### Next Steps
+- Implement MongoDB aggregation pipelines for reporting
+- Add MongoDB-specific caching strategies
+- Enhance MongoDB query optimization
+- Implement MongoDB change streams for real-time updates
+
+## [2025-04-13] PaymentMethod Include Implementation
+### Completed Tasks
+- [x] Implemented PaymentMethod includes at backend level
+- [x] Updated repository pattern for includes support
+- [x] Enhanced data consistency with backend processing
+- [x] Improved API performance with single request pattern
+
+### Implementation Details
+- Modified PaymentRepository for MongoDB includes
+- Updated PaymentService to handle includes
+- Enhanced API endpoints with include parameter support
+- Improved performance by reducing network requests
+
 ## [2025-04-06] Attachment System Code Integration
 ### Completed Tasks
 - [x] Integrated attachment model with rental properties and payments

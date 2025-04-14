@@ -19,68 +19,96 @@ RentTracker is a modern property management solution built with ASP.NET Core and
 git clone https://github.com/yourusername/RentTracker.git
 cd RentTracker
 
-# Set up database connection in appsettings.json
-# Run database migrations
-cd RentTrackerBackend
-dotnet ef database update
+# Start MongoDB and Redis using Docker
+docker-compose up -d
 
-# Run the backend
+# Configure connection strings in appsettings.json
+{
+  "MongoDb": {
+    "ConnectionString": "mongodb://root:example@localhost:27017",
+    "DatabaseName": "RentTracker"
+  },
+  "Redis": {
+    "ConnectionString": "localhost:6379"
+  }
+}
+
+# Install dependencies and run backend
+cd RentTrackerBackend
+dotnet restore
 dotnet run
 
-# In another terminal, run the frontend
+# In another terminal, start the frontend
 cd ../RentTrackerClient
 dotnet run
 ```
+
+### Development Requirements
+- .NET 8 SDK
+- Docker Desktop
+- MongoDB Compass (optional, for database management)
+
+### Initial Setup
+1. MongoDB will automatically create required collections
+2. Default indexes are created on startup
+3. Redis cache is initialized with default configuration
+4. Sample data can be loaded using the `/api/dev/seed` endpoint (development only)
 
 ## Features
 
 ### Existing Features
 * Multi-tenancy Support
+  - Advanced tenant isolation using MongoDB's built-in features
+  - JWT-based authentication with tenant context
   - Role-based access control with Admin and Normal user types
-  - JWT-based authentication
-  - Data isolation between users
-  - User-specific property and payment management
-* Property Management
-  - Add, edit, and delete rental properties with server-side ID generation
-  - Store property details (address, rent amount, lease dates)
-  - Manage property manager information
-  - Paginated property list with search functionality
-* Payment Tracking
-  - Record and manage rental payments through nested endpoints
-  - Track payment history with property context
-  - Monitor payment status with optimized performance
-  - Paginated payment list with search functionality
+  - Efficient tenant-specific data queries
+* Document-based Property Management
+  - Flexible schema design with embedded payments and attachments
+  - Extensible property attributes through dynamic fields
+  - Optimized MongoDB indexes for fast property lookups
+  - Full-text search capabilities for property details
+* Enhanced Payment Tracking
+  - Embedded payment arrays for efficient retrieval
+  - Atomic payment operations using MongoDB operators
+  - Optimistic concurrency control for payment updates
+  - Rich payment history with document versioning
+* High-Performance Data Access
+  - Redis caching layer for frequently accessed data
+  - Intelligent cache invalidation strategies
+  - Optimized MongoDB aggregation pipelines
+  - Efficient pagination using cursor-based approach
 * Document Management
-  - Upload and store property-related documents
-  - Secure file storage and retrieval
-  - Support for various document types
-  - Document tagging and categorization
-* Enhanced Property Management
-  - Comprehensive property information storage
-  - Lease agreement tracking
-  - Property manager contact details
-  - Improved navigation between properties and payments
+  - GridFS integration for large file storage
+  - Secure file handling with metadata tracking
+  - Efficient binary data streaming
+  - Document versioning and audit trails
+* Scalable Architecture
+  - Horizontally scalable MongoDB deployment
+  - Distributed caching with Redis
+  - Optimized compound indexes
+  - Built-in data versioning and concurrency control
 
 ### RentTrackerClient Features
 * Modern Component Architecture
-  - Separate PropertyList and PropertyEdit components
-  - Dedicated Payments component with property context
-  - Reusable UI components for consistency
-* Enhanced User Experience
-  - Paginated lists for both properties and payments
-  - Intuitive navigation between properties and their payments
-  - Full-screen layouts for better space utilization
-  - Consistent styling across components
-* Service Layer
-  - Typed HTTP client services
-  - Support for paginated API responses
-  - Proper error handling and validation
+  - Reactive components with real-time updates
+  - Smart caching integration with MongoDB
+  - Optimized data synchronization
   - Efficient state management
+* Enhanced User Experience
+  - Fast document-based data access
+  - Real-time property updates
+  - Intelligent cache utilization
+  - Responsive data loading
+* Service Layer
+  - MongoDB-aware typed HTTP clients
+  - Optimized document-based responses
+  - Intelligent error handling
+  - Efficient cache management
 * Performance Optimizations
-  - Lazy loading of related data
-  - Efficient data fetching with pagination
-  - Optimized API calls with proper caching
-  - Minimal client-side processing
+  - Smart MongoDB query optimization
+  - Efficient document caching
+  - Minimal network overhead
+  - Optimized data structures
 
 ### Planned Features
 * Docker Containerization with CI/CD Pipeline
@@ -95,23 +123,24 @@ dotnet run
 * Enhanced API Documentation
 
 ## Project Status and Roadmap
-
 ### Current Status
-- [x] Enhanced Property Management with Pagination
-- [x] Optimized Payment Tracking with Nested Endpoints
-- [x] Document Storage System
-- [x] Improved Client Architecture
-- [x] Performance Optimizations
-- [x] Multi-tenancy Support Implementation
+- [x] MongoDB Migration Complete
+- [x] Redis Cache Integration
+- [x] Enhanced Document-based Storage
+- [x] Optimized MongoDB Indexing
+- [x] GridFS Implementation
+- [x] Multi-tenancy Enhancement
 - [ ] Docker Containerization
 - [ ] Advanced Reporting
 - [ ] Payment Reminder System
 
 ### Recent Achievements
-- ✅ Implemented multi-tenancy with JWT authentication
-- ✅ Added role-based access control
-- ✅ Enhanced data isolation between users
-- ✅ Improved query performance with user context
+- ✅ Completed migration to MongoDB
+- ✅ Implemented Redis caching layer
+- ✅ Optimized MongoDB indexes and queries
+- ✅ Enhanced data model with document-based design
+- ✅ Implemented GridFS for file storage
+- ✅ Improved performance with caching strategies
 - ✅ Updated client architecture for multi-tenant support
 
 ### Upcoming Milestones
@@ -125,43 +154,75 @@ dotnet run
 
 ## Database Schema
 
-The database schema represents a multi-tenant rental property management system with 5 main entities. The system supports multiple users, where each user manages their own properties and payment methods, while having access to system-wide default payment methods:
+The system uses MongoDB collections to implement a flexible, document-based data model for multi-tenant rental property management. Each document includes built-in versioning, tenant isolation, and audit fields:
 
-1. **User**:
-   - Core entity for authentication and authorization
+### Base Document Structure
+All documents inherit these base fields:
+```json
+{
+    "_id": ObjectId,
+    "tenantId": string,
+    "createdAt": DateTime,
+    "updatedAt": DateTime,
+    "version": long
+}
+```
+
+### Collections
+
+1. **Users**:
+   - Core collection for authentication and authorization
    - Supports multiple user types (Admin/Normal)
    - Controls access to properties and payments
+   ```json
+   {
+       "email": string,
+       "passwordHash": string,
+       "userType": string,
+       "attributes": { } // Flexible attributes
+   }
+   ```
 
-2. **RentalProperty**:
-   - Core entity storing property details
-   - Linked to specific users for multi-tenancy
-   - Has one-to-many relationships with RentalPayment and Attachment
+2. **RentalProperties**:
+   - Embedded payments and attachments for efficient retrieval
+   - Flexible attributes for extensibility
+   ```json
+   {
+       "address": {
+           "street": string,
+           "city": string,
+           "state": string,
+           "zipCode": string
+       },
+       "rentAmount": decimal,
+       "leaseDates": {
+           "startDate": DateTime,
+           "endDate": DateTime
+       },
+       "payments": [{
+           "amount": decimal,
+           "date": DateTime,
+           "method": string,
+           "reference": string,
+           "attachments": [/* attachment refs */]
+       }],
+       "attachments": [{
+           "fileName": string,
+           "contentType": string,
+           "path": string,
+           "size": long
+       }],
+       "attributes": { } // Flexible attributes
+   }
+   ```
 
-2. **RentalPayment**:
-   - Tracks payments made for properties
-   - Connected to RentalProperty and PaymentMethod (many-to-one)
-   - Can have multiple attachments (one-to-many with Attachment)
-
-3. **PaymentMethod**:
-    - Stores different payment methods
-    - Has a one-to-many relationship with RentalPayment
-    - Can be user-specific (UserId) or system-wide (IsSystemDefault)
-
-4. **Attachment**:
-   - Handles file storage for both properties and payments
-   - Contains metadata like fileName, contentType, fileSize
-   - Links to either RentalProperty or RentalPayment through their IDs
-
-Key Relationships:
-- A RentalProperty can have many RentalPayments
-- A PaymentMethod can be used for many RentalPayments
-- Both RentalProperty and RentalPayment can have multiple Attachments
-
-All entities include standard audit fields (createdAt, updatedAt) and use UUID primary keys for identification. The multi-tenant design ensures:
-- Each user has their own set of rental properties
-- Properties are automatically deleted when a user is deleted (cascade delete)
-- Payment methods can be user-specific or system-wide defaults
-- Each user's data is isolated from other users
+### Key Features
+- Document-based schema with embedded arrays for related data
+- Optimistic concurrency using version field
+- Compound indexes for efficient querying
+- Text indexes for search functionality
+- Flexible attributes dictionary for schema evolution
+- Built-in multi-tenant data isolation
 
 ```mermaid
 erDiagram
@@ -236,19 +297,20 @@ erDiagram
 graph TD
     A[RentTracker] --> B[Backend]
     A --> C[Frontend]
-    A --> D[Database]
+    A --> D[Data Layer]
     A --> E[File Storage]
     
     B --> B1[ASP.NET Core]
     B --> B2[Minimal API]
-    B --> B3[Entity Framework Core]
+    B --> B3[MongoDB.Driver]
     
     C --> C1[Blazor WebAssembly]
     C --> C2[.NET 8]
     C --> C3[Razor Components]
     
-    D --> D1[PostgreSQL]
-    D --> D2[EF Core Migrations]
+    D --> D1[MongoDB]
+    D --> D2[Redis Cache]
+    D --> D3[GridFS]
     
     E --> E1[File Service]
     E --> E2[Secure Storage]
@@ -256,13 +318,13 @@ graph TD
 * **Backend Framework**: ASP.NET Core minimal API (.NET 8)
 * **Frontend Framework**: Blazor WebAssembly (.NET 8)
 * **Authentication**: JWT-based authentication
-* **ORM**: Entity Framework Core with optimized query patterns
-* **Database**: PostgreSQL
-* **Architecture Pattern**: RESTful API with nested endpoints
-* **File Management**: Custom FileService implementation
+* **Database**: MongoDB with Redis caching
+* **Data Access**: MongoDB.Driver with optimized repositories
+* **Architecture Pattern**: RESTful API with document-based storage
+* **File Management**: Custom FileService implementation with GridFS
 * **UI Components**: Modular Razor Components
 * **Client Architecture**: Service-based with typed HTTP clients
-* **Client Architecture**: Service-based with typed HTTP clients
+* **Caching Layer**: Redis for high-performance data access
 
 ### Backend Implementation
 
@@ -270,61 +332,54 @@ graph TD
 
 ```mermaid
 classDiagram
-    class BaseEntity {
-        +Guid Id
+    class BaseDocument {
+        +ObjectId Id
+        +string TenantId
         +DateTime CreatedAt
         +DateTime UpdatedAt
+        +long Version
     }
     class User {
-        <<extends BaseEntity>>
-        +Guid Id
+        <<extends BaseDocument>>
         +string Email
         +string PasswordHash
-        +UserType UserType
-        +ICollection<RentalProperty> Properties
-        +ICollection<PaymentMethod> PaymentMethods
+        +string UserType
+        +Dictionary Attributes
     }
     class RentalProperty {
-        +Guid Id
-        +Guid UserId
-        +User User
-        +string Address
-        +string Suburb
-        +string State
-        +string PostCode
-        +string Description
-        +decimal WeeklyRentAmount
-        +DateTime LeaseStartDate
-        +DateTime LeaseEndDate
-        +string PropertyManager
-        +string PropertyManagerContact
+        <<extends BaseDocument>>
+        +Address Address
+        +decimal RentAmount
+        +LeaseDates LeaseDates
+        +List~Payment~ Payments
+        +List~Attachment~ Attachments
+        +Dictionary Attributes
     }
-    class RentalPayment {
-        +Guid Id
-        +Guid RentalPropertyId
+    class Address {
+        +string Street
+        +string City
+        +string State
+        +string ZipCode
+    }
+    class Payment {
         +decimal Amount
         +DateTime PaymentDate
-        +string PaymentMethod
-        +string PaymentReference
-        +string Notes
+        +string Method
+        +string Reference
+        +List~Attachment~ Attachments
     }
     class Attachment {
-        +Guid Id
-        +Guid? RentalPropertyId
-        +Guid? RentalPaymentId
         +string FileName
         +string ContentType
-        +string FilePath
-        +string Description
+        +string Path
+        +long Size
     }
-    BaseEntity <|-- User
-    BaseEntity <|-- RentalProperty
-    BaseEntity <|-- RentalPayment
-    BaseEntity <|-- Attachment
-    User "1" --> "*" RentalProperty
-    User "1" --> "*" PaymentMethod
-    RentalProperty "1" --> "*" RentalPayment
-    RentalProperty "1" --> "*" Attachment
+    BaseDocument <|-- User
+    BaseDocument <|-- RentalProperty
+    RentalProperty --> Address
+    RentalProperty --> "*" Payment
+    RentalProperty --> "*" Attachment
+    Payment --> "*" Attachment
 ```
 
 ### Client Architecture
@@ -424,33 +479,41 @@ sequenceDiagram
 sequenceDiagram
     participant Client
     participant API
-    participant Database
+    participant Cache
+    participant MongoDB
     
     Client->>+API: GET /api/properties?page=1&pageSize=10
-    API->>+Database: Fetch Properties with Pagination
-    Database-->>-API: Return Paginated Results
+    API->>+Cache: Check Cache
+    Cache-->>-API: Cache Miss
+    API->>+MongoDB: Aggregate Pipeline Query
+    Note over API: Apply pagination and filtering
+    MongoDB-->>-API: Return Documents
+    API->>Cache: Store in Cache
     API-->>-Client: Properties with Pagination Info
 
     Client->>+API: POST /api/properties
-    Note over API: Backend generates new ID
-    API->>+Database: Create Property
-    Database-->>-API: Property Created
+    Note over API: Generate ObjectId
+    API->>+MongoDB: Insert Document
+    MongoDB-->>-API: Document Created
+    API->>Cache: Invalidate Cache
     API-->>-Client: Return Property Details
 
     Client->>+API: GET /api/properties/{id}
-    API->>+Database: Fetch Property
-    Note over API: Using AsNoTracking for read-only
-    Database-->>-API: Return Property
+    API->>+Cache: Check Cache
+    Cache-->>-API: Cache Hit
     API-->>-Client: Property Details
-
+    
     Client->>+API: PUT /api/properties/{id}
-    API->>+Database: Update Property
-    Database-->>-API: Updated
+    API->>+MongoDB: Update with Version Check
+    Note over API: Using optimistic concurrency
+    MongoDB-->>-API: Updated
+    API->>Cache: Invalidate Cache
     API-->>-Client: Success Response
 
     Client->>+API: DELETE /api/properties/{id}
-    API->>+Database: Delete Property
-    Database-->>-API: Deleted
+    API->>+MongoDB: Delete Document
+    MongoDB-->>-API: Deleted
+    API->>Cache: Invalidate Cache
     API-->>-Client: Success Response
 ```
 
@@ -468,34 +531,36 @@ sequenceDiagram
 sequenceDiagram
     participant Client
     participant API
-    participant Database
+    participant Cache
+    participant MongoDB
     
-    Client->>+API: GET /api/properties/{propertyId}/payments?page=1&pageSize=10
-    API->>+Database: Fetch Paginated Payments
-    Note over API: Using lazy loading & AsNoTracking
-    Database-->>-API: Return Paginated Payments
+    Client->>+API: GET /api/properties/{propertyId}/payments
+    API->>+Cache: Check Cache
+    Cache-->>-API: Cache Miss
+    API->>+MongoDB: Find Document & Project Payments
+    Note over API: Using array filters and projection
+    MongoDB-->>-API: Return Payments Array
+    API->>Cache: Store in Cache
     API-->>-Client: Payments with Pagination Info
 
     Client->>+API: POST /api/properties/{propertyId}/payments
-    Note over API: Backend generates payment ID
-    API->>+Database: Record Payment
-    Database-->>-API: Payment Recorded
+    API->>+MongoDB: Update Array with New Payment
+    Note over API: Using $push operator
+    MongoDB-->>-API: Payment Added
+    API->>Cache: Invalidate Cache
     API-->>-Client: 201 Created with Payment Details
 
-    Client->>+API: GET /api/properties/{propertyId}/payments/{paymentId}
-    API->>+Database: Fetch Specific Payment
-    Note over API: Optimized query with no tracking
-    Database-->>-API: Return Payment
-    API-->>-Client: Payment Details
-    
     Client->>+API: PUT /api/properties/{propertyId}/payments/{paymentId}
-    API->>+Database: Update Payment
-    Database-->>-API: Updated
+    API->>+MongoDB: Update Array Element
+    Note over API: Using $set with array filters
+    MongoDB-->>-API: Payment Updated
+    API->>Cache: Invalidate Cache
     API-->>-Client: Success Response
     
     Client->>+API: DELETE /api/properties/{propertyId}/payments/{paymentId}
-    API->>+Database: Delete Payment
-    Database-->>-API: Deleted
+    API->>+MongoDB: Update with $pull
+    MongoDB-->>-API: Payment Removed
+    API->>Cache: Invalidate Cache
     API-->>-Client: Success Response
 ```
 
