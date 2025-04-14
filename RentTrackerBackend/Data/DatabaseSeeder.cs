@@ -1,27 +1,86 @@
 using RentTrackerBackend.Models;
+using RentTrackerBackend.Models.Auth;
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
+using BCrypt.Net;
 
 namespace RentTrackerBackend.Data;
+
+public interface IPasswordHasher
+{
+    string HashPassword(string password);
+    bool VerifyPassword(string password, string hash);
+}
+
+public class BCryptPasswordHasher : IPasswordHasher
+{
+    public string HashPassword(string password)
+    {
+        return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 13);
+    }
+
+    public bool VerifyPassword(string password, string hash)
+    {
+        return BCrypt.Net.BCrypt.Verify(password, hash);
+    }
+}
 
 public class DatabaseSeeder
 {
     private readonly IMongoDatabase _database;
-    private readonly string _systemTenantId = "system";
+    private readonly string _systemTenantId = "admin@abc.com"; // Match the email for consistency
+    private readonly string _systemEmail = "admin@abc.com";
+    private readonly string _systemPassword = "test1234";
+    private readonly IPasswordHasher _passwordHasher;
 
-    public DatabaseSeeder(IMongoClient client, IOptions<MongoDbSettings> settings)
+    public DatabaseSeeder(
+        IMongoClient client,
+        IOptions<MongoDbSettings> settings,
+        IPasswordHasher passwordHasher)
     {
         _database = client.GetDatabase(settings.Value.DatabaseName);
+        _passwordHasher = passwordHasher;
+    }
+
+    private async Task DropCollections()
+    {
+        // Drop all collections to ensure clean state
+        Console.WriteLine("Dropping existing collections...");
+        try
+        {
+            await _database.DropCollectionAsync(nameof(User));
+            await _database.DropCollectionAsync(nameof(RentalProperty));
+            await _database.DropCollectionAsync(nameof(PaymentMethod));
+            await _database.DropCollectionAsync(nameof(RentalPayment));
+            await _database.DropCollectionAsync(nameof(Attachment));
+            Console.WriteLine("Collections dropped successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error dropping collections: {ex.Message}");
+            throw;
+        }
     }
 
     public async Task SeedAsync()
     {
-        // Only seed if the database is empty
-        var paymentMethodsCollection = _database.GetCollection<PaymentMethod>(nameof(PaymentMethod));
-        if (await paymentMethodsCollection.CountDocumentsAsync(FilterDefinition<PaymentMethod>.Empty) > 0)
+        // Drop existing collections first to start fresh
+        await DropCollections();
+
+        // Create system user
+        var usersCollection = _database.GetCollection<User>(nameof(User));
+        var systemUser = new User
         {
-            return;
-        }
+            TenantId = _systemTenantId,
+            Email = _systemEmail,
+            PasswordHash = _passwordHasher.HashPassword(_systemPassword),
+            UserType = UserType.Admin
+        };
+        await usersCollection.InsertOneAsync(systemUser);
+
+        // Get collection references for other data
+        var propertiesCollection = _database.GetCollection<RentalProperty>(nameof(RentalProperty));
+        var paymentMethodsCollection = _database.GetCollection<PaymentMethod>(nameof(PaymentMethod));
 
         // Create payment methods
         var paymentMethods = new[]
@@ -60,7 +119,7 @@ public class DatabaseSeeder
         var bankTransfer = paymentMethods[0]; // Keep reference for sample payments
 
         // Create sample rental properties
-        var propertiesCollection = _database.GetCollection<RentalProperty>(nameof(RentalProperty));
+        // Create sample rental properties
         var property1 = new RentalProperty
         {
             TenantId = _systemTenantId,
@@ -109,7 +168,9 @@ public class DatabaseSeeder
             }
         };
 
+        Console.WriteLine("Creating sample properties...");
         await propertiesCollection.InsertManyAsync(new[] { property1, property2 });
+        Console.WriteLine($"Created {2} sample properties");
 
         // Create sample rental payments
         var paymentsCollection = _database.GetCollection<RentalPayment>(nameof(RentalPayment));

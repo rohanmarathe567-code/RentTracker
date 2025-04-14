@@ -71,6 +71,10 @@ try
     builder.Services.AddScoped<IAttachmentService, AttachmentService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+    builder.Services.AddTransient<DatabaseSeeder>();
+    builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+    builder.Services.AddScoped<DatabaseSeeder>();
     
     // Add JWT authentication
     builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -78,10 +82,19 @@ try
     var app = builder.Build();
 
     // Seed the database
-    using (var scope = app.Services.CreateScope())
+    try
     {
-        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-        await seeder.SeedAsync();
+        using (var scope = app.Services.CreateScope())
+        {
+            var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+            await seeder.SeedAsync();
+            Console.WriteLine("Database seeded successfully");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error seeding database: {ex.Message}");
+        throw;
     }
 
     // Configure the HTTP request pipeline.
