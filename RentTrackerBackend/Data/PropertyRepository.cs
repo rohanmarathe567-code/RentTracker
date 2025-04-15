@@ -1,8 +1,6 @@
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
 using RentTrackerBackend.Models;
-using StackExchange.Redis;
-using System.Text.Json;
 
 namespace RentTrackerBackend.Data
 {
@@ -16,17 +14,14 @@ namespace RentTrackerBackend.Data
     public class PropertyRepository : MongoRepository<RentalProperty>, IPropertyRepository
     {
         private readonly IMongoCollection<RentalProperty> _collection;
-        private readonly IConnectionMultiplexer _redis;
         private readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(30);
 
         public PropertyRepository(
             IMongoClient mongoClient, 
-            IOptions<MongoDbSettings> settings,
-            IConnectionMultiplexer redis) : base(mongoClient, settings)
+            IOptions<MongoDbSettings> settings) : base(mongoClient, settings)
         {
             var database = mongoClient.GetDatabase(settings.Value.DatabaseName);
             _collection = database.GetCollection<RentalProperty>(typeof(RentalProperty).Name);
-            _redis = redis;
 
             // Create property-specific indexes
             var indexBuilder = Builders<RentalProperty>.IndexKeys;
@@ -71,60 +66,14 @@ namespace RentTrackerBackend.Data
 
         public override async Task<RentalProperty> GetByIdAsync(string tenantId, string id)
         {
-            var cacheKey = $"{tenantId}:property:{id}";
-            var cache = await _redis.GetDatabase().StringGetAsync(cacheKey);
-
-            if (cache.HasValue)
-            {
-                return JsonSerializer.Deserialize<RentalProperty>(cache);
-            }
-
             var property = await base.GetByIdAsync(tenantId, id);
-
-            if (property != null)
-            {
-                await _redis.GetDatabase().StringSetAsync(
-                    cacheKey,
-                    JsonSerializer.Serialize(property),
-                    _cacheExpiry);
-            }
-
             return property;
         }
 
         public override async Task<RentalProperty> CreateAsync(RentalProperty entity)
         {
             var property = await base.CreateAsync(entity);
-            
-            // Cache the new property
-            var cacheKey = $"{entity.TenantId}:property:{property.Id}";
-            await _redis.GetDatabase().StringSetAsync(
-                cacheKey,
-                JsonSerializer.Serialize(property),
-                _cacheExpiry);
-
             return property;
-        }
-
-        public override async Task UpdateAsync(string tenantId, string id, RentalProperty entity)
-        {
-            await base.UpdateAsync(tenantId, id, entity);
-
-            // Update cache
-            var cacheKey = $"{tenantId}:property:{id}";
-            await _redis.GetDatabase().StringSetAsync(
-                cacheKey,
-                JsonSerializer.Serialize(entity),
-                _cacheExpiry);
-        }
-
-        public override async Task DeleteAsync(string tenantId, string id)
-        {
-            await base.DeleteAsync(tenantId, id);
-
-            // Remove from cache
-            var cacheKey = $"{tenantId}:property:{id}";
-            await _redis.GetDatabase().KeyDeleteAsync(cacheKey);
         }
 
         public async Task<IEnumerable<RentalProperty>> GetPropertiesByCityAsync(string tenantId, string city)

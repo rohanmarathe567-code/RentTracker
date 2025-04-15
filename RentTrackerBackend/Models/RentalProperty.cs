@@ -13,7 +13,6 @@ namespace RentTrackerBackend.Models
         public LeaseDates LeaseDates { get; set; } = new LeaseDates();
         public List<string> PaymentIds { get; set; } = new List<string>();
         public List<string> AttachmentIds { get; set; } = new List<string>();
-        public Dictionary<string, object> Attributes { get; set; } = new Dictionary<string, object>();
 
         [BsonIgnore]
         public List<Payment> Payments { get; set; } = new List<Payment>();

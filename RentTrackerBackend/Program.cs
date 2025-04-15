@@ -64,7 +64,6 @@ try
 
     // Configure MongoDB and Redis
     builder.Services.AddMongoDb(builder.Configuration);
-    builder.Services.AddRedisCache(builder.Configuration);
 
     // Register Services
     builder.Services.AddScoped<IStorageService, FileService>();

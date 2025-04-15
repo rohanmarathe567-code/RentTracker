@@ -180,7 +180,6 @@ public static class PropertiesController
                 RentAmount = updatedProperty.RentAmount,
                 LeaseDates = updatedProperty.LeaseDates,
                 PropertyManager = updatedProperty.PropertyManager,
-                Attributes = updatedProperty.Attributes,
                 PaymentIds = property.PaymentIds,        // Preserve existing payment references
                 AttachmentIds = property.AttachmentIds  // Preserve existing attachment references
             };
