@@ -47,13 +47,13 @@ public static class PropertiesController
             {
                 var searchTerm = parameters.SearchTerm.ToLower();
                 query = query.Where(p =>
-                    p.Address.Street.ToLower().Contains(searchTerm) ||
-                    p.Address.City.ToLower().Contains(searchTerm) ||
-                    p.Address.State.ToLower().Contains(searchTerm) ||
-                    p.Address.ZipCode.Contains(searchTerm) ||
-                    p.PropertyManager.Name.ToLower().Contains(searchTerm) ||
-                    p.PropertyManager.Contact.ToLower().Contains(searchTerm) ||
-                    p.Description.ToLower().Contains(searchTerm));
+                    (p.Address.Street.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                     p.Address.City.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                     p.Address.State.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                     p.Address.ZipCode.Contains(searchTerm) ||
+                     p.PropertyManager.Name.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                     p.PropertyManager.Contact.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                     p.Description.ToLower().Contains(searchTerm)));
             }
 
             // Apply sorting if specified

@@ -2,72 +2,53 @@ using MongoDB.Driver;
 using Microsoft.Extensions.Options;
 using RentTrackerBackend.Models;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 
 namespace RentTrackerBackend.Data
 {
-    public interface IMongoRepository<T> where T : BaseDocument
+    public static class MongoDbExtensions
     {
-        Task<IEnumerable<T>> GetAllAsync(string tenantId, string[]? includes = null);
-        Task<T> GetByIdAsync(string tenantId, string id);
-        Task<T> CreateAsync(T entity);
-        Task UpdateAsync(string tenantId, string id, T entity);
-        Task DeleteAsync(string tenantId, string id);
-    }
-
-    public class MongoRepository<T> : IMongoRepository<T> where T : BaseDocument
-    {
-        private readonly IMongoCollection<T> _collection;
-
-        public MongoRepository(IMongoClient client, IOptions<MongoDbSettings> settings)
+        public static async Task<IEnumerable<T>> GetAllAsync<T>(this IMongoCollection<T> collection, string tenantId) where T : BaseDocument
         {
-            var database = client.GetDatabase(settings.Value.DatabaseName);
-            _collection = database.GetCollection<T>(typeof(T).Name);
+            var builder = Builders<T>.Filter;
+            var filter = builder.Eq("tenantId", tenantId);
             
-            // Create indexes
-            var indexBuilder = Builders<T>.IndexKeys;
-            var indexes = new List<CreateIndexModel<T>>
-            {
-                new CreateIndexModel<T>(indexBuilder.Ascending(x => x.TenantId)),
-                new CreateIndexModel<T>(indexBuilder.Ascending(x => x.TenantId).Ascending("Address.City"))
-            };
-            _collection.Indexes.CreateMany(indexes);
+            return await collection.Find(filter).ToListAsync();
         }
 
-        public virtual async Task<IEnumerable<T>> GetAllAsync(string tenantId, string[]? includes = null)
+        public static async Task<T> GetByIdAsync<T>(this IMongoCollection<T> collection, string tenantId, string id) where T : BaseDocument
         {
-            var items = await _collection.Find(x => x.TenantId == tenantId).ToListAsync();
-            return await IncludeRelatedDataAsync(items, includes);
-        }
-
-        protected virtual async Task<IEnumerable<T>> IncludeRelatedDataAsync(IEnumerable<T> items, string[]? includes)
-        {
-            // Base implementation does nothing with includes
-            // Derived classes should override this to handle specific includes
-            return items;
-        }
-
-        public virtual async Task<T> GetByIdAsync(string tenantId, string id)
-        {
-            return await _collection.Find(x =>
+            return await collection.Find(x =>
                 x.TenantId == tenantId &&
                 x.Id == ObjectId.Parse(id)).FirstOrDefaultAsync();
         }
 
-        public virtual async Task<T> CreateAsync(T entity)
+        public static async Task<T> CreateAsync<T>(this IMongoCollection<T> collection, T entity) where T : BaseDocument
         {
-            entity.CreatedAt = DateTime.UtcNow;
-            entity.UpdatedAt = DateTime.UtcNow;
-            await _collection.InsertOneAsync(entity);
+            var now = DateTime.UtcNow;
+            
+            // Set initial values before insert
+            entity.CreatedAt = now;
+            entity.UpdatedAt = now;
+            entity.Version = 1;
+
+            // Use InsertOneAsync which is atomic
+            await collection.InsertOneAsync(entity);
+            
             return entity;
         }
 
-        public virtual async Task UpdateAsync(string tenantId, string id, T entity)
+        public static async Task UpdateAsync<T>(this IMongoCollection<T> collection, string tenantId, string id, T entity) where T : BaseDocument
         {
-            entity.UpdatedAt = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
             var currentVersion = entity.Version;
-            entity.Version++;
 
-            var result = await _collection.ReplaceOneAsync(
+            // Update timestamps and version
+            entity.UpdatedAt = now;
+            entity.Version = currentVersion + 1;
+
+            // Use ReplaceOneAsync for atomic update with optimistic concurrency
+            var result = await collection.ReplaceOneAsync(
                 x => x.TenantId == tenantId &&
                      x.Id == ObjectId.Parse(id) &&
                      x.Version == currentVersion,
@@ -75,14 +56,74 @@ namespace RentTrackerBackend.Data
 
             if (result.ModifiedCount == 0)
             {
+                // Rollback entity changes on conflict
+                entity.UpdatedAt = DateTime.MinValue;
+                entity.Version = currentVersion;
                 throw new InvalidOperationException("Concurrency conflict - the document has been modified by another user.");
             }
         }
 
-        public virtual async Task DeleteAsync(string tenantId, string id)
+        public static async Task DeleteAsync<T>(this IMongoCollection<T> collection, string tenantId, string id) where T : BaseDocument
         {
-            await _collection.DeleteOneAsync(
-                x => x.TenantId == tenantId && x.Id == ObjectId.Parse(id));
+            await collection.DeleteOneAsync(x => x.TenantId == tenantId && x.Id == ObjectId.Parse(id));
+        }
+
+        public static void CreateTenantIndexes<T>(this IMongoCollection<T> collection) where T : BaseDocument
+        {
+            var indexBuilder = Builders<T>.IndexKeys;
+            var indexes = new List<CreateIndexModel<T>>
+            {
+                new CreateIndexModel<T>(indexBuilder.Ascending(x => x.TenantId)),
+                new CreateIndexModel<T>(indexBuilder.Ascending(x => x.TenantId).Ascending("Address.City"))
+            };
+            collection.Indexes.CreateMany(indexes);
+        }
+    }
+
+    public class MongoRepository<T> : IMongoRepository<T> where T : BaseDocument
+    {
+        private readonly IMongoCollection<T> _collection;
+
+        public MongoRepository(IMongoDatabase database)
+        {
+            // Ensure the class map is registered
+            if (!BsonClassMap.IsClassMapRegistered(typeof(T)))
+            {
+                BsonClassMap.RegisterClassMap<T>(cm =>
+                {
+                    cm.AutoMap();
+                    cm.SetIgnoreExtraElements(true);
+                });
+            }
+
+            var collectionName = typeof(T).Name;
+            _collection = database.GetCollection<T>(collectionName);
+            _collection.CreateTenantIndexes();
+        }
+
+        public async Task<T> GetByIdAsync(string tenantId, string id)
+        {
+            return await _collection.GetByIdAsync(tenantId, id);
+        }
+
+        public async Task<IEnumerable<T>> GetAllAsync(string tenantId, string[]? includes = null)
+        {
+            return await _collection.GetAllAsync(tenantId);
+        }
+
+        public async Task<T> CreateAsync(T entity)
+        {
+            return await _collection.CreateAsync(entity);
+        }
+
+        public async Task UpdateAsync(string tenantId, string id, T entity)
+        {
+            await _collection.UpdateAsync(tenantId, id, entity);
+        }
+
+        public async Task DeleteAsync(string tenantId, string id)
+        {
+            await _collection.DeleteAsync(tenantId, id);
         }
     }
 }

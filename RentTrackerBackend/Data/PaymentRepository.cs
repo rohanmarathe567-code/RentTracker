@@ -5,24 +5,38 @@ using RentTrackerBackend.Models;
 
 namespace RentTrackerBackend.Data
 {
-    public interface IPaymentRepository : IMongoRepository<RentalPayment>
+    public interface IPaymentRepository
     {
+        Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, string[]? includes = null);
+        Task<RentalPayment> GetByIdAsync(string tenantId, string id);
+        Task<RentalPayment> CreateAsync(RentalPayment entity);
+        Task UpdateAsync(string tenantId, string id, RentalPayment entity);
+        Task DeleteAsync(string tenantId, string id);
         Task<RentalPayment?> GetByPropertyIdAsync(string tenantId, string propertyId);
     }
 
-    public class PaymentRepository : MongoRepository<RentalPayment>, IPaymentRepository
+    public class PaymentRepository : IPaymentRepository
     {
         private readonly IMongoCollection<RentalPayment> _collection;
         private readonly IMongoCollection<PaymentMethod> _paymentMethodCollection;
 
-        public PaymentRepository(IMongoClient client, IOptions<MongoDbSettings> settings) : base(client, settings)
+        public PaymentRepository(IMongoClient client, IOptions<MongoDbSettings> settings)
         {
             var database = client.GetDatabase(settings.Value.DatabaseName);
-            _collection = database.GetCollection<RentalPayment>(typeof(RentalPayment).Name);
-            _paymentMethodCollection = database.GetCollection<PaymentMethod>(typeof(PaymentMethod).Name);
+            _collection = database.GetCollection<RentalPayment>(nameof(RentalPayment));
+            _paymentMethodCollection = database.GetCollection<PaymentMethod>(nameof(PaymentMethod));
+            
+            // Create base tenant indexes
+            _collection.CreateTenantIndexes();
         }
 
-        protected override async Task<IEnumerable<RentalPayment>> IncludeRelatedDataAsync(IEnumerable<RentalPayment> payments, string[]? includes)
+        public async Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, string[]? includes = null)
+        {
+            var payments = await _collection.GetAllAsync(tenantId);
+            return await IncludePaymentMethodsAsync(payments.ToList(), includes);
+        }
+
+        private async Task<IEnumerable<RentalPayment>> IncludePaymentMethodsAsync(List<RentalPayment> payments, string[]? includes)
         {
             if (includes?.Contains("PaymentMethod") == true)
             {
@@ -54,10 +68,30 @@ namespace RentTrackerBackend.Data
             return payments;
         }
 
+        public async Task<RentalPayment> GetByIdAsync(string tenantId, string id)
+        {
+            return await _collection.GetByIdAsync(tenantId, id);
+        }
+
+        public async Task<RentalPayment> CreateAsync(RentalPayment entity)
+        {
+            return await _collection.CreateAsync(entity);
+        }
+
+        public async Task UpdateAsync(string tenantId, string id, RentalPayment entity)
+        {
+            await _collection.UpdateAsync(tenantId, id, entity);
+        }
+
+        public async Task DeleteAsync(string tenantId, string id)
+        {
+            await _collection.DeleteAsync(tenantId, id);
+        }
+
         public async Task<RentalPayment?> GetByPropertyIdAsync(string tenantId, string propertyId)
         {
-            return await _collection.Find(x => 
-                x.TenantId == tenantId && 
+            return await _collection.Find(x =>
+                x.TenantId == tenantId &&
                 x.RentalPropertyId == propertyId)
                 .FirstOrDefaultAsync();
         }

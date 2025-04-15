@@ -4,24 +4,30 @@ using RentTrackerBackend.Models;
 
 namespace RentTrackerBackend.Data
 {
-    public interface IPropertyRepository : IMongoRepository<RentalProperty>
+    public interface IPropertyRepository
     {
+        Task<IEnumerable<RentalProperty>> GetAllAsync(string tenantId, string[]? includes = null);
+        Task<RentalProperty> GetByIdAsync(string tenantId, string id);
+        Task<RentalProperty> CreateAsync(RentalProperty entity);
+        Task UpdateAsync(string tenantId, string id, RentalProperty entity);
+        Task DeleteAsync(string tenantId, string id);
         Task<IEnumerable<RentalProperty>> GetPropertiesByCityAsync(string tenantId, string city);
         Task<IEnumerable<RentalProperty>> GetPropertiesByRentRangeAsync(string tenantId, decimal minRent, decimal maxRent);
         Task<IEnumerable<RentalProperty>> SearchPropertiesAsync(string tenantId, string searchText);
     }
 
-    public class PropertyRepository : MongoRepository<RentalProperty>, IPropertyRepository
+    public class PropertyRepository : IPropertyRepository
     {
         private readonly IMongoCollection<RentalProperty> _collection;
         private readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(30);
 
-        public PropertyRepository(
-            IMongoClient mongoClient, 
-            IOptions<MongoDbSettings> settings) : base(mongoClient, settings)
+        public PropertyRepository(IMongoClient mongoClient, IOptions<MongoDbSettings> settings)
         {
             var database = mongoClient.GetDatabase(settings.Value.DatabaseName);
             _collection = database.GetCollection<RentalProperty>(typeof(RentalProperty).Name);
+
+            // Create indexes
+            _collection.CreateTenantIndexes();
 
             // Create property-specific indexes
             var indexBuilder = Builders<RentalProperty>.IndexKeys;
@@ -33,9 +39,6 @@ namespace RentTrackerBackend.Data
                               .Ascending(x => x.RentAmount)),
                 new CreateIndexModel<RentalProperty>(
                     indexBuilder.Ascending(x => x.TenantId)
-                              .Ascending("Address.City")),
-                new CreateIndexModel<RentalProperty>(
-                    indexBuilder.Ascending(x => x.TenantId)
                               .Ascending("LeaseDates.StartDate")
                               .Ascending("LeaseDates.EndDate")),
                 
@@ -44,36 +47,38 @@ namespace RentTrackerBackend.Data
                     indexBuilder.Text("Address.Street")
                               .Text("Address.City")
                               .Text("Address.State")),
-                
-                // Index for optimistic concurrency
-                new CreateIndexModel<RentalProperty>(
-                    indexBuilder.Ascending(x => x.TenantId)
-                              .Ascending(x => x.Version)),
 
                 // Index for date-based queries
                 new CreateIndexModel<RentalProperty>(
                     indexBuilder.Ascending(x => x.TenantId)
-                              .Ascending(x => x.UpdatedAt)),
-
-                // Index for complex queries combining multiple fields
-                new CreateIndexModel<RentalProperty>(
-                    indexBuilder.Ascending(x => x.TenantId)
-                              .Ascending("Address.City")
-                              .Ascending(x => x.RentAmount))
+                              .Ascending(x => x.UpdatedAt))
             };
             _collection.Indexes.CreateMany(indexes);
         }
 
-        public override async Task<RentalProperty> GetByIdAsync(string tenantId, string id)
+        public Task<IEnumerable<RentalProperty>> GetAllAsync(string tenantId, string[]? includes = null)
         {
-            var property = await base.GetByIdAsync(tenantId, id);
-            return property;
+            return _collection.GetAllAsync(tenantId);
         }
 
-        public override async Task<RentalProperty> CreateAsync(RentalProperty entity)
+        public Task<RentalProperty> GetByIdAsync(string tenantId, string id)
         {
-            var property = await base.CreateAsync(entity);
-            return property;
+            return _collection.GetByIdAsync(tenantId, id);
+        }
+
+        public Task<RentalProperty> CreateAsync(RentalProperty entity)
+        {
+            return _collection.CreateAsync(entity);
+        }
+
+        public Task UpdateAsync(string tenantId, string id, RentalProperty entity)
+        {
+            return _collection.UpdateAsync(tenantId, id, entity);
+        }
+
+        public Task DeleteAsync(string tenantId, string id)
+        {
+            return _collection.DeleteAsync(tenantId, id);
         }
 
         public async Task<IEnumerable<RentalProperty>> GetPropertiesByCityAsync(string tenantId, string city)

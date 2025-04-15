@@ -21,6 +21,14 @@ namespace RentTrackerBackend.Extensions
                 return new MongoClient(settings.ConnectionString);
             });
 
+            // Register IMongoDatabase
+            services.AddScoped<IMongoDatabase>(sp =>
+            {
+                var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+                var client = sp.GetRequiredService<IMongoClient>();
+                return client.GetDatabase(settings.DatabaseName);
+            });
+
             // Register Generic Repository
             services.AddScoped(typeof(IMongoRepository<>), typeof(MongoRepository<>));
 
