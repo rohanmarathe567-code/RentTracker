@@ -1,14 +1,14 @@
 # RentTracker
 
-[![Project Status: Active](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/yourusername/RentTracker)
+[![Project Status: Active](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/rahulbedge/RentTracker)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![.NET Build](https://github.com/yourusername/RentTracker/workflows/build/badge.svg)](https://github.com/yourusername/RentTracker/actions)
+[![.NET Build](https://github.com/yourusername/RentTracker/workflows/build/badge.svg)](https://github.com/rahulbedge/RentTracker/actions)
 
 A comprehensive multi-tenant rental property management system for tracking payments and managing property-related documents.
 
 ## Overview
 
-RentTracker is a modern property management solution built with ASP.NET Core and Blazor WebAssembly that helps landlords efficiently manage their rental properties, track payments, and handle property-related documents. The system provides an intuitive web application with a robust backend API for property management operations while maintaining secure data storage, multi-tenancy support, and file handling capabilities.
+RentTracker is a modern property management solution built with ASP.NET Core that helps landlords efficiently manage their rental properties, track payments, and handle property-related documents. The system provides a robust backend API for property management operations while maintaining secure data storage, multi-tenancy support, and file handling capabilities.
 
 ## Getting Started
 
@@ -56,7 +56,7 @@ dotnet run
 
 ## Features
 
-### Existing Features
+### Current Features
 * Multi-tenancy Support
   - Advanced tenant isolation using MongoDB's built-in features
   - JWT-based authentication with tenant context
@@ -72,6 +72,13 @@ dotnet run
   - Atomic payment operations using MongoDB operators
   - Optimistic concurrency control for payment updates
   - Rich payment history with document versioning
+* Theme System Enhancements
+  - Dark theme support
+  - Theme customization interface
+  - Theme transition animations
+  - User theme preferences
+
+### Planned Features
 * High-Performance Data Access
   - Redis caching layer for frequently accessed data
   - Intelligent cache invalidation strategies
@@ -82,82 +89,61 @@ dotnet run
   - Secure file handling with metadata tracking
   - Efficient binary data streaming
   - Document versioning and audit trails
-* Scalable Architecture
-  - Horizontally scalable MongoDB deployment
-  - Distributed caching with Redis
-  - Optimized compound indexes
-  - Built-in data versioning and concurrency control
-
-### RentTrackerClient Features
-* Modern Component Architecture
-  - Reactive components with real-time updates
-  - Smart caching integration with MongoDB
-  - Optimized data synchronization
-  - Efficient state management
-* Enhanced User Experience
-  - Fast document-based data access
-  - Real-time property updates
-  - Intelligent cache utilization
-  - Responsive data loading
-* Service Layer
-  - MongoDB-aware typed HTTP clients
-  - Optimized document-based responses
-  - Intelligent error handling
-  - Efficient cache management
-* Performance Optimizations
-  - Smart MongoDB query optimization
-  - Efficient document caching
-  - Minimal network overhead
-  - Optimized data structures
-
-### Planned Features
-* Docker Containerization with CI/CD Pipeline
-* Enhanced Reporting
-  - Financial analysis tools
-  - Custom report generation
-  - Data visualization
-* Dashboard with Key Metrics
-* Payment Reminder System
-* Improved Data Export
-* Advanced Search and Filtering
-* Enhanced API Documentation
+* MongoDB Performance Optimization
+  - Advanced aggregation pipelines for reporting
+  - Enhanced MongoDB-specific caching strategies
+  - Optimized query patterns
+  - Real-time updates using change streams
+* Testing and Documentation
+  - Comprehensive unit test coverage
+  - Updated API documentation for MongoDB features
+  - Multi-tenant integration tests
+  - Enhanced security testing
+* Future Enhancements
+  - Docker containerization with CI/CD pipeline
+  - Enhanced reporting with MongoDB aggregation
+  - Dashboard with metrics visualization
+  - Payment reminder system
+  - Advanced search and filtering
+  - Improved data export functionality
 
 ## Project Status and Roadmap
+
 ### Current Status
-- [x] MongoDB Migration Complete
-- [x] Redis Cache Integration
-- [x] Enhanced Document-based Storage
-- [x] Optimized MongoDB Indexing
-- [x] GridFS Implementation
-- [x] Multi-tenancy Enhancement
-- [ ] Docker Containerization
-- [ ] Advanced Reporting
-- [ ] Payment Reminder System
+- ✅ MongoDB Migration Complete
+- ✅ Optimized MongoDB Indexing
+- ✅ Multi-tenancy Enhancement
+- ✅ MongoDB Performance Optimization
+- ✅ Theme System Implementation
+- ⏳ Redis Cache Integration
+- ⏳ Enhanced Document-based Storage
+- ⏳ GridFS Implementation
+- ⏳ Docker Containerization (Planned)
+- ⏳ Advanced Reporting (Planned)
+- ⏳ Payment Reminder System (Planned)
 
 ### Recent Achievements
-- ✅ Completed migration to MongoDB
-- ✅ Implemented Redis caching layer
-- ✅ Optimized MongoDB indexes and queries
-- ✅ Enhanced data model with document-based design
-- ✅ Implemented GridFS for file storage
-- ✅ Improved performance with caching strategies
-- ✅ Updated client architecture for multi-tenant support
+- Successfully migrated from PostgreSQL to MongoDB
+- Implemented Redis caching layer
+- Enhanced data model with document-based design
+- Optimized MongoDB indexes and queries
+- Implemented GridFS for file storage
+- Updated tenant isolation using MongoDB features
+- Enhanced property attributes handling
+- Improved API performance with caching
 
 ### Upcoming Milestones
-1. Q2 2025: Docker Containerization and CI/CD Pipeline
-2. Q3 2025: Enhanced Reporting Features
-3. Q4 2025: Advanced Analytics and Payment Reminders
+1. Q2 2025: MongoDB Performance Optimization and Theme System
+2. Q3 2025: Docker Containerization and CI/CD Pipeline
+3. Q4 2025: Enhanced Reporting and Analytics
 
 ## Architecture
 
-[Additional architecture details available in docs/multi-tenancy-plan.md]
+### Database Schema
 
-## Database Schema
+The system uses MongoDB collections with a flexible, document-based data model:
 
-The system uses MongoDB collections to implement a flexible, document-based data model for multi-tenant rental property management. Each document includes built-in versioning, tenant isolation, and audit fields:
-
-### Base Document Structure
-All documents inherit these base fields:
+#### Base Document Structure
 ```json
 {
     "_id": ObjectId,
@@ -168,124 +154,81 @@ All documents inherit these base fields:
 }
 ```
 
-### Collections
+#### Core Collections
 
 1. **Users**:
-   - Core collection for authentication and authorization
-   - Supports multiple user types (Admin/Normal)
-   - Controls access to properties and payments
-   ```json
-   {
-       "email": string,
-       "passwordHash": string,
-       "userType": string,
-       "attributes": { } // Flexible attributes
-   }
-   ```
+```json
+{
+    "email": string,
+    "passwordHash": string,
+    "userType": string,
+    "attributes": { }
+}
+```
 
 2. **RentalProperties**:
-   - Embedded payments and attachments for efficient retrieval
-   - Flexible attributes for extensibility
-   ```json
-   {
-       "address": {
-           "street": string,
-           "city": string,
-           "state": string,
-           "zipCode": string
-       },
-       "rentAmount": decimal,
-       "leaseDates": {
-           "startDate": DateTime,
-           "endDate": DateTime
-       },
-       "payments": [{
-           "amount": decimal,
-           "date": DateTime,
-           "method": string,
-           "reference": string,
-           "attachments": [/* attachment refs */]
-       }],
-       "attachments": [{
-           "fileName": string,
-           "contentType": string,
-           "path": string,
-           "size": long
-       }],
-       "attributes": { } // Flexible attributes
-   }
-   ```
+```json
+{
+    "address": {
+        "street": string,
+        "city": string,
+        "state": string,
+        "zipCode": string
+    },
+    "rentAmount": decimal,
+    "leaseDates": {
+        "startDate": DateTime,
+        "endDate": DateTime
+    },
+    "propertyManager": {
+        "name": string,
+        "contact": string
+    },
+    "description": string,
+    "payments": [{
+        "amount": decimal,
+        "date": DateTime,
+        "method": string,
+        "reference": string,
+        "attachments": [/* attachment refs */]
+    }],
+    "attachments": [{
+        "fileName": string,
+        "contentType": string,
+        "path": string,
+        "size": long
+    }],
+    "attributes": { }
+}
+```
 
-### Key Features
-- Document-based schema with embedded arrays for related data
-- Optimistic concurrency using version field
-- Compound indexes for efficient querying
-- Text indexes for search functionality
-- Flexible attributes dictionary for schema evolution
-- Built-in multi-tenant data isolation
+### Technology Stack
 
-```mermaid
-erDiagram
-    User ||--|{ RentalProperty : "owns"
-    User ||--|{ PaymentMethod : "has"
-    RentalProperty ||--|{ RentalPayment : "has"
-    PaymentMethod ||--|{ RentalPayment : "has"
-    RentalProperty ||--|{ Attachment : "has"
-    RentalPayment ||--|{ Attachment : "has"
+- **Backend**: ASP.NET Core minimal API (.NET 8)
+- **Database**: MongoDB with Redis caching
+- **File Storage**: GridFS for document management
+- **Authentication**: JWT-based with tenant isolation
+- **Performance**: 
+  * MongoDB aggregation pipelines
+  * Redis caching layer
+  * Optimized indexes
+  * Cursor-based pagination
 
-    RentalPayment {
-        uuid id
-        uuid rentalPropertyId
-        decimal amount
-        datetime paymentDate
-        uuid paymentMethodId
-        string paymentReference
-        string notes
-        datetime createdAt
-        datetime updatedAt
-    }
-    RentalProperty {
-        uuid id
-        uuid userId
-        string address
-        string suburb
-        string state
-        string postCode
-        string description
-        decimal weeklyRentAmount
-        datetime leaseStartDate
-        datetime leaseEndDate
-        string propertyManager
-        string propertyManagerContact
-        datetime createdAt
-        datetime updatedAt
-    }
+## API Documentation
 
-    User {
-        uuid id
-        string email
-        string passwordHash
-        int userType
-        datetime createdAt
-        datetime updatedAt
-    }
-    PaymentMethod {
-        uuid id
-        string name
-        string description
-        datetime createdAt
-        datetime updatedAt
-    }
-    Attachment {
-        uuid id
-        string fileName
-        string contentType
-        string storagePath
-        bigint fileSize
-        string description
-        string entityType
-        uuid rentalPropertyId
-        uuid rentalPaymentId
+Our comprehensive API documentation is available at `/api/docs` when running the application. It includes detailed endpoint descriptions, request/response examples, and authentication information.
+
+For detailed architectural decisions and implementation plans, please refer to the following documentation:
+- `docs/multi-tenancy-plan.md`
+- `docs/mongodb-migration-plan.md`
+- `docs/redis-cache-plan.md`
+
+## Contributing
+
+Please read our contributing guidelines in CONTRIBUTING.md before submitting pull requests.
+
+## License
+
         datetime uploadDate
         array tags
     }
