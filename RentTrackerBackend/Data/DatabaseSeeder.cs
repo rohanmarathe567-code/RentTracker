@@ -73,6 +73,9 @@ public class DatabaseSeeder
         var systemUser = new User
         {
             Email = _systemEmail,
+            FirstName = "Rahul",
+            MiddleName = "Anant",
+            LastName = "Bedge",
             PasswordHash = _passwordHasher.HashPassword(_systemPassword),
             UserType = UserType.Admin
         };

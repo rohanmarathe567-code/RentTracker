@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Linq
+@using System.Security.Claims
 @inject NavigationManager Navigation
 @inject IAuthenticationService AuthService
 
@@ -11,8 +13,10 @@
             <div>
                 <AuthorizeView>
                     <Authorized>
-                        <span class="me-3">Welcome, @context.User.Identity?.Name!</span>
-                        <button class="btn btn-link" @onclick="HandleLogout">Logout</button>
+                        <div class="d-flex align-items-center gap-3">
+                            <span>Welcome, @(context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value ?? "User")!</span>
+                            <a href="javascript:void(0)" class="text-decoration-none" @onclick="HandleLogout">Logout</a>
+                        </div>
                     </Authorized>
                     <NotAuthorized>
                         <a href="login" class="me-3">Login</a>

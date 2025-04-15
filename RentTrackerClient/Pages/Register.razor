@@ -24,6 +24,24 @@
                         }
 
                         <div class="form-group mb-3">
+                            <label for="firstName">First Name</label>
+                            <InputText id="firstName" class="form-control" @bind-Value="registerModel.FirstName" />
+                            <ValidationMessage For="@(() => registerModel.FirstName)" />
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="middleName">Middle Name (Optional)</label>
+                            <InputText id="middleName" class="form-control" @bind-Value="registerModel.MiddleName" />
+                            <ValidationMessage For="@(() => registerModel.MiddleName)" />
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="lastName">Last Name</label>
+                            <InputText id="lastName" class="form-control" @bind-Value="registerModel.LastName" />
+                            <ValidationMessage For="@(() => registerModel.LastName)" />
+                        </div>
+
+                        <div class="form-group mb-3">
                             <label for="email">Email</label>
                             <InputText id="email" class="form-control" @bind-Value="registerModel.Email" />
                             <ValidationMessage For="@(() => registerModel.Email)" />
@@ -77,6 +95,9 @@
             errorMessage = null;
 
             var result = await AuthService.RegisterAsync(
+                registerModel.FirstName,
+                registerModel.MiddleName,
+                registerModel.LastName,
                 registerModel.Email,
                 registerModel.Password,
                 registerModel.ConfirmPassword);
@@ -111,6 +132,17 @@
 
     private class RegisterModel
     {
+        [Required(ErrorMessage = "First name is required")]
+        [StringLength(50, ErrorMessage = "First name cannot be longer than 50 characters")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [StringLength(50, ErrorMessage = "Middle name cannot be longer than 50 characters")]
+        public string? MiddleName { get; set; }
+
+        [Required(ErrorMessage = "Last name is required")]
+        [StringLength(50, ErrorMessage = "Last name cannot be longer than 50 characters")]
+        public string LastName { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email address")]
         public string Email { get; set; } = string.Empty;
