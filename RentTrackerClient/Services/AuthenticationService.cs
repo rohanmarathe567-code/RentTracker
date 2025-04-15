@@ -8,7 +8,7 @@ namespace RentTrackerClient.Services;
 public interface IAuthenticationService
 {
     Task<bool> LoginAsync(string email, string password);
-    Task<bool> RegisterAsync(string email, string password, string confirmPassword);
+    Task<bool> RegisterAsync(string firstName, string? middleName, string lastName, string email, string password, string confirmPassword);
     Task LogoutAsync();
     Task<string?> GetTokenAsync();
     bool IsAuthenticated { get; }
@@ -92,12 +92,15 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public async Task<bool> RegisterAsync(string email, string password, string confirmPassword)
+    public async Task<bool> RegisterAsync(string firstName, string? middleName, string lastName, string email, string password, string confirmPassword)
     {
         try
         {
             var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/auth/register", new
             {
+                FirstName = firstName,
+                MiddleName = middleName,
+                LastName = lastName,
                 Email = email,
                 Password = password,
                 ConfirmPassword = confirmPassword,
@@ -171,4 +174,9 @@ public class AuthenticationService : IAuthenticationService
 public class LoginResponse
 {
     public string Token { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? MiddleName { get; set; }
+    public string Email { get; set; } = string.Empty;
 }

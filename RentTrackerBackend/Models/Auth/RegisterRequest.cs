@@ -9,6 +9,26 @@ namespace RentTrackerBackend.Models.Auth;
 public class RegisterRequest
 {
     /// <summary>
+    /// User's first name. Required field.
+    /// </summary>
+    [Required]
+    [StringLength(50)]
+    public string FirstName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's middle name. Optional field.
+    /// </summary>
+    [StringLength(50)]
+    public string? MiddleName { get; set; }
+
+    /// <summary>
+    /// User's last name. Required field.
+    /// </summary>
+    [Required]
+    [StringLength(50)]
+    public string LastName { get; set; } = string.Empty;
+
+    /// <summary>
     /// User's email address. Must be a valid email format.
     /// </summary>
     [Required]

@@ -30,6 +30,9 @@ public class AuthService : IAuthService
         var user = new User
         {
             Email = request.Email,
+            FirstName = request.FirstName,
+            MiddleName = request.MiddleName,
+            LastName = request.LastName,
             PasswordHash = HashPassword(request.Password),
             UserType = UserType.User // Always create regular users through registration
         };
@@ -44,6 +47,9 @@ public class AuthService : IAuthService
         {
             UserId = user.Id.ToString(),
             Email = user.Email,
+            FirstName = user.FirstName,
+            MiddleName = user.MiddleName,
+            LastName = user.LastName,
             UserType = user.UserType,
             Token = token,
             TokenExpiration = DateTime.UtcNow.AddMinutes(_jwtConfig.TokenLifetimeMinutes)
@@ -65,6 +71,9 @@ public class AuthService : IAuthService
         {
             UserId = user.Id.ToString(),
             Email = user.Email,
+            FirstName = user.FirstName,
+            MiddleName = user.MiddleName,
+            LastName = user.LastName,
             UserType = user.UserType,
             Token = token,
             TokenExpiration = DateTime.UtcNow.AddMinutes(_jwtConfig.TokenLifetimeMinutes)
@@ -87,7 +96,10 @@ public class AuthService : IAuthService
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role, user.UserType.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim("userId", user.Id.ToString()) // Add explicit userId claim
+            new Claim("userId", user.Id.ToString()), // Add explicit userId claim
+            new Claim(ClaimTypes.GivenName, user.FirstName),
+            new Claim(ClaimTypes.Surname, user.LastName),
+            new Claim("middleName", user.MiddleName ?? string.Empty) // Add middle name claim
         };
         
         var token = new JwtSecurityToken(
