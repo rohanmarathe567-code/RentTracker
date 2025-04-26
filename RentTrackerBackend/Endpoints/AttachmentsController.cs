@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Data;
-using System.Security.Claims;
 using System.Text.Json;
 using MongoDB.Driver;
 
@@ -16,12 +15,13 @@ public static class AttachmentsController
         app.MapGet("/api/attachments/{attachmentId}/download", async (
             string attachmentId,
             IAttachmentService attachmentService,
-            ILogger<Program> logger,
-            ClaimsPrincipal user) =>
+            IClaimsPrincipalService claimsPrincipalService,
+            ILogger<Program> logger) =>
         {
-            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(tenantId))
+            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            {
                 return Results.Unauthorized();
+            }
 
             try
             {
@@ -47,12 +47,13 @@ public static class AttachmentsController
         app.MapDelete("/api/attachments/{attachmentId}", async (
             string attachmentId,
             IAttachmentService attachmentService,
-            ILogger<Program> logger,
-            ClaimsPrincipal user) =>
+            IClaimsPrincipalService claimsPrincipalService,
+            ILogger<Program> logger) =>
         {
-            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(tenantId))
+            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            {
                 return Results.Unauthorized();
+            }
 
             try
             {
@@ -79,11 +80,12 @@ public static class AttachmentsController
             string propertyId,
             IAttachmentService attachmentService,
             IMongoRepository<RentalProperty> propertyRepository,
-            ClaimsPrincipal user) =>
+            IClaimsPrincipalService claimsPrincipalService) =>
         {
-            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(tenantId))
+            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            {
                 return Results.Unauthorized();
+            }
 
             var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
             if (property == null)
@@ -98,14 +100,15 @@ public static class AttachmentsController
             IFormFile file,
             IAttachmentService attachmentService,
             IMongoRepository<RentalProperty> propertyRepository,
+            IClaimsPrincipalService claimsPrincipalService,
             ILogger<Program> logger,
-            ClaimsPrincipal user,
             string? description = null,
             string? tags = null) =>
         {
-            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(tenantId))
+            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            {
                 return Results.Unauthorized();
+            }
 
             var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
             if (property == null)
@@ -131,11 +134,12 @@ public static class AttachmentsController
             IAttachmentService attachmentService,
             IMongoRepository<RentalProperty> propertyRepository,
             IMongoRepository<RentalPayment> paymentRepository,
-            ClaimsPrincipal user) =>
+            IClaimsPrincipalService claimsPrincipalService) =>
         {
-            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(tenantId))
+            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            {
                 return Results.Unauthorized();
+            }
 
             var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
             if (property == null)
@@ -156,14 +160,15 @@ public static class AttachmentsController
             IAttachmentService attachmentService,
             IMongoRepository<RentalProperty> propertyRepository,
             IMongoRepository<RentalPayment> paymentRepository,
+            IClaimsPrincipalService claimsPrincipalService,
             ILogger<Program> logger,
-            ClaimsPrincipal user,
             string? description = null,
             string? tags = null) =>
         {
-            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(tenantId))
+            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            {
                 return Results.Unauthorized();
+            }
 
             var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
             if (property == null)

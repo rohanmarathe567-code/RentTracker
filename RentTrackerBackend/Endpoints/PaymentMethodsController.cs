@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
-using System.Security.Claims;
+using RentTrackerBackend.Services;
 using MongoDB.Driver;
 
 namespace RentTrackerBackend.Endpoints;
@@ -13,11 +13,12 @@ public static class PaymentMethodsController
         // Get all payment methods
         app.MapGet("/api/paymentmethods", async (
             IMongoRepository<PaymentMethod> repository,
-            ClaimsPrincipal user) =>
+            IClaimsPrincipalService claimsPrincipalService) =>
         {
-            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(tenantId))
+            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            {
                 return Results.Unauthorized();
+            }
 
             // Get system defaults and user's custom payment methods
             var systemDefaults = await repository.GetAllAsync("system");
@@ -35,15 +36,16 @@ public static class PaymentMethodsController
         // Create a new payment method
         app.MapPost("/api/paymentmethods", async (
             IMongoRepository<PaymentMethod> repository,
-            PaymentMethod paymentMethod,
-            ClaimsPrincipal user) =>
+            IClaimsPrincipalService claimsPrincipalService,
+            PaymentMethod paymentMethod) =>
         {
-            var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(tenantId))
+            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            {
                 return Results.Unauthorized();
+            }
 
             // Only admins can create system-wide payment methods
-            if (paymentMethod.IsSystemDefault && !user.IsInRole("Admin"))
+            if (paymentMethod.IsSystemDefault && !claimsPrincipalService.IsInRole("Admin"))
                 return Results.Forbid();
 
             // Set the appropriate tenant ID based on whether it's a system default

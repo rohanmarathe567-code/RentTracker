@@ -1,3 +1,46 @@
+[2025-04-26 19:30:00] - Backend Service Layer Enhancement
+
+## Decision
+Implement dedicated service layer and improve dependency injection across the backend.
+
+## Rationale
+1. Previous implementation:
+   - Business logic mixed in controllers
+   - Repeated authorization logic
+   - Direct repository usage in controllers
+   - Tight coupling between components
+
+2. New implementation:
+   - Dedicated service layer for business logic
+   - Centralized claims handling via ClaimsPrincipalService
+   - Improved separation of concerns
+   - Better testability and maintainability
+
+## Implementation Details
+1. Added ClaimsPrincipalService:
+   - Centralized tenant ID validation
+   - Unified role checking
+   - Consistent claims access
+
+2. Added PropertyService:
+   - Encapsulated property-related business logic
+   - Implemented proper pagination and sorting
+   - Centralized property validation
+   - Improved error handling
+
+3. Updated Controllers:
+   - Removed business logic
+   - Use dependency injection for services
+   - Simplified endpoint implementations
+   - Better error handling
+
+## Impact
+- Improved code organization
+- Better separation of concerns
+- Enhanced testability
+- Reduced code duplication
+- More maintainable codebase
+- Clearer responsibility boundaries
 # Decision Log
 
 [2025-04-14 20:22:00] - MongoDB Migration Implementation

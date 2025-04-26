@@ -2,7 +2,6 @@ using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Data;
-using System.Security.Claims;
 using MongoDB.Driver;
 
 namespace RentTrackerBackend.Endpoints;
@@ -16,17 +15,18 @@ public static class PaymentsController
             string propertyId,
             [AsParameters] PaginationParameters parameters,
             IPaymentService paymentService,
-            IMongoRepository<RentalProperty> propertyRepository,
-            ClaimsPrincipal user) =>
+            IPropertyService propertyService,
+            IClaimsPrincipalService claimsPrincipalService) =>
         {
             try
             {
-                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(tenantId))
+                if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+                {
                     return Results.Unauthorized();
+                }
 
                 // Verify property ownership
-                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
+                var property = await propertyService.GetPropertyByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
@@ -99,17 +99,18 @@ public static class PaymentsController
             string propertyId,
             string paymentId,
             IPaymentService paymentService,
-            IMongoRepository<RentalProperty> propertyRepository,
-            ClaimsPrincipal user) =>
+            IPropertyService propertyService,
+            IClaimsPrincipalService claimsPrincipalService) =>
         {
             try
             {
-                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(tenantId))
+                if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+                {
                     return Results.Unauthorized();
+                }
 
                 // Verify property ownership
-                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
+                var property = await propertyService.GetPropertyByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
@@ -133,17 +134,18 @@ public static class PaymentsController
             string paymentId,
             RentalPayment updatedPayment,
             IPaymentService paymentService,
-            IMongoRepository<RentalProperty> propertyRepository,
-            ClaimsPrincipal user) =>
+            IPropertyService propertyService,
+            IClaimsPrincipalService claimsPrincipalService) =>
         {
             try
             {
-                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(tenantId))
+                if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+                {
                     return Results.Unauthorized();
+                }
 
                 // Verify property ownership
-                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
+                var property = await propertyService.GetPropertyByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
@@ -172,17 +174,18 @@ public static class PaymentsController
             string propertyId,
             string paymentId,
             IPaymentService paymentService,
-            IMongoRepository<RentalProperty> propertyRepository,
-            ClaimsPrincipal user) =>
+            IPropertyService propertyService,
+            IClaimsPrincipalService claimsPrincipalService) =>
         {
             try
             {
-                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(tenantId))
+                if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+                {
                     return Results.Unauthorized();
+                }
 
                 // Verify property ownership
-                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
+                var property = await propertyService.GetPropertyByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 
@@ -208,17 +211,18 @@ public static class PaymentsController
             string propertyId,
             RentalPayment payment,
             IPaymentService paymentService,
-            IMongoRepository<RentalProperty> propertyRepository,
-            ClaimsPrincipal user) =>
+            IPropertyService propertyService,
+            IClaimsPrincipalService claimsPrincipalService) =>
         {
             try
             {
-                var tenantId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(tenantId))
+                if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+                {
                     return Results.Unauthorized();
+                }
 
                 // Verify property ownership
-                var property = await propertyRepository.GetByIdAsync(tenantId, propertyId);
+                var property = await propertyService.GetPropertyByIdAsync(tenantId, propertyId);
                 if (property == null)
                     return Results.NotFound("Property not found");
 

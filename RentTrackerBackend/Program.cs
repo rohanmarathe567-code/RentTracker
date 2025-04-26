@@ -66,9 +66,12 @@ try
     builder.Services.AddMongoDb(builder.Configuration);
 
     // Register Services
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IStorageService, FileService>();
     builder.Services.AddScoped<IAttachmentService, AttachmentService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
+    builder.Services.AddScoped<IPropertyService, PropertyService>();
+    builder.Services.AddScoped<IClaimsPrincipalService, ClaimsPrincipalService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
     builder.Services.AddTransient<DatabaseSeeder>();

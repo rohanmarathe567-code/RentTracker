@@ -25,6 +25,12 @@ This file tracks the project's current status, including recent changes, current
 * Enhance authentication test coverage
 
 ## Recent Changes
+### 2025-04-26 19:29 - Backend Service Layer Improvements
+* Added dedicated service layer for better separation of concerns
+* Implemented ClaimsPrincipalService for centralized claims handling
+* Added PropertyService to encapsulate property-related business logic
+* Improved dependency injection in Program.cs
+* Reduced controller complexity by moving business logic to services
 
 ### 2025-04-15 21:34 - Project Task Organization
 * Cleaned up completed tasks from progress tracking
