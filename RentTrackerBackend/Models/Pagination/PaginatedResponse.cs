@@ -25,7 +25,7 @@ public class PaginatedResponse<T>
             Items = items,
             TotalCount = totalCount,
             PageNumber = pageNumber,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)),
             HasNextPage = pageNumber < (int)Math.Ceiling(totalCount / (double)pageSize),
             HasPreviousPage = pageNumber > 1
         };

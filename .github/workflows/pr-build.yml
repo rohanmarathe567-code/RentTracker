@@ -1,12 +1,13 @@
-name: PR Build Check
+name: build
 
 on:
   pull_request:
     branches:
-      - '*'  # This will run on PRs to any branch
+      - 'master'
 
 jobs:
   build:
+    name: Build and Test
     runs-on: self-hosted
     steps:
     - uses: actions/checkout@v2
@@ -14,24 +15,19 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '8.0.x'  # Using latest .NET 8 version
+        dotnet-version: '8.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
 
     - name: Build
       run: dotnet build --no-restore --configuration Release
-
-    - name: Mark PR as ready
-      if: success() && github.event.pull_request.draft == true
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          await github.rest.pulls.update({
-            owner: context.repo.owner,
-            repo: context.repo.name,
-            pull_number: context.issue.number,
-            draft: false
-          });
-          console.log('Successfully marked PR as ready for review');
+      
+    - name: Test
+      shell: bash
+      run: |
+        dotnet test --no-build --configuration Release --verbosity normal
+        if [ $? -ne 0 ]; then
+          echo "Tests failed"
+          exit 1
+        fi
