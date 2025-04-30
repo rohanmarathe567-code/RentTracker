@@ -1,8 +1,16 @@
-using RentTrackerBackend.Data;
-using RentTrackerBackend.Models;
-using System;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
 
 namespace RentTrackerBackend.Services;
+
+public interface IStorageService
+{
+    Task<string> UploadFileAsync(IFormFile file);
+    Task<Stream> DownloadFileAsync(string storagePath);
+    Task DeleteFileAsync(string storagePath);
+    bool ValidateFileType(string contentType, string fileName);
+}
 
 public class FileService : IStorageService
 {
@@ -12,9 +20,9 @@ public class FileService : IStorageService
 
     public FileService(IWebHostEnvironment environment, ILogger<FileService> logger)
     {
-        _environment = environment;
-        _logger = logger;
-        _uploadsFolder = Path.Combine(AppContext.BaseDirectory, "uploads");
+        _environment = environment ?? throw new ArgumentNullException(nameof(environment));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _uploadsFolder = Path.Combine(environment.ContentRootPath, "uploads");
         
         try
         {
@@ -54,8 +62,16 @@ public class FileService : IStorageService
 
     public bool ValidateFileType(string contentType, string fileName)
     {
+        if (contentType == null)
+            throw new ArgumentNullException(nameof(contentType));
+        if (fileName == null)
+            throw new ArgumentNullException(nameof(fileName));
+
         _logger.LogDebug($"Validating file type: {contentType} for file: {fileName}");
-        
+
+        if (string.IsNullOrEmpty(contentType) || string.IsNullOrEmpty(fileName))
+            return false;
+            
         var extension = Path.GetExtension(fileName).ToLowerInvariant();
         if (!_allowedFileTypes.ContainsKey(extension))
         {
@@ -72,11 +88,14 @@ public class FileService : IStorageService
 
     public async Task<string> UploadFileAsync(IFormFile file)
     {
+        if (file == null)
+            throw new ArgumentException("File cannot be null", nameof(file));
+
         try
         {
             _logger.LogInformation($"Attempting to upload file: {file.FileName} ({file.ContentType})");
             
-            if (file == null || file.Length == 0)
+            if (file.Length == 0)
             {
                 _logger.LogWarning("File is null or empty");
                 throw new ArgumentException("File is null or empty");
@@ -135,24 +154,28 @@ public class FileService : IStorageService
 
     public async Task DeleteFileAsync(string storagePath)
     {
+        if (storagePath == null)
+            throw new ArgumentNullException(nameof(storagePath));
+
         try
         {
             var filePath = Path.Combine(_uploadsFolder, storagePath);
             
-            // Use Task.Run for synchronous file operations
-            await Task.Run(() =>
+            if (File.Exists(filePath))
             {
-                if (File.Exists(filePath))
+                _logger.LogInformation($"Deleting file: {filePath}");
+                File.Delete(filePath);
+                // Wait for the file to be deleted
+                while (File.Exists(filePath))
                 {
-                    _logger.LogInformation($"Deleting file: {filePath}");
-                    File.Delete(filePath);
-                    _logger.LogInformation($"Successfully deleted file: {storagePath}");
+                    await Task.Delay(100);
                 }
-                else
-                {
-                    _logger.LogWarning($"File not found for deletion: {filePath}");
-                }
-            });
+                _logger.LogInformation($"Successfully deleted file: {storagePath}");
+            }
+            else
+            {
+                _logger.LogWarning($"File not found for deletion: {filePath}");
+            }
         }
         catch (Exception ex)
         {

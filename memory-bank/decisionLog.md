@@ -99,3 +99,11 @@ This file records architectural and implementation decisions using a list format
 - Enhanced collaboration in test planning and review
 
 [2025-04-22 19:07:23] - Deleted unit-tests-plan.md as it contained primarily performance test scenarios and monitoring plans rather than unit tests. This will be revisited later when focusing specifically on performance testing.
+
+[2025-04-30 22:57] - Backend Services Refactoring
+- Decision: Refactored backend services by consolidating interface implementations into concrete classes and introducing repository pattern
+- Rationale: Simplify service architecture, improve code organization, and separate data access concerns
+- Implications: 
+  * Reduced code duplication by removing separate interface files
+  * Better separation of concerns with new AttachmentRepository
+  * Services now have clearer responsibilities and implementation boundaries

@@ -33,7 +33,9 @@ namespace RentTrackerBackend.Extensions
             services.AddScoped(typeof(IMongoRepository<>), typeof(MongoRepository<>));
 
             // Register Specific Repositories
+            services.AddScoped<IPropertyRepository, PropertyRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
             // Register Database Seeder
             services.AddScoped<DatabaseSeeder>();
