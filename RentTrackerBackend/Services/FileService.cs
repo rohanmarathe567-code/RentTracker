@@ -130,7 +130,7 @@ public class FileService : IStorageService
         }
     }
 
-    public async Task<Stream> DownloadFileAsync(string storagePath)
+    public Task<Stream> DownloadFileAsync(string storagePath)
     {
         try
         {
@@ -143,7 +143,7 @@ public class FileService : IStorageService
             }
 
             _logger.LogDebug($"Opening file for download: {filePath}");
-            return new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
+            return Task.FromResult<Stream>(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true));
         }
         catch (Exception ex)
         {

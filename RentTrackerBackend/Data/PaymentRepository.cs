@@ -32,6 +32,11 @@ namespace RentTrackerBackend.Data
 
         public async Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, string[]? includes = null)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+            }
+
             var payments = await _collection.GetAllAsync(tenantId);
             return await IncludePaymentMethodsAsync(payments.ToList(), includes);
         }
@@ -70,16 +75,51 @@ namespace RentTrackerBackend.Data
 
         public async Task<RentalPayment> GetByIdAsync(string tenantId, string id)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+            }
+
+            if (!ObjectId.TryParse(id, out _))
+            {
+                throw new FormatException("Invalid ObjectId format");
+            }
+
             return await _collection.GetByIdAsync(tenantId, id);
         }
 
         public async Task<RentalPayment> CreateAsync(RentalPayment entity)
         {
+            if (entity == null)
+            {
+                throw new ArgumentNullException(nameof(entity));
+            }
+
+            if (entity.Amount <= 0)
+            {
+                throw new ArgumentException("Payment amount must be greater than zero", nameof(entity));
+            }
+
             return await _collection.CreateAsync(entity);
         }
 
         public async Task UpdateAsync(string tenantId, string id, RentalPayment entity)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+            }
+
+            if (!ObjectId.TryParse(id, out _))
+            {
+                throw new FormatException("Invalid ObjectId format");
+            }
+
+            if (entity == null)
+            {
+                throw new ArgumentNullException(nameof(entity));
+            }
+
             await _collection.UpdateAsync(tenantId, id, entity);
         }
 

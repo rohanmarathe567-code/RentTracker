@@ -8,7 +8,7 @@ namespace RentTrackerBackend.Data
     {
         Task<IEnumerable<RentalProperty>> GetAllAsync(string tenantId, string[]? includes = null);
         Task<RentalProperty> GetByIdAsync(string tenantId, string id);
-        Task<RentalProperty> CreateAsync(RentalProperty entity);
+        Task<RentalProperty> CreateAsync(RentalProperty? entity);
         Task UpdateAsync(string tenantId, string id, RentalProperty entity);
         Task DeleteAsync(string tenantId, string id);
         Task<IEnumerable<RentalProperty>> GetPropertiesByCityAsync(string tenantId, string city);
@@ -65,9 +65,11 @@ namespace RentTrackerBackend.Data
         {
             return _collection.GetByIdAsync(tenantId, id);
         }
-
-        public Task<RentalProperty> CreateAsync(RentalProperty entity)
+        public Task<RentalProperty> CreateAsync(RentalProperty? entity)
         {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+                
             return _collection.CreateAsync(entity);
         }
 

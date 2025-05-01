@@ -194,11 +194,13 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
         }
 
         [Fact]
-        public async Task CreateAsync_ShouldThrowNullReferenceException_WhenPropertyIsNull()
+        public async Task CreateAsync_ShouldThrowArgumentNullException_WhenPropertyIsNull()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<NullReferenceException>(() => 
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 _repository.CreateAsync(null));
+#pragma warning restore CS8625
         }
 
         [Fact]
@@ -312,11 +314,13 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
         {
             // Arrange
             var tenantId = "tenant123";
+#pragma warning disable CS8600, CS8604 // Converting null literal or possible null value to non-nullable type
             string searchText = null;
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 _repository.SearchPropertiesAsync(tenantId, searchText));
+#pragma warning restore CS8600, CS8604
         }
     }
 }

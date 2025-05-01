@@ -55,7 +55,8 @@ namespace RentTrackerBackend.Services
             string? description = null,
             string[]? tags = null)
         {
-            var tenantId = _claimsPrincipalService.GetTenantId();
+            var tenantId = _claimsPrincipalService.GetTenantId() ??
+                throw new ArgumentException("TenantId is required but was not found in the claims.");
 
             // Verify parent entity exists and get TenantId
             switch (attachmentType)
@@ -111,7 +112,8 @@ namespace RentTrackerBackend.Services
 
         public async Task<(Stream FileStream, string ContentType, string FileName)> DownloadAttachmentAsync(string attachmentId)
         {
-            var tenantId = _claimsPrincipalService.GetTenantId();
+            var tenantId = _claimsPrincipalService.GetTenantId() ??
+                throw new ArgumentException("TenantId is required but was not found in the claims.");
             var attachment = await _attachmentRepository.GetByIdAsync(tenantId, attachmentId);
             if (attachment == null)
                 throw new FileNotFoundException($"Attachment with ID {attachmentId} not found.");
@@ -122,7 +124,8 @@ namespace RentTrackerBackend.Services
 
         public async Task DeleteAttachmentAsync(string attachmentId)
         {
-            var tenantId = _claimsPrincipalService.GetTenantId();
+            var tenantId = _claimsPrincipalService.GetTenantId() ??
+                throw new ArgumentException("TenantId is required but was not found in the claims.");
             var attachment = await _attachmentRepository.GetByIdAsync(tenantId, attachmentId);
             if (attachment == null)
                 throw new FileNotFoundException($"Attachment with ID {attachmentId} not found.");
@@ -138,7 +141,8 @@ namespace RentTrackerBackend.Services
 
         public async Task<IEnumerable<Attachment>> GetAttachmentsForEntityAsync(RentalAttachmentType entityType, string entityId)
         {
-            var tenantId = _claimsPrincipalService.GetTenantId();
+            var tenantId = _claimsPrincipalService.GetTenantId() ??
+                throw new ArgumentException("TenantId is required but was not found in the claims.");
             return entityType == RentalAttachmentType.Property
                 ? await _attachmentRepository.GetAttachmentsByPropertyIdAsync(tenantId, entityId)
                 : await _attachmentRepository.GetAttachmentsByPaymentIdAsync(tenantId, entityId);

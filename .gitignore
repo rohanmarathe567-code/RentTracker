@@ -111,3 +111,7 @@ RentTrackerBackend/k6s/*.local.js
 # Bundled or compiled k6 test scripts
 RentTrackerBackend/k6s/dist/
 RentTrackerBackend/k6s/bundle/
+
+### Uploaded Files ###
+# User uploaded files
+RentTrackerBackend/uploads/
