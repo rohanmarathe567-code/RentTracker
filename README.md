@@ -2,7 +2,7 @@
 
 [![Project Status: Active](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/rahulbedge/RentTracker)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![.NET Build](https://github.com/rahulbedge/RentTracker/workflows/build/badge.svg)](https://github.com/rahulbedge/RentTracker/actions)
+[![build](https://github.com/rahulbedge/RentTracker/actions/workflows/pr-build.yml/badge.svg?branch=master)](https://github.com/rahulbedge/RentTracker/actions/workflows/pr-build.yml)
 
 A comprehensive multi-tenant rental property management system for tracking payments and managing property-related documents.
 
