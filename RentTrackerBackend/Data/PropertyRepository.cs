@@ -26,8 +26,14 @@ namespace RentTrackerBackend.Data
             var database = mongoClient.GetDatabase(settings.Value.DatabaseName);
             _collection = database.GetCollection<RentalProperty>(typeof(RentalProperty).Name);
 
-            // Create indexes
-            _collection.CreateTenantIndexes();
+            // Initialize indexes asynchronously
+            InitializeIndexes().GetAwaiter().GetResult();
+        }
+
+        private async Task InitializeIndexes()
+        {
+            // Create base tenant indexes
+            await _collection.CreateTenantIndexesAsync();
 
             // Create property-specific indexes
             var indexBuilder = Builders<RentalProperty>.IndexKeys;
@@ -53,7 +59,7 @@ namespace RentTrackerBackend.Data
                     indexBuilder.Ascending(x => x.TenantId)
                               .Ascending(x => x.UpdatedAt))
             };
-            _collection.Indexes.CreateMany(indexes);
+            await _collection.Indexes.CreateManyAsync(indexes);
         }
 
         public Task<IEnumerable<RentalProperty>> GetAllAsync(string tenantId, string[]? includes = null)

@@ -26,8 +26,14 @@ namespace RentTrackerBackend.Data
             _collection = database.GetCollection<RentalPayment>(nameof(RentalPayment));
             _paymentMethodCollection = database.GetCollection<PaymentMethod>(nameof(PaymentMethod));
             
+            // Initialize indexes asynchronously
+            InitializeIndexes().GetAwaiter().GetResult();
+        }
+
+        private async Task InitializeIndexes()
+        {
             // Create base tenant indexes
-            _collection.CreateTenantIndexes();
+            await _collection.CreateTenantIndexesAsync();
         }
 
         public async Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, bool includeSystem = false, string[]? includes = null)

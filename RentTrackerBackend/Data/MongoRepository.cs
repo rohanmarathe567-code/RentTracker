@@ -32,6 +32,9 @@ namespace RentTrackerBackend.Data
 
         public static async Task<T> GetByIdAsync<T>(this IMongoCollection<T> collection, string tenantId, string id) where T : BaseDocument
         {
+            if (!ObjectId.TryParse(id, out _))
+                throw new FormatException($"Invalid ObjectId format: {id}");
+
             return await collection.Find(x =>
                 x.TenantId == tenantId &&
                 x.Id == ObjectId.Parse(id)).FirstOrDefaultAsync();
@@ -39,6 +42,9 @@ namespace RentTrackerBackend.Data
 
         public static async Task<T> CreateAsync<T>(this IMongoCollection<T> collection, T entity) where T : BaseDocument
         {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
             var now = DateTime.UtcNow;
             
             // Set initial values before insert
@@ -54,6 +60,9 @@ namespace RentTrackerBackend.Data
 
         public static async Task UpdateAsync<T>(this IMongoCollection<T> collection, string tenantId, string id, T entity) where T : BaseDocument
         {
+            if (!ObjectId.TryParse(id, out _))
+                throw new FormatException($"Invalid ObjectId format: {id}");
+
             var now = DateTime.UtcNow;
             var currentVersion = entity.Version;
 
@@ -75,14 +84,15 @@ namespace RentTrackerBackend.Data
                 entity.Version = currentVersion;
                 throw new InvalidOperationException("Concurrency conflict - the document has been modified by another user.");
             }
-        }
-
-        public static async Task DeleteAsync<T>(this IMongoCollection<T> collection, string tenantId, string id) where T : BaseDocument
+        }        public static async Task DeleteAsync<T>(this IMongoCollection<T> collection, string tenantId, string id) where T : BaseDocument
         {
-            await collection.DeleteOneAsync(x => x.TenantId == tenantId && x.Id == ObjectId.Parse(id));
-        }
+            if (!ObjectId.TryParse(id, out _))
+                throw new FormatException($"Invalid ObjectId format: {id}");
 
-        public static void CreateTenantIndexes<T>(this IMongoCollection<T> collection) where T : BaseDocument
+            await collection.DeleteOneAsync(x => x.TenantId == tenantId && x.Id == ObjectId.Parse(id));
+        }        
+        
+        public static async Task CreateTenantIndexesAsync<T>(this IMongoCollection<T> collection, CancellationToken cancellationToken = default) where T : BaseDocument
         {
             var indexBuilder = Builders<T>.IndexKeys;
             var indexes = new List<CreateIndexModel<T>>
@@ -90,15 +100,14 @@ namespace RentTrackerBackend.Data
                 new CreateIndexModel<T>(indexBuilder.Ascending(x => x.TenantId)),
                 new CreateIndexModel<T>(indexBuilder.Ascending(x => x.TenantId).Ascending("Address.City"))
             };
-            collection.Indexes.CreateMany(indexes);
+            
+            await collection.Indexes.CreateManyAsync(indexes, options: null, cancellationToken);
         }
     }
 
     public class MongoRepository<T> : IMongoRepository<T> where T : BaseDocument
     {
-        private readonly IMongoCollection<T> _collection;
-
-        public MongoRepository(IMongoDatabase database)
+        private readonly IMongoCollection<T> _collection;        public MongoRepository(IMongoDatabase database)
         {
             // Ensure the class map is registered
             if (!BsonClassMap.IsClassMapRegistered(typeof(T)))
@@ -112,7 +121,7 @@ namespace RentTrackerBackend.Data
 
             var collectionName = typeof(T).Name;
             _collection = database.GetCollection<T>(collectionName);
-            _collection.CreateTenantIndexes();
+            _collection.CreateTenantIndexesAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
 
         public async Task<T> GetByIdAsync(string tenantId, string id)
