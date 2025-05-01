@@ -166,7 +166,35 @@ The system uses MongoDB collections with a flexible, document-based data model:
 }
 ```
 
-2. **RentalProperties**:
+2. **PaymentMethods**:
+```json
+{
+    "name": string,
+    "description": string,
+    "isActive": boolean,
+    "requiresReference": boolean,
+    "attributes": { }
+}
+```
+
+3. **Attachments**:
+```json
+{
+    "originalFileName": string,
+    "storedFileName": string,
+    "contentType": string,
+    "size": long,
+    "uploadDate": DateTime,
+    "userId": string,
+    "metadata": {
+        "propertyId": string,
+        "paymentId": string,
+        "category": string
+    }
+}
+```
+
+4. **RentalProperties**:
 ```json
 {
     "address": {
@@ -228,11 +256,6 @@ For detailed architectural decisions and implementation plans, please refer to t
 Please read our contributing guidelines in CONTRIBUTING.md before submitting pull requests.
 
 ## License
-
-        datetime uploadDate
-        array tags
-    }
-```
 
 ### Technology Stack
 
