@@ -31,13 +31,27 @@
 
                         <div class="mb-3">
                             <label for="paymentMethodId" class="form-label">Payment Method</label>
-                            <InputSelect id="paymentMethodId" class="form-control" @bind-Value="Payment!.PaymentMethodId" @bind-Value:after="OnPaymentMethodChanged">
-                                <option value="">Select a payment method</option>
-                                @foreach (var method in _paymentMethods)
-                                {
-                                    <option value="@method.Id">@method.Name</option>
-                                }
-                            </InputSelect>
+                            @if (_isLoading)
+                            {
+                                <div class="d-flex align-items-center">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Loading payment methods...</span>
+                                </div>
+                            }
+                            else if (!string.IsNullOrEmpty(_errorMessage))
+                            {
+                                <div class="alert alert-danger">@_errorMessage</div>
+                            }
+                            else
+                            {
+                                <InputSelect id="paymentMethodId" class="form-control" @bind-Value="Payment!.PaymentMethodId" @bind-Value:after="OnPaymentMethodChanged">
+                                    <option value="">Select a payment method</option>
+                                    @foreach (var method in _paymentMethods)
+                                    {
+                                        <option value="@method.Id">@method.Name</option>
+                                    }
+                                </InputSelect>
+                            }
                         </div>
 
                         <div class="mb-3">
@@ -68,6 +82,8 @@
 
 @code {
     private List<PaymentMethod> _paymentMethods = new();
+    private bool _isLoading = true;
+    private string? _errorMessage;
 
     private void OnPaymentMethodChanged()
     {
@@ -105,11 +121,23 @@
     {
         try
         {
+            _isLoading = true;
+            _errorMessage = null;
             _paymentMethods = await PaymentMethodService.GetPaymentMethodsAsync();
+            
+            if (_paymentMethods.Count == 0)
+            {
+                _errorMessage = "No payment methods found. Please ensure payment methods are configured in the system.";
+            }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading payment methods");
+            _errorMessage = "Failed to load payment methods. Please try refreshing the page.";
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 

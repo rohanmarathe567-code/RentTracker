@@ -75,6 +75,31 @@ public class PaymentServiceTests
 
     #region GetPaymentsByPropertyAsync Tests
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GetPaymentsByPropertyAsync_WithIncludeSystemParameter_RespectsParameter(bool includeSystem)
+    {
+        // Arrange
+        var property = CreateTestProperty();
+        var payments = new List<RentalPayment>
+        {
+            CreateTestPayment(propertyId: TestPropertyId)
+        };
+
+        _mockPropertyRepository.GetByIdAsync(TestTenantId, TestPropertyId).Returns(property);
+        _mockPaymentRepository.GetAllAsync(TestTenantId, includeSystem, null).Returns(payments);
+
+        // Act
+        var result = await _paymentService.GetPaymentsByPropertyAsync(TestTenantId, TestPropertyId, includeSystem);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        await _mockPropertyRepository.Received(1).GetByIdAsync(TestTenantId, TestPropertyId);
+        await _mockPaymentRepository.Received(1).GetAllAsync(TestTenantId, includeSystem, null);
+    }
+
     [Fact]
     public async Task GetPaymentsByPropertyAsync_WhenPropertyExists_ReturnsPayments()
     {
@@ -88,17 +113,17 @@ public class PaymentServiceTests
         };
 
         _mockPropertyRepository.GetByIdAsync(TestTenantId, TestPropertyId).Returns(property);
-        _mockPaymentRepository.GetAllAsync(TestTenantId, null).Returns(payments);
+        _mockPaymentRepository.GetAllAsync(TestTenantId, true, null).Returns(payments);
 
         // Act
-        var result = await _paymentService.GetPaymentsByPropertyAsync(TestTenantId, TestPropertyId);
+        var result = await _paymentService.GetPaymentsByPropertyAsync(TestTenantId, TestPropertyId, includeSystem: true);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count());
         Assert.All(result, payment => Assert.Equal(TestPropertyId, payment.RentalPropertyId));
         await _mockPropertyRepository.Received(1).GetByIdAsync(TestTenantId, TestPropertyId);
-        await _mockPaymentRepository.Received(1).GetAllAsync(TestTenantId, null);
+        await _mockPaymentRepository.Received(1).GetAllAsync(TestTenantId, true, null);
     }
 
     [Fact]
@@ -113,7 +138,7 @@ public class PaymentServiceTests
         
         Assert.Contains(TestPropertyId, exception.Message);
         await _mockPropertyRepository.Received(1).GetByIdAsync(TestTenantId, TestPropertyId);
-        await _mockPaymentRepository.DidNotReceive().GetAllAsync(Arg.Any<string>(), Arg.Any<string[]>());
+        await _mockPaymentRepository.DidNotReceive().GetAllAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string[]>());
     }
 
     [Fact]
@@ -125,16 +150,16 @@ public class PaymentServiceTests
         var includes = new[] { "PaymentMethod" };
 
         _mockPropertyRepository.GetByIdAsync(TestTenantId, TestPropertyId).Returns(property);
-        _mockPaymentRepository.GetAllAsync(TestTenantId, includes).Returns(payments);
+        _mockPaymentRepository.GetAllAsync(TestTenantId, true, includes).Returns(payments);
 
         // Act
-        var result = await _paymentService.GetPaymentsByPropertyAsync(TestTenantId, TestPropertyId, includes);
+        var result = await _paymentService.GetPaymentsByPropertyAsync(TestTenantId, TestPropertyId, includeSystem: true, includes: includes);
 
         // Assert
         Assert.NotNull(result);
         Assert.Single(result);
         await _mockPropertyRepository.Received(1).GetByIdAsync(TestTenantId, TestPropertyId);
-        await _mockPaymentRepository.Received(1).GetAllAsync(TestTenantId, includes);
+        await _mockPaymentRepository.Received(1).GetAllAsync(TestTenantId, true, includes);
     }
 
     [Fact]
@@ -148,16 +173,16 @@ public class PaymentServiceTests
         };
 
         _mockPropertyRepository.GetByIdAsync(TestTenantId, TestPropertyId).Returns(property);
-        _mockPaymentRepository.GetAllAsync(TestTenantId, null).Returns(payments);
+        _mockPaymentRepository.GetAllAsync(TestTenantId, true, null).Returns(payments);
 
         // Act
-        var result = await _paymentService.GetPaymentsByPropertyAsync(TestTenantId, TestPropertyId);
+        var result = await _paymentService.GetPaymentsByPropertyAsync(TestTenantId, TestPropertyId, includeSystem: true);
 
         // Assert
         Assert.NotNull(result);
         Assert.Empty(result);
         await _mockPropertyRepository.Received(1).GetByIdAsync(TestTenantId, TestPropertyId);
-        await _mockPaymentRepository.Received(1).GetAllAsync(TestTenantId, null);
+        await _mockPaymentRepository.Received(1).GetAllAsync(TestTenantId, true, null);
     }
 
     #endregion

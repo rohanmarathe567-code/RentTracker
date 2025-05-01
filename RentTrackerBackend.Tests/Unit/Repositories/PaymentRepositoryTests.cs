@@ -75,14 +75,16 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
                 .Returns(cursor);
 
             // Act
-            var result = await _repository.GetAllAsync(tenantId);
+            var result = await _repository.GetAllAsync(tenantId, false);
 
             // Assert
             result.Should().BeEquivalentTo(expectedPayments);
         }
 
-        [Fact]
-        public async Task GetAllAsync_ShouldIncludePaymentMethods_WhenIncludesContainsPaymentMethod()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task GetAllAsync_ShouldIncludePaymentMethods_WhenIncludesContainsPaymentMethod(bool includeSystem)
         {
             // Arrange
             var tenantId = "tenant123";
@@ -117,7 +119,7 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
                 .Returns(paymentMethodsCursor);
 
             // Act
-            var result = await _repository.GetAllAsync(tenantId, new[] { "PaymentMethod" });
+            var result = await _repository.GetAllAsync(tenantId, includeSystem, new[] { "PaymentMethod" });
 
             // Assert
             result.Should().ContainSingle()
@@ -262,7 +264,7 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
            // Act & Assert
 #pragma warning disable CS8604 // Possible null reference argument
            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-               _repository.GetAllAsync(tenantId));
+               _repository.GetAllAsync(tenantId, includeSystem: false));
 #pragma warning restore CS8604
 
            Assert.Contains("Tenant ID cannot be null or empty", exception.Message);
@@ -326,8 +328,10 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
 #pragma warning restore CS8625
        }
 
-       [Fact]
-       public async Task GetAllAsync_ShouldHandleMissingPaymentMethod_WhenIncludesContainsPaymentMethod()
+       [Theory]
+       [InlineData(true)]
+       [InlineData(false)]
+       public async Task GetAllAsync_ShouldHandleMissingPaymentMethod_WhenIncludesContainsPaymentMethod(bool includeSystem)
        {
            // Arrange
            var tenantId = "tenant123";
@@ -360,11 +364,53 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
                .Returns(emptyPaymentMethodsCursor);
 
            // Act
-           var result = await _repository.GetAllAsync(tenantId, new[] { "PaymentMethod" });
+           var result = await _repository.GetAllAsync(tenantId, includeSystem, new[] { "PaymentMethod" });
 
            // Assert
            result.Should().ContainSingle()
                .Which.PaymentMethod.Should().BeNull();
+       }
+
+       [Fact]
+       public async Task GetAllAsync_ShouldIncludeSystemWidePaymentMethods_WhenIncludeSystemIsTrue()
+       {
+           // Arrange
+           var tenantId = "tenant123";
+           var systemPaymentMethodId = ObjectId.GenerateNewId().ToString();
+           var tenantPaymentMethodId = ObjectId.GenerateNewId().ToString();
+
+           var expectedPayments = new List<RentalPayment>
+           {
+               new RentalPayment
+               {
+                   TenantId = tenantId,
+                   PaymentMethodId = tenantPaymentMethodId
+               },
+               new RentalPayment
+               {
+                   TenantId = "system",
+                   PaymentMethodId = systemPaymentMethodId
+               }
+           };
+
+           var paymentsCursor = Substitute.For<IAsyncCursor<RentalPayment>>();
+           paymentsCursor.Current.Returns(expectedPayments);
+           paymentsCursor.MoveNextAsync(Arg.Any<CancellationToken>())
+               .Returns(true, false);
+
+           _collection.FindAsync(
+               Arg.Any<FilterDefinition<RentalPayment>>(),
+               Arg.Any<FindOptions<RentalPayment, RentalPayment>>(),
+               Arg.Any<CancellationToken>())
+               .Returns(paymentsCursor);
+
+           // Act
+           var result = await _repository.GetAllAsync(tenantId, true);
+
+           // Assert
+           result.Should().HaveCount(2)
+               .And.Contain(p => p.TenantId == tenantId)
+               .And.Contain(p => p.TenantId == "system");
        }
 
        [Fact]

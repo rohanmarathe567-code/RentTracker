@@ -37,7 +37,7 @@ public static class PaymentsController
                     includes = parameters.Include.Split(',', StringSplitOptions.RemoveEmptyEntries);
                 }
 
-                var payments = await paymentService.GetPaymentsByPropertyAsync(tenantId, propertyId, includes);
+                var payments = await paymentService.GetPaymentsByPropertyAsync(tenantId, propertyId, includeSystem: true, includes: includes);
                 
                 // Manual filtering
                 var filteredPayments = payments.AsQueryable();

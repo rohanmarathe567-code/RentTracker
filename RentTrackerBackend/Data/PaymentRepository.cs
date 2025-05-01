@@ -7,7 +7,7 @@ namespace RentTrackerBackend.Data
 {
     public interface IPaymentRepository
     {
-        Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, string[]? includes = null);
+        Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, bool includeSystem = false, string[]? includes = null);
         Task<RentalPayment> GetByIdAsync(string tenantId, string id);
         Task<RentalPayment> CreateAsync(RentalPayment entity);
         Task UpdateAsync(string tenantId, string id, RentalPayment entity);
@@ -30,14 +30,14 @@ namespace RentTrackerBackend.Data
             _collection.CreateTenantIndexes();
         }
 
-        public async Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, string[]? includes = null)
+        public async Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, bool includeSystem = false, string[]? includes = null)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
             {
                 throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
             }
 
-            var payments = await _collection.GetAllAsync(tenantId);
+            var payments = await _collection.GetAllAsync(tenantId, includeSystem);
             return await IncludePaymentMethodsAsync(payments.ToList(), includes);
         }
 

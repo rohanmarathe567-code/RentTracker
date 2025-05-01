@@ -86,9 +86,7 @@ public class DatabaseSeeder
 
         // Get collection references for other data
         var propertiesCollection = _database.GetCollection<RentalProperty>(nameof(RentalProperty));
-        var paymentMethodsCollection = _database.GetCollection<PaymentMethod>(nameof(PaymentMethod));
-
-        // Create payment methods
+        var paymentMethodsCollection = _database.GetCollection<PaymentMethod>(nameof(PaymentMethod));        // Create payment methods
         var paymentMethods = new[]
         {
             new PaymentMethod
@@ -96,28 +94,28 @@ public class DatabaseSeeder
                 Name = "Bank Transfer",
                 Description = "Direct bank transfer payment",
                 IsSystemDefault = true,
-                TenantId = _systemUserId.ToString()
+                TenantId = "system"
             },
             new PaymentMethod
             {
                 Name = "Credit Card",
                 Description = "Payment via credit card",
                 IsSystemDefault = true,
-                TenantId = _systemUserId.ToString()
+                TenantId = "system"
             },
             new PaymentMethod
             {
                 Name = "Cash",
                 Description = "Cash payment",
                 IsSystemDefault = true,
-                TenantId = _systemUserId.ToString()
+                TenantId = "system"
             },
             new PaymentMethod
             {
                 Name = "PayPal",
                 Description = "Payment through PayPal service",
                 IsSystemDefault = true,
-                TenantId = _systemUserId.ToString()
+                TenantId = "system"
             }
         };
 

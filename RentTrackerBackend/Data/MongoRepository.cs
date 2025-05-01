@@ -8,10 +8,24 @@ namespace RentTrackerBackend.Data
 {
     public static class MongoDbExtensions
     {
-        public static async Task<IEnumerable<T>> GetAllAsync<T>(this IMongoCollection<T> collection, string tenantId) where T : BaseDocument
+        public static async Task<IEnumerable<T>> GetAllAsync<T>(this IMongoCollection<T> collection, string tenantId, bool includeSystem = false) where T : BaseDocument
         {
             var builder = Builders<T>.Filter;
-            var filter = builder.Eq("tenantId", tenantId);
+            var filters = new List<FilterDefinition<T>>();
+
+            // Add tenant-specific filter
+            filters.Add(builder.Eq("tenantId", tenantId));
+
+            // Include system-wide items if requested
+            if (includeSystem)
+            {
+                filters.Add(builder.Eq("tenantId", "system"));
+            }
+
+            // Combine filters with OR if we're including system items
+            var filter = includeSystem
+                ? builder.Or(filters)
+                : filters[0];
             
             return await collection.Find(filter).ToListAsync();
         }
@@ -106,9 +120,9 @@ namespace RentTrackerBackend.Data
             return await _collection.GetByIdAsync(tenantId, id);
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync(string tenantId, string[]? includes = null)
+        public async Task<IEnumerable<T>> GetAllAsync(string tenantId, bool includeSystem = false, string[]? includes = null)
         {
-            return await _collection.GetAllAsync(tenantId);
+            return await _collection.GetAllAsync(tenantId, includeSystem);
         }
 
         public async Task<T> CreateAsync(T entity)

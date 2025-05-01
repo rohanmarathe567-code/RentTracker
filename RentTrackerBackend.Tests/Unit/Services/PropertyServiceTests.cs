@@ -88,7 +88,7 @@ public class PropertyServiceTests
             CreateTestProperty("789 Pine Rd", "Seattle", "WA", "98102", rentAmount: 2000)
         };
         
-        _mockRepository.GetAllAsync(TestTenantId, null).Returns(properties);
+        _mockRepository.GetAllAsync(TestTenantId, false).Returns(properties);
 
         var parameters = new PaginationParameters
         {
@@ -108,7 +108,7 @@ public class PropertyServiceTests
         Assert.Equal(2, result.Items.Count());
         // Seattle properties should be included
         Assert.Contains(result.Items, p => p.Address.City == "Seattle");
-        await _mockRepository.Received(1).GetAllAsync(TestTenantId, null);
+        await _mockRepository.Received(1).GetAllAsync(TestTenantId, false);
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class PropertyServiceTests
             CreateTestProperty("789 Pine Rd", "Seattle", "WA", "98102")
         };
         
-        _mockRepository.GetAllAsync(TestTenantId, null).Returns(properties);
+        _mockRepository.GetAllAsync(TestTenantId, false).Returns(properties);
 
         var parameters = new PaginationParameters
         {
@@ -137,14 +137,14 @@ public class PropertyServiceTests
         Assert.NotNull(result);
         Assert.Equal(3, result.TotalCount);
         Assert.Equal(3, result.Items.Count());
-        await _mockRepository.Received(1).GetAllAsync(TestTenantId, null);
+        await _mockRepository.Received(1).GetAllAsync(TestTenantId, false);
     }
 
     [Fact]
     public async Task GetPropertiesAsync_WithInvalidPagination_ValidatesPagination()
     {
         // Arrange
-        _mockRepository.GetAllAsync(TestTenantId, null).Returns(new List<RentalProperty>());
+        _mockRepository.GetAllAsync(TestTenantId, false).Returns(new List<RentalProperty>());
 
         var parameters = new PaginationParameters
         {
@@ -178,7 +178,7 @@ public class PropertyServiceTests
             CreateTestProperty("789 Pine Rd", "Bellevue", "WA", "98102", rentAmount: 2000)
         };
         
-        _mockRepository.GetAllAsync(TestTenantId, null).Returns(properties);
+        _mockRepository.GetAllAsync(TestTenantId, false).Returns(properties);
 
         var parameters = new PaginationParameters
         {
@@ -194,7 +194,7 @@ public class PropertyServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(3, result.Items.Count());
-        await _mockRepository.Received(1).GetAllAsync(TestTenantId, null);
+        await _mockRepository.Received(1).GetAllAsync(TestTenantId, false);
     }
 
     #endregion

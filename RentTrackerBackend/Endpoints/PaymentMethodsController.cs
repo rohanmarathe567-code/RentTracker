@@ -9,26 +9,44 @@ namespace RentTrackerBackend.Endpoints;
 public static class PaymentMethodsController
 {
     public static void MapPaymentMethodEndpoints(this WebApplication app)
-    {
-        // Get all payment methods
+    {        // Get all payment methods
         app.MapGet("/api/paymentmethods", async (
             IMongoRepository<PaymentMethod> repository,
-            IClaimsPrincipalService claimsPrincipalService) =>
+            IClaimsPrincipalService claimsPrincipalService,
+            ILogger<PaymentMethod> logger) =>
         {
-            if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
+            try 
             {
-                return Results.Unauthorized();
-            }
-
-            // Get system defaults and user's custom payment methods
-            var systemDefaults = await repository.GetAllAsync("system");
-            var userMethods = await repository.GetAllAsync(tenantId);
-
-            var paymentMethods = systemDefaults.Union(userMethods)
-                .OrderBy(p => p.Name)
-                .ToList();
+                logger.LogInformation("GET request received for payment methods");
                 
-            return Results.Ok(paymentMethods);
+                // Validate tenant ID but always return system payment methods
+                bool hasTenantId = claimsPrincipalService.ValidateTenantId(out string tenantId);
+                  if (!hasTenantId)
+                {
+                    logger.LogWarning("No valid tenant ID found in request, returning only system payment methods");
+                    // Even without tenant authentication, we can still provide system payment methods
+                    var onlySystemDefaults = await repository.GetAllAsync("system");
+                    return Results.Ok(onlySystemDefaults.OrderBy(p => p.Name).ToList());
+                }
+                
+                logger.LogInformation($"Fetching payment methods for tenant: {tenantId}");
+
+                // Get system defaults and user's custom payment methods
+                var systemDefaults = await repository.GetAllAsync("system");
+                var userMethods = await repository.GetAllAsync(tenantId);
+
+                var paymentMethods = systemDefaults.Union(userMethods)
+                    .OrderBy(p => p.Name)
+                    .ToList();
+                
+                logger.LogInformation($"Returning {paymentMethods.Count} payment methods ({systemDefaults.Count()} system, {userMethods.Count()} user)");
+                return Results.Ok(paymentMethods);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing payment methods request");
+                return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
+            }
         })
         .WithName("GetPaymentMethods")
         .Produces<IEnumerable<PaymentMethod>>(StatusCodes.Status200OK);
