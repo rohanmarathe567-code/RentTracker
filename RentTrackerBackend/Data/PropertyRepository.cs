@@ -89,8 +89,15 @@ namespace RentTrackerBackend.Data
 
         public async Task<IEnumerable<RentalProperty>> GetPropertiesByCityAsync(string tenantId, string city)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+            if (string.IsNullOrWhiteSpace(city))
+                throw new ArgumentException("City cannot be null or empty", nameof(city));
+
             return await _collection
-                .Find(x => x.TenantId == tenantId && x.Address.City == city)
+                .Find(x => x.TenantId == tenantId && 
+                          x.Address != null && 
+                          x.Address.City == city)
                 .ToListAsync();
         }
 

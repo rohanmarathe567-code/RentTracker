@@ -275,6 +275,87 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
             result.Should().BeEquivalentTo(expectedProperties);
         }
 
+        [Fact]
+        public async Task GetPropertiesByCityAsync_ShouldReturnProperties_WhenPropertiesExistInCity()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var city = "TestCity";
+            var expectedProperties = new List<RentalProperty>
+            {
+                new RentalProperty {
+                    TenantId = tenantId,
+                    Address = new Address { City = city }
+                },
+                new RentalProperty {
+                    TenantId = tenantId,
+                    Address = new Address { City = city }
+                }
+            };
+
+            var cursor = Substitute.For<IAsyncCursor<RentalProperty>>();
+            cursor.Current.Returns(expectedProperties);
+            cursor.MoveNextAsync(Arg.Any<CancellationToken>())
+                .Returns(true, false);
+
+            _collection.FindAsync(
+                Arg.Any<FilterDefinition<RentalProperty>>(),
+                Arg.Any<FindOptions<RentalProperty, RentalProperty>>(),
+                Arg.Any<CancellationToken>())
+                .Returns(cursor);
+
+            // Act
+            var result = await _repository.GetPropertiesByCityAsync(tenantId, city);
+
+            // Assert
+            result.Should().BeEquivalentTo(expectedProperties);
+        }
+
+        [Fact]
+        public async Task GetPropertiesByCityAsync_ShouldReturnEmptyList_WhenNoPropertiesExistInCity()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var city = "NonExistentCity";
+
+            var cursor = Substitute.For<IAsyncCursor<RentalProperty>>();
+            cursor.Current.Returns(new List<RentalProperty>());
+            cursor.MoveNextAsync(Arg.Any<CancellationToken>())
+                .Returns(false);
+
+            _collection.FindAsync(
+                Arg.Any<FilterDefinition<RentalProperty>>(),
+                Arg.Any<FindOptions<RentalProperty, RentalProperty>>(),
+                Arg.Any<CancellationToken>())
+                .Returns(cursor);
+
+            // Act
+            var result = await _repository.GetPropertiesByCityAsync(tenantId, city);
+
+            // Assert
+            result.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData("", "TestCity")]
+        [InlineData("   ", "TestCity")]
+        public async Task GetPropertiesByCityAsync_ShouldThrowArgumentException_WhenTenantIdIsInvalid(string tenantId, string city)
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _repository.GetPropertiesByCityAsync(tenantId, city));
+        }
+
+        [Theory]
+        [InlineData("tenant123", "")]
+        [InlineData("tenant123", "   ")]
+        public async Task GetPropertiesByCityAsync_ShouldThrowArgumentException_WhenCityIsInvalid(string tenantId, string city)
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _repository.GetPropertiesByCityAsync(tenantId, city));
+        }
+
         [Theory]
         [InlineData("", false)]
         [InlineData(" ", false)]
