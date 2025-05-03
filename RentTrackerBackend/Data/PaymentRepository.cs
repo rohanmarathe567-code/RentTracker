@@ -28,12 +28,10 @@ namespace RentTrackerBackend.Data
             
             // Initialize indexes asynchronously
             InitializeIndexes().GetAwaiter().GetResult();
-        }
-
-        private async Task InitializeIndexes()
+        }        private async Task InitializeIndexes()
         {
             // Create base tenant indexes
-            await _collection.CreateTenantIndexesAsync();
+            await _collection.CreateTenantIndexesAsync(CancellationToken.None);
         }
 
         public async Task<IEnumerable<RentalPayment>> GetAllAsync(string tenantId, bool includeSystem = false, string[]? includes = null)
