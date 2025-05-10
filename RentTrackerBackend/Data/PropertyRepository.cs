@@ -19,16 +19,16 @@ namespace RentTrackerBackend.Data
     public class PropertyRepository : IPropertyRepository
     {
         private readonly IMongoCollection<RentalProperty> _collection;
-        private readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(30);
-
-        public PropertyRepository(IMongoClient mongoClient, IOptions<MongoDbSettings> settings)
+        private readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(30);        public PropertyRepository(IMongoClient mongoClient, IOptions<MongoDbSettings> settings)
         {
             var database = mongoClient.GetDatabase(settings.Value.DatabaseName);
             _collection = database.GetCollection<RentalProperty>(typeof(RentalProperty).Name);
 
             // Initialize indexes asynchronously
             InitializeIndexes().GetAwaiter().GetResult();
-        }        private async Task InitializeIndexes()
+        }
+        
+        private async Task InitializeIndexes()
         {
             // Create base tenant indexes
             await _collection.CreateTenantIndexesAsync(CancellationToken.None);
@@ -55,35 +55,45 @@ namespace RentTrackerBackend.Data
                 // Index for date-based queries
                 new CreateIndexModel<RentalProperty>(
                     indexBuilder.Ascending(x => x.TenantId)
-                              .Ascending(x => x.UpdatedAt))
-            };
+                              .Ascending(x => x.UpdatedAt))            };
             await _collection.Indexes.CreateManyAsync(indexes);
         }
-
+        
         public Task<IEnumerable<RentalProperty>> GetAllAsync(string tenantId, string[]? includes = null)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+                
             return _collection.GetAllAsync(tenantId);
         }
 
         public Task<RentalProperty> GetByIdAsync(string tenantId, string id)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));                
             return _collection.GetByIdAsync(tenantId, id);
         }
+        
         public Task<RentalProperty> CreateAsync(RentalProperty? entity)
         {
             if (entity == null)
-                throw new ArgumentNullException(nameof(entity));
-                
+                throw new ArgumentNullException(nameof(entity));                
             return _collection.CreateAsync(entity);
         }
-
+        
         public Task UpdateAsync(string tenantId, string id, RentalProperty entity)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+                
             return _collection.UpdateAsync(tenantId, id, entity);
         }
 
         public Task DeleteAsync(string tenantId, string id)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+                
             return _collection.DeleteAsync(tenantId, id);
         }
 
@@ -94,24 +104,45 @@ namespace RentTrackerBackend.Data
             if (string.IsNullOrWhiteSpace(city))
                 throw new ArgumentException("City cannot be null or empty", nameof(city));
 
-            return await _collection
-                .Find(x => x.TenantId == tenantId && 
+            return await _collection                .Find(x => x.TenantId == tenantId && 
                           x.Address != null && 
                           x.Address.City == city)
                 .ToListAsync();
         }
-
+        
         public async Task<IEnumerable<RentalProperty>> GetPropertiesByRentRangeAsync(string tenantId, decimal minRent, decimal maxRent)
         {
-            return await _collection
-                .Find(x => x.TenantId == tenantId && 
-                          x.RentAmount >= minRent && 
-                          x.RentAmount <= maxRent)
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+            if (minRent < 0)
+                throw new ArgumentException("Minimum rent cannot be negative", nameof(minRent));
+            if (maxRent < minRent)
+                throw new ArgumentException("Maximum rent cannot be less than minimum rent", nameof(maxRent));
+            
+            // First get all properties for this tenant
+            var properties = await _collection
+                .Find(x => x.TenantId == tenantId)
                 .ToListAsync();
+                  // Then filter by rent range in memory
+            return properties.Where(p => p.RentAmount >= minRent && p.RentAmount <= maxRent);
         }
-
+        
         public async Task<IEnumerable<RentalProperty>> SearchPropertiesAsync(string tenantId, string searchText)
         {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
+            if (searchText == null)
+                throw new ArgumentNullException(nameof(searchText), "Search text cannot be null");
+                
+            // If search text is empty or whitespace, return all properties for tenant
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                return await _collection
+                    .Find(x => x.TenantId == tenantId)
+                    .SortByDescending(x => x.UpdatedAt)
+                    .ToListAsync();
+            }
+            
             // Create a text search filter combined with tenant filter
             var builder = Builders<RentalProperty>.Filter;
             var filter = builder.And(
