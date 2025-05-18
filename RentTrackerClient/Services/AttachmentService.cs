@@ -104,6 +104,16 @@ public class AttachmentService : HttpClientService
         return attachments;
     }
 
+    public async Task<List<Attachment>> GetAttachmentsByTransactionAsync(string propertyId, string transactionId)
+    {
+        _logger.LogInformation($"Fetching attachments for property ID: {propertyId}, transaction ID: {transactionId}");
+        
+        var attachments = await GetListAsync<Attachment>($"properties/{propertyId}/transactions/{transactionId}/attachments");
+        
+        _logger.LogDebug($"Retrieved {attachments.Count} attachments for property ID: {propertyId}, transaction ID: {transactionId}");
+        return attachments;
+    }
+
     public async Task<List<Attachment>> GetAttachmentsByPaymentAsync(string propertyId, string paymentId)
     {
         _logger.LogInformation($"Fetching attachments for property ID: {propertyId}, payment ID: {paymentId}");
@@ -112,6 +122,57 @@ public class AttachmentService : HttpClientService
         
         _logger.LogDebug($"Retrieved {attachments.Count} attachments for property ID: {propertyId}, payment ID: {paymentId}");
         return attachments;
+    }
+
+    public async Task<Attachment?> UploadAttachmentToTransactionAsync(string propertyId, string transactionId, IBrowserFile file, string? description = null, string[]? tags = null)
+    {
+        _logger.LogInformation($"Uploading attachment for property ID: {propertyId}, transaction ID: {transactionId}");
+        _logger.LogDebug($"Attachment filename: {file.Name}");
+
+        using var content = new MultipartFormDataContent();
+        using var fileStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+        using var fileContent = new StreamContent(fileStream);
+        
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+        content.Add(fileContent, "file", file.Name);
+        
+        if (description != null)
+            content.Add(new StringContent(description), "description");
+            
+        if (tags != null && tags.Length > 0)
+            content.Add(new StringContent(JsonSerializer.Serialize(tags)), "tags");
+
+        try
+        {
+            // Get auth token and add it to the request
+            var token = await _authService.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.PostAsync($"{_baseUrl}/properties/{propertyId}/transactions/{transactionId}/attachments", content);
+            response.EnsureSuccessStatusCode();
+
+            var attachment = await response.Content.ReadFromJsonAsync<Attachment>();
+            
+            if (attachment != null)
+            {
+                _logger.LogInformation($"Successfully uploaded attachment for property ID: {propertyId}, transaction ID: {transactionId}. Attachment ID: {attachment.Id}");
+            }
+            else
+            {
+                _logger.LogWarning($"Attachment upload for property ID: {propertyId}, transaction ID: {transactionId} returned no attachment");
+            }
+
+            return attachment;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error uploading attachment for property ID: {propertyId}, transaction ID: {transactionId}");
+            throw;
+        }
     }
 
     public async Task<Attachment?> UploadAttachmentToPaymentAsync(string propertyId, string paymentId, IBrowserFile file, string? description = null, string[]? tags = null)

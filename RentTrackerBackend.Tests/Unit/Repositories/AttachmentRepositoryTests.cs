@@ -353,61 +353,6 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
         }
 
         [Fact]
-        public async Task GetAttachmentsByPaymentIdAsync_ShouldReturnAttachments_WhenAttachmentsExist()
-        {
-            // Arrange
-            var tenantId = "tenant123";
-            var paymentId = "payment789";
-            var expectedAttachments = new List<Attachment>
-            {
-                new Attachment { TenantId = tenantId, RentalPaymentId = paymentId },
-                new Attachment { TenantId = tenantId, RentalPaymentId = paymentId }
-            };
-
-            var cursor = Substitute.For<IAsyncCursor<Attachment>>();
-            cursor.Current.Returns(expectedAttachments);
-            cursor.MoveNextAsync(Arg.Any<CancellationToken>())
-                .Returns(true, false);
-
-            _collection.FindAsync(
-                Arg.Any<FilterDefinition<Attachment>>(),
-                Arg.Any<FindOptions<Attachment, Attachment>>(),
-                Arg.Any<CancellationToken>())
-                .Returns(cursor);
-
-            // Act
-            var result = await _repository.GetAttachmentsByPaymentIdAsync(tenantId, paymentId);
-
-            // Assert
-            result.Should().BeEquivalentTo(expectedAttachments);
-        }
-
-        [Fact]
-        public async Task GetAttachmentsByPaymentIdAsync_ShouldReturnEmptyList_WhenNoAttachmentsExist()
-        {
-            // Arrange
-            var tenantId = "tenant123";
-            var paymentId = "payment789";
-
-            var cursor = Substitute.For<IAsyncCursor<Attachment>>();
-            cursor.Current.Returns(new List<Attachment>());
-            cursor.MoveNextAsync(Arg.Any<CancellationToken>())
-                .Returns(false);
-
-            _collection.FindAsync(
-                Arg.Any<FilterDefinition<Attachment>>(),
-                Arg.Any<FindOptions<Attachment, Attachment>>(),
-                Arg.Any<CancellationToken>())
-                .Returns(cursor);
-
-            // Act
-            var result = await _repository.GetAttachmentsByPaymentIdAsync(tenantId, paymentId);
-
-            // Assert
-            result.Should().BeEmpty();
-        }
-
-        [Fact]
         public async Task GetAttachmentsByEntityTypeAsync_ShouldReturnAttachments_WhenAttachmentsExist()
         {
             // Arrange
@@ -510,18 +455,6 @@ namespace RentTrackerBackend.Tests.Unit.Repositories
                 _repository.GetAttachmentsByPropertyIdAsync(tenantId, propertyId));
         }
 
-        [Theory]
-        [InlineData("")]
-        [InlineData("   ")]
-        public async Task GetAttachmentsByPaymentIdAsync_ShouldThrowArgumentException_WhenPaymentIdIsInvalid(string paymentId)
-        {
-            // Arrange
-            var tenantId = "tenant123";
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => 
-                _repository.GetAttachmentsByPaymentIdAsync(tenantId, paymentId));
-        }
 
         [Theory]
         [InlineData("")]

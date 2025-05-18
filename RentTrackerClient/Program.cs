@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Components.Authorization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using RentTrackerClient;
 using RentTrackerClient.Services;
 
@@ -13,8 +15,21 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Logging.ClearProviders();
 builder.Logging.AddProvider(new ClientLoggerProvider(LogLevel.Debug));
 
-// Configure HttpClient
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:7000") });
+// Configure HttpClient with JSON serialization options
+builder.Services.AddScoped(sp =>
+{
+    var client = new HttpClient { BaseAddress = new Uri("http://localhost:7000") };    
+    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));    
+    return client;
+});
+
+// Add JSON options
+builder.Services.Configure<JsonSerializerOptions>(options =>
+{
+    options.PropertyNameCaseInsensitive = true;
+    options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Add Authentication Services
 builder.Services.AddAuthorizationCore();
@@ -42,13 +57,6 @@ builder.Services.AddScoped(sp =>
     )
 );
 builder.Services.AddScoped(sp =>
-    new RentalPaymentService(
-        sp.GetRequiredService<HttpClient>(),
-        sp.GetRequiredService<ILogger<RentalPaymentService>>(),
-        sp.GetRequiredService<IAuthenticationService>()
-    )
-);
-builder.Services.AddScoped(sp =>
     new AttachmentService(
         sp.GetRequiredService<HttpClient>(),
         sp.GetRequiredService<ILogger<AttachmentService>>(),
@@ -61,6 +69,24 @@ builder.Services.AddScoped(sp =>
     new PaymentMethodService(
         sp.GetRequiredService<HttpClient>(),
         sp.GetRequiredService<ILogger<PaymentMethodService>>(),
+        sp.GetRequiredService<IAuthenticationService>()
+    )
+);
+
+// Register PropertyTransactionService with logging
+builder.Services.AddScoped(sp =>
+    new PropertyTransactionService(
+        sp.GetRequiredService<HttpClient>(),
+        sp.GetRequiredService<ILogger<PropertyTransactionService>>(),
+        sp.GetRequiredService<IAuthenticationService>()
+    )
+);
+
+// Register TransactionCategoryService with logging and authentication
+builder.Services.AddScoped(sp =>
+    new TransactionCategoryService(
+        sp.GetRequiredService<HttpClient>(),
+        sp.GetRequiredService<ILogger<TransactionCategoryService>>(),
         sp.GetRequiredService<IAuthenticationService>()
     )
 );

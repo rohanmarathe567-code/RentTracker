@@ -27,7 +27,7 @@ namespace RentTrackerBackend.Services
     {
         private readonly IAttachmentRepository _attachmentRepository;
         private readonly IPropertyRepository _propertyRepository;
-        private readonly IPaymentRepository _paymentRepository;
+        private readonly IPropertyTransactionRepository _transactionRepository;
         private readonly ILogger<AttachmentService> _logger;
         private readonly IStorageService _storageService;
         private readonly IClaimsPrincipalService _claimsPrincipalService;
@@ -35,14 +35,14 @@ namespace RentTrackerBackend.Services
         public AttachmentService(
             IAttachmentRepository attachmentRepository,
             IPropertyRepository propertyRepository,
-            IPaymentRepository paymentRepository,
+            IPropertyTransactionRepository transactionRepository,
             IStorageService storageService,
             IClaimsPrincipalService claimsPrincipalService,
             ILogger<AttachmentService> logger)
         {
             _attachmentRepository = attachmentRepository;
             _propertyRepository = propertyRepository;
-            _paymentRepository = paymentRepository;
+            _transactionRepository = transactionRepository;
             _storageService = storageService;
             _claimsPrincipalService = claimsPrincipalService;
             _logger = logger;
@@ -67,11 +67,11 @@ namespace RentTrackerBackend.Services
                         throw new ArgumentException($"Property with ID {parentId} not found.");
                     tenantId = property.TenantId;
                     break;
-                case RentalAttachmentType.Payment:
-                    var payment = await _paymentRepository.GetByIdAsync(tenantId, parentId);
-                    if (payment == null)
-                        throw new ArgumentException($"Payment with ID {parentId} not found.");
-                    tenantId = payment.TenantId;
+                case RentalAttachmentType.Transaction:
+                    var transaction = await _transactionRepository.GetByIdAsync(tenantId, parentId);
+                    if (transaction == null)
+                        throw new ArgumentException($"Transaction with ID {parentId} not found.");
+                    tenantId = transaction.TenantId;
                     break;
                 default:
                     throw new ArgumentException($"Invalid attachment type: {attachmentType}");
@@ -100,7 +100,7 @@ namespace RentTrackerBackend.Services
                 Tags = tags,
                 EntityType = attachmentType.ToString(),
                 RentalPropertyId = attachmentType == RentalAttachmentType.Property ? parentId : null,
-                RentalPaymentId = attachmentType == RentalAttachmentType.Payment ? parentId : null,
+                TransactionId = attachmentType == RentalAttachmentType.Transaction ? parentId : null,
                 TenantId = tenantId
             };
 
@@ -145,7 +145,7 @@ namespace RentTrackerBackend.Services
                 throw new ArgumentException("TenantId is required but was not found in the claims.");
             return entityType == RentalAttachmentType.Property
                 ? await _attachmentRepository.GetAttachmentsByPropertyIdAsync(tenantId, entityId)
-                : await _attachmentRepository.GetAttachmentsByPaymentIdAsync(tenantId, entityId);
+                : await _attachmentRepository.GetAttachmentsByTransactionIdAsync(tenantId, entityId);
         }
     }
 }

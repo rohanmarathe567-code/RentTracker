@@ -12,7 +12,7 @@ namespace RentTrackerBackend.Data
         Task UpdateAsync(string tenantId, string id, Attachment entity);
         Task DeleteAsync(string tenantId, string id);
         Task<IEnumerable<Attachment>> GetAttachmentsByPropertyIdAsync(string tenantId, string propertyId);
-        Task<IEnumerable<Attachment>> GetAttachmentsByPaymentIdAsync(string tenantId, string paymentId);
+        Task<IEnumerable<Attachment>> GetAttachmentsByTransactionIdAsync(string tenantId, string transactionId);
         Task<IEnumerable<Attachment>> GetAttachmentsByEntityTypeAsync(string tenantId, string entityType);
     }
 
@@ -43,7 +43,7 @@ namespace RentTrackerBackend.Data
                 
                 new CreateIndexModel<Attachment>(
                     indexBuilder.Ascending(x => x.TenantId)
-                              .Ascending(x => x.RentalPaymentId)),
+                              .Ascending(x => x.TransactionId)),
 
                 new CreateIndexModel<Attachment>(
                     indexBuilder.Ascending(x => x.TenantId)
@@ -124,15 +124,15 @@ namespace RentTrackerBackend.Data
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Attachment>> GetAttachmentsByPaymentIdAsync(string tenantId, string paymentId)
+        public async Task<IEnumerable<Attachment>> GetAttachmentsByTransactionIdAsync(string tenantId, string transactionId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
                 throw new ArgumentException("Tenant ID cannot be null or empty", nameof(tenantId));
-            if (string.IsNullOrWhiteSpace(paymentId))
-                throw new ArgumentException("Payment ID cannot be null or empty", nameof(paymentId));
+            if (string.IsNullOrWhiteSpace(transactionId))
+                throw new ArgumentException("Transaction ID cannot be null or empty", nameof(transactionId));
 
             return await _collection
-                .Find(x => x.TenantId == tenantId && x.RentalPaymentId == paymentId)
+                .Find(x => x.TenantId == tenantId && x.TransactionId == transactionId)
                 .ToListAsync();
         }
 

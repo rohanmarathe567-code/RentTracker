@@ -7,7 +7,7 @@ This directory contains unit tests that verify individual components in isolatio
 ### Repositories/
 Tests for data access layer components:
 - Generic MongoDB repository operations
-- Entity-specific repository operations (Property, Payment, Attachment)
+- Entity-specific repository operations (Property, Attachment)
 - Query filters and projections
 - Data validation
 
@@ -15,7 +15,6 @@ Tests for data access layer components:
 Tests for business logic components:
 - Authentication service
 - File service
-- Payment service
 - Property service
 - Business rule validation
 

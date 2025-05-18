@@ -1,0 +1,331 @@
+@page "/properties/{PropertyId}/transactions"
+@using RentTrackerClient.Models
+@using RentTrackerClient.Models.Pagination
+@using RentTrackerClient.Services
+@using RentTrackerClient.Components
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject PropertyTransactionService TransactionService
+@inject RentalPropertyService PropertyService
+@inject IAuthenticationService AuthService
+
+<PageTitle>Property Transactions</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex gap-2 align-items-center">
+        <button class="btn btn-sm btn-outline-secondary" @onclick="NavigateBack" title="Back to Properties">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <h5 class="mb-0">Property Transactions</h5>
+    </div>
+    <div class="btn-group">
+        <a href="@($"properties/{PropertyId}/transactions/new?type=Income")" class="btn btn-sm btn-success">
+            <i class="bi bi-plus-lg"></i>
+            <span class="ms-1">Income</span>
+        </a>
+        <a href="@($"properties/{PropertyId}/transactions/new?type=Expense")" class="btn btn-sm btn-danger">
+            <i class="bi bi-plus-lg"></i>
+            <span class="ms-1">Expense</span>
+        </a>
+    </div>
+</div>
+
+@if (loading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card mb-3">
+                <div class="card-body py-2">
+                    <div class="d-flex gap-3 align-items-center">
+                        <div class="d-flex gap-2 align-items-center">
+                            <select class="form-select form-select-sm" style="width: 130px;" @bind="selectedType">
+                                <option value="">All Types</option>
+                                <option value="Income">Income</option>
+                                <option value="Expense">Expense</option>
+                            </select>
+                            <select class="form-select form-select-sm" style="width: 150px;" @bind="selectedDateRange">
+                                <option value="">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="thisweek">This Week</option>
+                                <option value="thismonth">This Month</option>
+                                <option value="last3months">Last 3 Months</option>
+                                <option value="thisyear">This Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                            @if (selectedDateRange == "custom")
+                            {
+                                <div class="input-group input-group-sm" style="width: auto;">
+                                    <input type="date" class="form-control" @bind="startDate" />
+                                    <span class="input-group-text">to</span>
+                                    <input type="date" class="form-control" @bind="endDate" />
+                                </div>
+                            }
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-primary" @onclick="ApplyFilters">
+                                <i class="bi bi-funnel"></i>
+                                <span class="ms-1">Apply</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="ClearFilters">
+                                <i class="bi bi-x-lg"></i>
+                                <span class="ms-1">Clear</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <TransactionsTable
+                Transactions="transactions"
+                OnEditClicked="EditTransaction"
+                OnDeleteClicked="ConfirmDelete"
+                OnAttachmentsClicked="ShowAttachments" />
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade @(isDeleteModalVisible ? "show" : "")" tabindex="-1" role="dialog"
+     style="display: @(isDeleteModalVisible ? "block" : "none")">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" @onclick="CancelDelete" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this transaction?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" @onclick="CancelDelete">
+                    <i class="bi bi-x-lg"></i>
+                    <span class="ms-1">Cancel</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" @onclick="DeleteTransaction">
+                    <i class="bi bi-trash"></i>
+                    <span class="ms-1">Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Backdrop -->
+@if (isDeleteModalVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Attachments Modal -->
+<AttachmentsModal
+    IsVisible="@isAttachmentsModalVisible"
+    PropertyId="@PropertyId"
+    TransactionId="@selectedTransactionId"
+    OnClose="@HideAttachments" />
+
+@code {
+    [Parameter]
+    public string? PropertyId { get; set; }
+
+    private bool loading = true;
+    private bool isDeleteModalVisible = false;
+    private bool isAttachmentsModalVisible = false;
+    private PropertyTransaction? transactionToDelete;
+    private string propertyName = "";
+    private string selectedTransactionId = string.Empty;
+    private List<PropertyTransaction> transactions = new();
+    private string? selectedType;
+    private string selectedDateRange = "";
+    private DateTime? startDate;
+    private DateTime? endDate;
+
+    private void UpdateDateRange()
+    {
+        switch (selectedDateRange)
+        {
+            case "today":
+                startDate = DateTime.Today;
+                endDate = DateTime.Today;
+                break;
+            case "thisweek":
+                startDate = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+                endDate = startDate.Value.AddDays(6);
+                break;
+            case "thismonth":
+                startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                endDate = startDate.Value.AddMonths(1).AddDays(-1);
+                break;
+            case "last3months":
+                startDate = DateTime.Today.AddMonths(-3);
+                endDate = DateTime.Today;
+                break;
+            case "thisyear":
+                startDate = new DateTime(DateTime.Today.Year, 1, 1);
+                endDate = new DateTime(DateTime.Today.Year, 12, 31);
+                break;
+            case "custom":
+                // Keep existing custom date range
+                break;
+            default:
+                startDate = null;
+                endDate = null;
+                break;
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        if (selectedDateRange != "custom")
+        {
+            UpdateDateRange();
+        }
+        loading = true;
+        await LoadTransactions();
+        loading = false;
+    }
+
+    private async Task ClearFilters()
+    {
+        selectedType = null;
+        selectedDateRange = "";
+        startDate = null;
+        endDate = null;
+        await ApplyFilters();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(PropertyId))
+        {
+            await LoadProperty();
+            await LoadTransactions();
+        }
+        loading = false;
+    }    private async Task LoadProperty()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(PropertyId))
+            {
+                return;
+            }
+            
+            var property = await PropertyService.GetPropertyAsync(PropertyId);
+            if (property != null)
+            {
+                propertyName = $"{property.Address.Street}, {property.Address.City}, {property.Address.State}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading property: {ex.Message}");
+        }
+    }    private async Task LoadTransactions()
+    {
+        if (string.IsNullOrEmpty(PropertyId))
+        {
+            return;
+        }
+        
+        try 
+        {
+            var response = await TransactionService.GetTransactionsByPropertyAsync(
+                propertyId: PropertyId,
+                pageNumber: 1,
+                pageSize: 50,
+                type: string.IsNullOrEmpty(selectedType) ? null : Enum.Parse<TransactionType>(selectedType),
+                sortField: "TransactionDate",
+                sortDescending: true
+            );
+
+            transactions = response?.Items.ToList() ?? new List<PropertyTransaction>();
+
+            // Filter by date if specified
+            if (startDate.HasValue || endDate.HasValue)
+            {
+                transactions = transactions.Where(t =>
+                    (!startDate.HasValue || t.TransactionDate.ToLocalTime().Date >= startDate.Value.Date) &&
+                    (!endDate.HasValue || t.TransactionDate.ToLocalTime().Date <= endDate.Value.Date)
+                ).ToList();
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading transactions: {ex.Message}");
+        }
+    }
+    private void EditTransaction(PropertyTransaction transaction)
+    {
+        Navigation.NavigateTo($"properties/{PropertyId}/transactions/edit/{transaction.Id}");
+    }
+
+    private void ConfirmDelete(PropertyTransaction transaction)
+    {
+        transactionToDelete = transaction;
+        isDeleteModalVisible = true;
+    }
+
+    private void CancelDelete()
+    {
+        isDeleteModalVisible = false;
+        transactionToDelete = null;
+    }
+
+    private async Task DeleteTransaction()
+    {
+        if (transactionToDelete == null || string.IsNullOrEmpty(PropertyId)) return;
+
+        try
+        {
+            loading = true;
+            StateHasChanged();
+
+            var success = await TransactionService.DeleteTransactionAsync(PropertyId, transactionToDelete.Id);
+            if (success)
+            {
+                // Close the modal
+                isDeleteModalVisible = false;
+                transactionToDelete = null;
+
+                // Reload the transactions and summary
+                await LoadTransactions();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting transaction: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/properties");
+    }
+
+    private void ShowAttachments(PropertyTransaction transaction)
+    {
+        selectedTransactionId = transaction.Id;
+        isAttachmentsModalVisible = true;
+    }
+
+    private void HideAttachments()
+    {
+        isAttachmentsModalVisible = false;
+        selectedTransactionId = string.Empty;
+    }
+}

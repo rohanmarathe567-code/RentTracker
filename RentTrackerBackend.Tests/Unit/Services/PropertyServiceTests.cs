@@ -308,12 +308,10 @@ public class PropertyServiceTests
         var creationDate = DateTime.UtcNow.AddDays(-30);
         var existingProperty = CreateTestProperty();
         existingProperty.CreatedAt = creationDate;
-        existingProperty.PaymentIds = new List<string> { "payment1", "payment2" };
         existingProperty.AttachmentIds = new List<string> { "attachment1", "attachment2" };
         
         var updatedProperty = CreateTestProperty();
         updatedProperty.Address.Street = "Updated Street";
-        updatedProperty.PaymentIds = new List<string> { "payment3" }; // Should not be updated
         updatedProperty.AttachmentIds = new List<string> { "attachment3" }; // Should not be updated
 
         _mockRepository.GetByIdAsync(TestTenantId, TestPropertyId).Returns(existingProperty);
@@ -324,8 +322,6 @@ public class PropertyServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(creationDate, result!.CreatedAt); // Should preserve original creation date
-        Assert.Equal(2, result.PaymentIds.Count); // Should preserve original payment IDs
-        Assert.Equal("payment1", result.PaymentIds[0]);
         Assert.Equal(2, result.AttachmentIds.Count); // Should preserve original attachment IDs
         Assert.Equal("attachment1", result.AttachmentIds[0]);
     }
@@ -415,7 +411,6 @@ public class PropertyServiceTests
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddYears(1)
             },
-            PaymentIds = new List<string>(),
             AttachmentIds = new List<string>(),
             CreatedAt = DateTime.UtcNow.AddDays(-10),
             UpdatedAt = DateTime.UtcNow.AddDays(-5),

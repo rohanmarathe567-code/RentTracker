@@ -7,6 +7,7 @@ using Serilog;
 using Serilog.Events;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.IIS;
+using System.Text.Json.Serialization;
 
 // Configure Serilog early
 Log.Logger = new LoggerConfiguration()
@@ -54,13 +55,15 @@ try
     {
         options.SerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.SerializerOptions.Converters.Add(new ObjectIdJsonConverter());
+        options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
     // Configure Swagger/OpenAPI
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerConfiguration();
 
     // Configure MongoDB and Redis
     builder.Services.AddMongoDb(builder.Configuration);
@@ -69,14 +72,19 @@ try
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IStorageService, FileService>();
     builder.Services.AddScoped<IAttachmentService, AttachmentService>();
-    builder.Services.AddScoped<IPaymentService, PaymentService>();
     builder.Services.AddScoped<IPropertyService, PropertyService>();
+    builder.Services.AddScoped<IPropertyTransactionService, PropertyTransactionService>();
     builder.Services.AddScoped<IClaimsPrincipalService, ClaimsPrincipalService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
     builder.Services.AddTransient<DatabaseSeeder>();
     builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
     builder.Services.AddScoped<DatabaseSeeder>();
+    
+    // Register Repositories
+    builder.Services.AddScoped<IPropertyTransactionRepository, PropertyTransactionRepository>();
+    builder.Services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+    builder.Services.AddScoped<ITransactionCategoryRepository, TransactionCategoryRepository>();
     
     // Add JWT authentication
     builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -89,7 +97,7 @@ try
         using (var scope = app.Services.CreateScope())
         {
             var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-            await seeder.SeedAsync();
+            //await seeder.SeedAsync();
             Console.WriteLine("Database seeded successfully");
         }
     }
@@ -117,7 +125,8 @@ try
     app.MapControllers();
     app.MapHealthEndpoints();
     app.MapPropertyEndpoints();
-    app.MapPaymentEndpoints();
+    app.MapPropertyTransactionEndpoints();
+    app.MapTransactionCategoryEndpoints();
     app.MapAttachmentEndpoints();
     app.MapPaymentMethodEndpoints();
     app.MapAuthEndpoints();
@@ -128,7 +137,7 @@ try
     
     // Create subdirectories for different attachment types
     Directory.CreateDirectory(Path.Combine(uploadsDir, "property"));
-    Directory.CreateDirectory(Path.Combine(uploadsDir, "payment"));
+    Directory.CreateDirectory(Path.Combine(uploadsDir, "transaction"));
 
     app.Run();
 }

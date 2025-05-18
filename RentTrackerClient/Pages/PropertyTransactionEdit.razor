@@ -1,0 +1,437 @@
+@page "/properties/{PropertyId}/transactions/new"
+@page "/properties/{PropertyId}/transactions/edit/{Id}"
+@using RentTrackerClient.Models
+@using RentTrackerClient.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Web
+@using System.Text.Json
+@inject PropertyTransactionService TransactionService
+@inject PaymentMethodService PaymentMethodService
+@inject TransactionCategoryService CategoryService
+@inject NavigationManager NavigationManager
+@inject ILogger<PropertyTransactionEdit> Logger
+@inject IAuthenticationService AuthService
+
+<PageTitle>Transaction Details - Rent Tracker</PageTitle>
+
+<div class="modal fade show" style="display: block;" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    @(string.IsNullOrEmpty(Id) ? 
+                        (TransactionType == TransactionType.Income ? "Add Income" : "Add Expense") 
+                        : "Edit Transaction")
+                </h5>
+                <button type="button" class="btn-close" @onclick="NavigateBack"></button>
+            </div>
+            @if (isLoading)
+            {
+                <div class="modal-body">
+                    <div class="loading-container">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="modal-body">
+                    <div class="alert alert-danger">@errorMessage</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-primary" @onclick="NavigateBack">
+                        <i class="bi bi-arrow-left"></i>
+                        <span class="ms-1">Back to Transactions</span>
+                    </button>
+                </div>
+            }
+            else if (transaction != null)
+            {
+                <EditForm Model="@transaction" OnValidSubmit="@(async () => await HandleValidSubmit())">
+                    <div class="modal-body">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="amount" class="form-label">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <InputNumber id="amount" class="form-control" @bind-Value="displayAmount" />
+                                </div>
+                                <ValidationMessage For="@(() => transaction.Amount)" />
+                                @if (TransactionType == TransactionType.Expense)
+                                {
+                                    <small class="text-muted">Enter amount as positive value</small>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label for="transactionDate" class="form-label">Transaction Date</label>
+                                <InputDate id="transactionDate" class="form-control" @bind-Value="transaction.TransactionDate" />
+                                <ValidationMessage For="@(() => transaction.TransactionDate)" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <InputTextArea id="notes" class="form-control" @bind-Value="transaction.Notes" rows="2" />
+                                <ValidationMessage For="@(() => transaction.Notes)" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="reference" class="form-label">Reference</label>
+                                <InputText id="reference" class="form-control" @bind-Value="transaction.Reference" />
+                                <ValidationMessage For="@(() => transaction.Reference)" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="categoryId" class="form-label">Category</label>
+                                <InputSelect id="categoryId" class="form-select" @bind-Value="transaction.CategoryId">
+                                    @foreach (var category in categories)
+                                    {
+                                        <option value="@category.Id">@category.Name</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => transaction.CategoryId)" />
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="paymentMethod" class="form-label">Payment Method</label>
+                                <InputSelect id="paymentMethod" class="form-select" @bind-Value="transaction.PaymentMethodId">
+                                    @foreach (var method in paymentMethods)
+                                    {
+                                        <option value="@method.Id">@method.Name</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => transaction.PaymentMethodId)" />
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" @onclick="NavigateBack">
+                            <i class="bi bi-x-lg"></i>
+                            <span class="ms-1">Cancel</span>
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            <span class="ms-1">Save</span>
+                        </button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop fade show"></div>
+
+@code {
+    [Parameter]
+    public string PropertyId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    private PropertyTransaction? transaction;
+    private decimal displayAmount
+    {
+        get => transaction != null ? Math.Abs(transaction.Amount) : 0;
+        set
+        {
+            if (transaction != null)
+            {
+                transaction.Amount = value;
+            }
+        }
+    }
+    private bool isLoading = true;
+    private string? errorMessage;
+    private List<PaymentMethod> paymentMethods = new();
+    private List<PropertyTransactionCategory> categories = new();
+    private TransactionType TransactionType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            Console.WriteLine("Initializing PropertyTransactionEdit component...");
+            Console.WriteLine($"PropertyId: {PropertyId}");
+            Console.WriteLine($"Transaction Id: {Id ?? "new"}");
+
+            // Get transaction type from query parameter
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            Console.WriteLine($"Current URI: {uri}");
+            var typeParam = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("type");
+            Console.WriteLine($"Type parameter from query: {typeParam}");
+            
+            TransactionType = !string.IsNullOrEmpty(typeParam) ?
+                Enum.Parse<TransactionType>(typeParam) :
+                TransactionType.Income;
+            Console.WriteLine($"Resolved TransactionType: {TransactionType}");
+
+            // Load payment methods and categories
+            Console.WriteLine("Loading payment methods and categories...");
+            paymentMethods = (await PaymentMethodService.GetPaymentMethodsAsync()).ToList();
+            Console.WriteLine($"Loaded {paymentMethods.Count} payment methods");
+            
+            Console.WriteLine($"Loading categories for transaction type: {TransactionType}...");
+            // Load categories for the specific transaction type
+            var loadedCategories = await CategoryService.GetAllCategoriesAsync(TransactionType);
+            if (loadedCategories == null || !loadedCategories.Any())
+            {
+                errorMessage = $"No categories available for {TransactionType}. Please create a category first.";
+                return;
+            }
+            
+            categories = loadedCategories.ToList();
+            Console.WriteLine($"Loaded {categories.Count} categories for {TransactionType}:");
+            foreach (var category in categories)
+            {
+                Console.WriteLine($"- Category: {category.Name} (ID: {category.Id})");
+            }
+
+            if (!string.IsNullOrEmpty(Id))
+            {
+                transaction = await TransactionService.GetTransactionByIdAsync(PropertyId, Id);
+                if (transaction == null)
+                {
+                    errorMessage = $"Transaction with ID {Id} not found.";
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Creating new transaction for PropertyId: {PropertyId}");
+                
+                var tenantId = await AuthService.GetCurrentTenantIdAsync();
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    errorMessage = "Failed to get tenant ID. Please try again.";
+                    return;
+                }
+
+                // Create new transaction with default values
+                var now = DateTime.UtcNow;
+                transaction = new PropertyTransaction
+                {
+                    RentalPropertyId = PropertyId,
+                    TransactionType = TransactionType,
+                    TransactionDate = now,
+                    TenantId = tenantId,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    Version = 0,
+                    AttachmentIds = new List<string>()
+                };
+                
+                // Set default category
+                var defaultCategory = categories.FirstOrDefault();
+                if (defaultCategory == null)
+                {
+                    errorMessage = $"No categories available for {TransactionType}. Please create a category first.";
+                    return;
+                }
+                transaction.CategoryId = defaultCategory.Id;
+
+                // Set payment method if available
+                if (paymentMethods.Any())
+                {
+                    transaction.PaymentMethodId = paymentMethods.First().Id;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading transaction: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (transaction == null)
+            return;
+
+        try
+        {
+            errorMessage = null;
+            Console.WriteLine("Starting transaction submission...");
+            
+            // Validate transaction object
+            if (transaction == null)
+            {
+                errorMessage = "Transaction object is null";
+                return;
+            }
+
+            Console.WriteLine($"Validating transaction: PropertyId={PropertyId}");
+            Console.WriteLine($"Amount: {transaction.Amount}");
+            Console.WriteLine($"TransactionDate: {transaction.TransactionDate}");
+            Console.WriteLine($"CategoryId: {transaction.CategoryId}");
+            Console.WriteLine($"PaymentMethodId: {transaction.PaymentMethodId}");
+
+            // Validate amount is greater than 0
+            if (transaction.Amount <= 0)
+            {
+                errorMessage = "Amount must be greater than 0";
+                return;
+            }
+            
+            // Keep amount positive in storage, negative values handled in UI
+            transaction.Amount = Math.Abs(transaction.Amount);
+
+            var now = DateTime.UtcNow;
+            transaction.TransactionDate = DateTime.SpecifyKind(transaction.TransactionDate, DateTimeKind.Utc);
+            transaction.UpdatedAt = now;
+
+            // Get tenant ID
+            var tenantId = await AuthService.GetCurrentTenantIdAsync();
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                errorMessage = "Failed to get tenant ID. Please try again.";
+                return;
+            }
+            transaction.TenantId = tenantId;
+
+            if (!string.IsNullOrEmpty(Id))
+            {
+                // For updates, preserve creation info
+                var existingTransaction = await TransactionService.GetTransactionByIdAsync(PropertyId, Id);
+                if (existingTransaction == null)
+                {
+                    errorMessage = "Could not find transaction to update.";
+                    return;
+                }
+
+                transaction.CreatedAt = existingTransaction.CreatedAt;
+                transaction.Version = existingTransaction.Version + 1;
+                transaction.AttachmentIds = existingTransaction.AttachmentIds;
+
+                var result = await TransactionService.UpdateTransactionAsync(PropertyId, Id, transaction);
+                if (result)
+                {
+                    Console.WriteLine($"Transaction updated successfully");
+                    NavigateBack();
+                }
+                else
+                {
+                    throw new Exception("Failed to update transaction on the server");
+                }
+            }
+            else
+            {
+                // Validate required fields
+                if (string.IsNullOrEmpty(transaction.CategoryId))
+                {
+                    errorMessage = "Category is required.";
+                    return;
+                }
+
+                // Re-validate category exists on server
+                try
+                {
+                    var serverCategory = await CategoryService.GetCategoryByIdAsync(transaction.CategoryId);
+                    if (serverCategory == null)
+                    {
+                        errorMessage = "Selected category no longer exists. Please select a different category.";
+                        // Reload categories to get current list
+                        var updatedCategories = await CategoryService.GetAllCategoriesAsync(TransactionType);
+                        if (updatedCategories != null)
+                        {
+                            categories = updatedCategories.ToList();
+                        }
+                        return;
+                    }
+                    Console.WriteLine($"Verified category on server: {serverCategory.Name} (ID: {serverCategory.Id})");
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = "Failed to validate category. Please try again.";
+                    Console.WriteLine($"Error validating category: {ex.Message}");
+                    return;
+                }
+                
+                // Validate amount is greater than 0
+                if (transaction.Amount <= 0)
+                {
+                    errorMessage = "Amount must be greater than 0.";
+                    return;
+                }
+
+                // Keep amount positive in storage, negative values handled in UI
+                transaction.Amount = Math.Abs(transaction.Amount);
+
+                // Set creation info
+                transaction.CreatedAt = now;
+                transaction.UpdatedAt = now;
+                transaction.Version = 0;
+                transaction.RentalPropertyId = PropertyId;
+                
+                // Clear navigation properties
+                transaction.Category = null;
+                transaction.PaymentMethod = null;
+                transaction.Id = string.Empty;
+                
+                var createdTransaction = await TransactionService.CreateTransactionAsync(PropertyId, transaction);
+                if (createdTransaction != null)
+                {
+                    Console.WriteLine($"Transaction created successfully: {createdTransaction.Id}");
+                    Id = createdTransaction.Id;
+                    transaction.Id = createdTransaction.Id;
+                    NavigateBack();
+                }
+                else
+                {
+                    errorMessage = "Failed to create transaction. Please try again.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (ex.Message.Contains("Category not found"))
+            {
+                errorMessage = "Selected category is no longer available. Please reload the page to get the latest categories.";
+                
+                // Reload categories
+                try
+                {
+                    var updatedCategories = await CategoryService.GetAllCategoriesAsync(TransactionType);
+                    if (updatedCategories != null)
+                    {
+                        categories = updatedCategories.ToList();
+                        Console.WriteLine($"Reloaded categories after error. Found {categories.Count} categories.");
+                        foreach (var category in categories)
+                        {
+                            Console.WriteLine($"- {category.Name} (Id: {category.Id})");
+                        }
+                    }
+                }
+                catch
+                {
+                    errorMessage = "Failed to reload categories. Please refresh the page and try again.";
+                }
+            }
+            else
+            {
+                errorMessage = $"Error saving transaction: {ex.Message}";
+            }
+            Console.WriteLine($"Exception details: {ex}");
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo($"/properties/{PropertyId}/transactions");
+    }
+
+}

@@ -89,10 +89,9 @@ namespace RentTrackerBackend.Services
                 throw new ArgumentException("Address is required");
             }
 
-            _logger.LogInformation("Creating new property: {@Property}", property);
+            _logger.LogDebug("Creating new property");
             var createdProperty = await _propertyRepository.CreateAsync(property);
-            _logger.LogInformation("Property created successfully with ID: {Id}", createdProperty.FormattedId);
-
+            _logger.LogDebug("Created property {Id}", createdProperty.FormattedId);
             return createdProperty;
         }
 
@@ -117,7 +116,7 @@ namespace RentTrackerBackend.Services
                 RentAmount = updatedProperty.RentAmount,
                 LeaseDates = updatedProperty.LeaseDates,
                 PropertyManager = updatedProperty.PropertyManager,
-                PaymentIds = existingProperty.PaymentIds,
+                TransactionIds = existingProperty.TransactionIds,
                 AttachmentIds = existingProperty.AttachmentIds
             };
 

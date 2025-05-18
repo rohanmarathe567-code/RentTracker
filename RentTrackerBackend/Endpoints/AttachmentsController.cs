@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Data;
@@ -41,7 +42,8 @@ public static class AttachmentsController
                 logger.LogError(ex, "Error downloading attachment {Id}", attachmentId);
                 return Results.BadRequest($"File download failed: {ex.Message}");
             }
-        });
+        })
+        .RequireAuthorization();
 
         // Delete attachment
         app.MapDelete("/api/attachments/{attachmentId}", async (
@@ -73,7 +75,8 @@ public static class AttachmentsController
                 logger.LogError(ex, "Error deleting attachment {Id}", attachmentId);
                 return Results.BadRequest($"File deletion failed: {ex.Message}");
             }
-        });
+        })
+        .RequireAuthorization();
 
         // Property Attachments
         app.MapGet("/api/properties/{propertyId}/attachments", async (
@@ -93,7 +96,8 @@ public static class AttachmentsController
 
             var attachments = await attachmentService.GetAttachmentsForEntityAsync(RentalAttachmentType.Property, propertyId);
             return Results.Ok(attachments);
-        });
+        })
+        .RequireAuthorization();
 
         app.MapPost("/api/properties/{propertyId}/attachments", async (
             string propertyId,
@@ -125,15 +129,17 @@ public static class AttachmentsController
                 logger.LogError(ex, "Error uploading attachment for property {Id}", propertyId);
                 return Results.BadRequest($"File upload failed: {ex.Message}");
             }
-        }).DisableAntiforgery();
+        })
+        .DisableAntiforgery()
+        .RequireAuthorization();
 
-        // Payment Attachments
-        app.MapGet("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
+        // Transaction Attachments
+        app.MapGet("/api/properties/{propertyId}/transactions/{transactionId}/attachments", async (
             string propertyId,
-            string paymentId,
+            string transactionId,
             IAttachmentService attachmentService,
             IMongoRepository<RentalProperty> propertyRepository,
-            IMongoRepository<RentalPayment> paymentRepository,
+            IPropertyTransactionRepository transactionRepository,
             IClaimsPrincipalService claimsPrincipalService) =>
         {
             if (!claimsPrincipalService.ValidateTenantId(out string tenantId))
@@ -145,21 +151,22 @@ public static class AttachmentsController
             if (property == null)
                 return Results.NotFound("Property not found");
 
-            var payment = await paymentRepository.GetByIdAsync(tenantId, paymentId);
-            if (payment == null || payment.RentalPropertyId != propertyId)
-                return Results.NotFound("Payment not found");
+            var transaction = await transactionRepository.GetByIdAsync(tenantId, transactionId);
+            if (transaction == null || transaction.RentalPropertyId != propertyId)
+                return Results.NotFound("Transaction not found");
 
-            var attachments = await attachmentService.GetAttachmentsForEntityAsync(RentalAttachmentType.Payment, paymentId);
+            var attachments = await attachmentService.GetAttachmentsForEntityAsync(RentalAttachmentType.Transaction, transactionId);
             return Results.Ok(attachments);
-        });
+        })
+        .RequireAuthorization();
 
-        app.MapPost("/api/properties/{propertyId}/payments/{paymentId}/attachments", async (
+        app.MapPost("/api/properties/{propertyId}/transactions/{transactionId}/attachments", async (
             string propertyId,
-            string paymentId,
+            string transactionId,
             IFormFile file,
             IAttachmentService attachmentService,
             IMongoRepository<RentalProperty> propertyRepository,
-            IMongoRepository<RentalPayment> paymentRepository,
+            IPropertyTransactionRepository transactionRepository,
             IClaimsPrincipalService claimsPrincipalService,
             ILogger<Program> logger,
             string? description = null,
@@ -174,21 +181,23 @@ public static class AttachmentsController
             if (property == null)
                 return Results.NotFound("Property not found");
 
-            var payment = await paymentRepository.GetByIdAsync(tenantId, paymentId);
-            if (payment == null || payment.RentalPropertyId != propertyId)
-                return Results.NotFound("Payment not found");
+            var transaction = await transactionRepository.GetByIdAsync(tenantId, transactionId);
+            if (transaction == null || transaction.RentalPropertyId != propertyId)
+                return Results.NotFound("Transaction not found");
 
             try
             {
                 var parsedTags = tags != null ? JsonSerializer.Deserialize<string[]>(tags) : null;
-                var attachment = await attachmentService.SaveAttachmentAsync(file, RentalAttachmentType.Payment, paymentId, description, parsedTags);
+                var attachment = await attachmentService.SaveAttachmentAsync(file, RentalAttachmentType.Transaction, transactionId, description, parsedTags);
                 return Results.Created($"/api/attachments/{attachment.Id}", attachment);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error uploading attachment for payment {Id}", paymentId);
+                logger.LogError(ex, "Error uploading attachment for transaction {Id}", transactionId);
                 return Results.BadRequest($"File upload failed: {ex.Message}");
             }
-        }).DisableAntiforgery();
+        })
+        .DisableAntiforgery()
+        .RequireAuthorization();
     }
 }

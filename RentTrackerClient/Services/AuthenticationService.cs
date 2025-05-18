@@ -11,6 +11,7 @@ public interface IAuthenticationService
     Task<bool> RegisterAsync(string firstName, string? middleName, string lastName, string email, string password, string confirmPassword);
     Task LogoutAsync();
     Task<string?> GetTokenAsync();
+    Task<string> GetCurrentTenantIdAsync();
     bool IsAuthenticated { get; }
 }
 
@@ -127,9 +128,7 @@ public class AuthenticationService : IAuthenticationService
         {
             await customProvider.UpdateAuthenticationState(null);
         }
-    }
-
-    private bool _initialized;
+    }    private bool _initialized;
     private Task? _initializationTask;
 
     public async Task<string?> GetTokenAsync()
@@ -144,6 +143,13 @@ public class AuthenticationService : IAuthenticationService
             _initialized = true;
         }
         return _authToken;
+    }
+      public Task<string> GetCurrentTenantIdAsync()
+    {
+        // For now, we'll return a default tenant ID since the system is tenant-enabled
+        // In a real implementation, this would extract the tenant ID from the JWT token
+        // or from another storage mechanism
+        return Task.FromResult("default-tenant");
     }
 
     private async Task InitializeAuthTokenAsync()

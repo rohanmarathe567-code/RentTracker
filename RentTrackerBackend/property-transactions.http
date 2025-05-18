@@ -1,0 +1,88 @@
+// RentTracker property transactions test
+@baseUrl = http://localhost:5000
+
+### Get all properties (to obtain a property ID for testing)
+# @name getProperties
+GET {{baseUrl}}/api/properties
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+### Get all transaction categories
+# @name getCategories
+GET {{baseUrl}}/api/categories
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+### Get income transaction categories
+# @name getIncomeCategories
+GET {{baseUrl}}/api/categories?type=Income
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+### Get expense transaction categories
+# @name getExpenseCategories
+GET {{baseUrl}}/api/categories?type=Expense
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+### Create a new income transaction
+# @name createIncomeTransaction
+POST {{baseUrl}}/api/properties/{{getProperties.response.body.$[0].id}}/transactions
+Content-Type: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+{
+  "amount": 750.00,
+  "transactionDate": "{{$datetime iso8601}}",
+  "transactionType": 0,
+  "categoryId": "{{getIncomeCategories.response.body.$[0].id}}",
+  "paymentMethodId": null,
+  "reference": "RENT-TEST123",
+  "notes": "Test income transaction"
+}
+
+### Create a new expense transaction
+# @name createExpenseTransaction
+POST {{baseUrl}}/api/properties/{{getProperties.response.body.$[0].id}}/transactions
+Content-Type: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+{
+  "amount": 120.50,
+  "transactionDate": "{{$datetime iso8601}}",
+  "transactionType": 1,
+  "categoryId": "{{getExpenseCategories.response.body.$[0].id}}",
+  "paymentMethodId": null,
+  "reference": "EXPENSE-TEST123",
+  "notes": "Test expense transaction"
+}
+
+### Get all transactions for a property
+# @name getTransactions
+GET {{baseUrl}}/api/properties/{{getProperties.response.body.$[0].id}}/transactions
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+### Get only income transactions
+# @name getIncomeTransactions
+GET {{baseUrl}}/api/properties/{{getProperties.response.body.$[0].id}}/transactions?type=Income
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+### Get only expense transactions
+# @name getExpenseTransactions
+GET {{baseUrl}}/api/properties/{{getProperties.response.body.$[0].id}}/transactions?type=Expense
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+### Get financial summary for a property
+# @name getFinancialSummary
+GET {{baseUrl}}/api/properties/{{getProperties.response.body.$[0].id}}/financial-summary
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}
+
+### Get financial summary with date range
+# @name getFinancialSummaryByDateRange
+GET {{baseUrl}}/api/properties/{{getProperties.response.body.$[0].id}}/financial-summary?startDate={{$datetime iso8601 -30 d}}&endDate={{$datetime iso8601}}
+Accept: application/json
+tenantId: {{$dotenv TENANT_ID}}

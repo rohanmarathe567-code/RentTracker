@@ -34,7 +34,8 @@ namespace RentTrackerBackend.Extensions
 
             // Register Specific Repositories
             services.AddScoped<IPropertyRepository, PropertyRepository>();
-            services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IPropertyTransactionRepository, PropertyTransactionRepository>();
+            services.AddScoped<ITransactionCategoryRepository, TransactionCategoryRepository>();
             services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
             // Register Database Seeder

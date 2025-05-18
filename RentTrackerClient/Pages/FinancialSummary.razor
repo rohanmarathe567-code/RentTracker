@@ -1,0 +1,178 @@
+@page "/properties/{PropertyId}/financial-summary"
+@using RentTrackerClient.Models
+@using RentTrackerClient.Models.Pagination
+@using RentTrackerClient.Services
+@inject NavigationManager Navigation
+@inject PropertyTransactionService TransactionService
+@inject RentalPropertyService PropertyService
+
+<PageTitle>Financial Summary</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex gap-2 align-items-center">
+        <button class="btn btn-sm btn-outline-secondary" @onclick="NavigateBack" title="Back to Properties">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <h5 class="mb-0">Financial Summary</h5>
+    </div>
+</div>
+
+@if (loading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Time Period</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <select class="form-select" @bind="selectedPeriod">
+                            <option value="current-fy">Current Financial Year</option>
+                            <option value="last-fy">Last Financial Year</option>
+                            <option value="last-2-fy">Last 2 Financial Years</option>
+                            <option value="last-5-fy">Last 5 Financial Years</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" @onclick="ApplyFilter">Apply</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Financial Summary</h5>
+                </div>
+                <div class="card-body">
+                    @if (summary != null)
+                    {
+                        <div class="mb-3">
+                            <strong>Property:</strong> @propertyName
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <h5>Total Income</h5>
+                                        <h3>@summary.TotalIncome.ToString("C")</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-danger text-white">
+                                    <div class="card-body">
+                                        <h5>Total Expenses</h5>
+                                        <h3>@summary.TotalExpenses.ToString("C")</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card @(summary.NetCashflow >= 0 ? "bg-info" : "bg-warning") text-white">
+                                    <div class="card-body">
+                                        <h5>Net Cashflow</h5>
+                                        <h3>@summary.NetCashflow.ToString("C")</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <p>No financial summary available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? PropertyId { get; set; }
+
+    private bool loading = true;
+    private string propertyName = "";
+    private RentTrackerClient.Models.FinancialSummary? summary;
+    private string selectedPeriod = "current-fy";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(PropertyId))
+        {
+            await LoadProperty();
+            await LoadFinancialSummary();
+        }
+        loading = false;
+    }
+
+    private async Task LoadProperty()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(PropertyId))
+            {
+                return;
+            }
+            
+            var property = await PropertyService.GetPropertyAsync(PropertyId);
+            if (property != null)
+            {
+                propertyName = $"{property.Address.Street}, {property.Address.City}, {property.Address.State}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading property: {ex.Message}");
+        }
+    }
+
+    private async Task LoadFinancialSummary()
+    {
+        if (string.IsNullOrEmpty(PropertyId))
+        {
+            return;
+        }
+        
+        try
+        {
+            var (startDate, endDate) = GetDateRangeForPeriod(selectedPeriod);
+            summary = await TransactionService.GetFinancialSummaryAsync(PropertyId, startDate, endDate);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading financial summary: {ex.Message}");
+        }
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/properties");
+    }
+
+    private async Task ApplyFilter()
+    {
+        loading = true;
+        await LoadFinancialSummary();
+        loading = false;
+    }
+
+    private (DateTime? startDate, DateTime? endDate) GetDateRangeForPeriod(string period)
+    {
+        var today = DateTime.UtcNow.ToLocalTime().Date;
+        var currentFYStart = new DateTime(today.Month >= 7 ? today.Year : today.Year - 1, 7, 1, 0, 0, 0, DateTimeKind.Local);
+        
+        return period switch
+        {
+            "current-fy" => (currentFYStart.ToUniversalTime(), null),
+            "last-fy" => (currentFYStart.AddYears(-1).ToUniversalTime(), currentFYStart.AddDays(-1).ToUniversalTime()),
+            "last-2-fy" => (currentFYStart.AddYears(-2).ToUniversalTime(), currentFYStart.AddDays(-1).ToUniversalTime()),
+            "last-5-fy" => (currentFYStart.AddYears(-5).ToUniversalTime(), currentFYStart.AddDays(-1).ToUniversalTime()),
+            _ => (null, null) // "all" or any other value
+        };
+    }
+}

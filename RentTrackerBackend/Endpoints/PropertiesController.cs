@@ -23,9 +23,6 @@ public static class PropertiesController
                     return Results.Unauthorized();
                 }
 
-                logger.LogInformation("GET /api/properties called with parameters: PageNumber={PageNumber}, PageSize={PageSize}",
-                    parameters.PageNumber, parameters.PageSize);
-
                 var result = await propertyService.GetPropertiesAsync(tenantId, parameters);
                 return Results.Ok(result);
             }
@@ -81,10 +78,10 @@ public static class PropertiesController
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error creating property: {Message}", ex.Message);
+                logger.LogError(ex, "Failed to create property");
                 return Results.Problem(
                     title: "Error creating property",
-                    detail: ex.Message,
+                    detail: "An unexpected error occurred",
                     statusCode: 500
                 );
             }

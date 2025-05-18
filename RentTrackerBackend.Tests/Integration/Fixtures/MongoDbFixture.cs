@@ -27,11 +27,11 @@ namespace RentTrackerBackend.Tests.Integration.Fixtures
         public static async Task<MongoDbFixture> CreateAsync()
         {
             string connectionString;
-            MongoDbRunner runner = null;
+            MongoDbRunner runner = null!;
 
             try
             {
-                connectionString = Environment.GetEnvironmentVariable("MongoDB__ConnectionString");
+                connectionString = Environment.GetEnvironmentVariable("MongoDB__ConnectionString")!;
                 if (string.IsNullOrEmpty(connectionString))
                 {
                     // Always use Mongo2Go for tests
@@ -87,6 +87,7 @@ namespace RentTrackerBackend.Tests.Integration.Fixtures
             {
                 _runner.Dispose();
             }
+            await Task.CompletedTask;
         }
 
         public async Task CreateIndexesAsync()

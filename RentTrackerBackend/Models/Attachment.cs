@@ -34,7 +34,7 @@ namespace RentTrackerBackend.Models
         [BsonElement("rentalPropertyId")]
         public string? RentalPropertyId { get; set; }
         
-        [BsonElement("rentalPaymentId")]
-        public string? RentalPaymentId { get; set; }
+        [BsonElement("transactionId")]
+        public string? TransactionId { get; set; }
     }
 }

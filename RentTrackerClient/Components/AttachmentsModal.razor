@@ -159,7 +159,7 @@
     public string PropertyId { get; set; } = string.Empty;
 
     [Parameter]
-    public string? PaymentId { get; set; }
+    public string? TransactionId { get; set; }
 
     [Parameter]
     public EventCallback OnClose { get; set; }
@@ -181,9 +181,9 @@
     {
         try
         {
-            if (!string.IsNullOrEmpty(PaymentId))
+            if (!string.IsNullOrEmpty(TransactionId))
             {
-                attachments = await AttachmentService.GetAttachmentsByPaymentAsync(PropertyId, PaymentId);
+                attachments = await AttachmentService.GetAttachmentsByTransactionAsync(PropertyId, TransactionId);
             }
             else
             {
@@ -212,9 +212,9 @@
         {
             foreach (var file in files)
             {
-                if (!string.IsNullOrEmpty(PaymentId))
+                if (!string.IsNullOrEmpty(TransactionId))
                 {
-                    await AttachmentService.UploadAttachmentToPaymentAsync(PropertyId, PaymentId, file);
+                    await AttachmentService.UploadAttachmentToTransactionAsync(PropertyId, TransactionId, file);
                 }
                 else
                 {

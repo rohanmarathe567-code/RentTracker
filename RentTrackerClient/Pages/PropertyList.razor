@@ -53,7 +53,7 @@
                 @foreach (var property in propertiesResponse.Items)
                 {
                     <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 border" style="cursor: pointer;" @onclick="() => NavigateToPayments(property.Id)">
+                        <div class="card h-100 border" style="cursor: pointer;" @onclick="() => NavigateToTransactions(property.Id)">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">@property.Address</h5>
                             </div>
@@ -81,8 +81,12 @@
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button class="btn btn-secondary"
-                                            @onclick="() => NavigateToPayments(property.Id)" title="View Payments">
-                                        <i class="bi bi-cash-coin"></i>
+                                            @onclick="() => NavigateToTransactions(property.Id)" title="View Transactions">
+                                        <i class="bi bi-wallet2"></i>
+                                    </button>
+                                    <button class="btn btn-secondary"
+                                            @onclick="() => NavigateToFinancialSummary(property.Id)" title="Financial Summary">
+                                        <i class="bi bi-graph-up"></i>
                                     </button>
                                     <button class="btn btn-secondary"
                                             @onclick="() => ShowAttachments(property.Id)" title="View Attachments">
@@ -252,10 +256,14 @@ private async Task OnSearchInput()
     {
         NavigationManager.NavigateTo($"/properties/{id}");
     }
-
-    private void NavigateToPayments(string id)
+    private void NavigateToTransactions(string id)
     {
-        NavigationManager.NavigateTo($"/payments/{id}");
+        NavigationManager.NavigateTo($"/properties/{id}/transactions");
+    }
+
+    private void NavigateToFinancialSummary(string id)
+    {
+        NavigationManager.NavigateTo($"/properties/{id}/financial-summary");
     }
 
     private void ConfirmDelete(RentalProperty property)

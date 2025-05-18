@@ -21,16 +21,18 @@ namespace RentTrackerBackend.Models
         [BsonElement("leaseDates")]
         public LeaseDates LeaseDates { get; set; } = new LeaseDates();
 
-        [BsonElement("paymentIds")]
-        public List<string> PaymentIds { get; set; } = new List<string>();
+        [BsonElement("transactionIds")]
+        public List<string> TransactionIds { get; set; } = new List<string>();
 
         [BsonElement("attachmentIds")]
         public List<string> AttachmentIds { get; set; } = new List<string>();
 
         [BsonIgnore]
-        public List<RentalPayment> Payments { get; set; } = new List<RentalPayment>();
+        [JsonIgnore]
+        public List<PropertyTransaction> Transactions { get; set; } = new List<PropertyTransaction>();
         
         [BsonIgnore]
+        [JsonIgnore]
         public List<Attachment> Attachments { get; set; } = new List<Attachment>();
     }
 

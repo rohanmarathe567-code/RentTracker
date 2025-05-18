@@ -20,7 +20,7 @@ public class RentalProperty
     
     public DateTime UpdatedAt { get; set; }
     
-    public List<RentalPayment> RentalPayments { get; set; } = new();
+    public List<PropertyTransaction> Transactions { get; set; } = new();
     
     public List<Attachment> Attachments { get; set; } = new();
 

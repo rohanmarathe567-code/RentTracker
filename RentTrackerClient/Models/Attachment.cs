@@ -24,7 +24,7 @@ public class Attachment
     
     public RentalProperty? RentalProperty { get; set; }
     
-    public string? RentalPaymentId { get; set; }
+    public string? TransactionId { get; set; }
     
-    public RentalPayment? RentalPayment { get; set; }
+    public PropertyTransaction? Transaction { get; set; }
 }

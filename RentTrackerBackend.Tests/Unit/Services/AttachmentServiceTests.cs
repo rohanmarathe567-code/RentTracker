@@ -17,7 +17,7 @@ public class AttachmentServiceTests
 {
     private readonly IAttachmentRepository _mockAttachmentRepository;
     private readonly IPropertyRepository _mockPropertyRepository;
-    private readonly IPaymentRepository _mockPaymentRepository;
+    private readonly IPropertyTransactionRepository _mockTransactionRepository;
     private readonly IStorageService _mockStorageService;
     private readonly IClaimsPrincipalService _mockClaimsPrincipalService;
     private readonly ILogger<AttachmentService> _mockLogger;
@@ -25,7 +25,6 @@ public class AttachmentServiceTests
     
     private const string TestTenantId = "507f1f77bcf86cd799439011";
     private const string TestPropertyId = "507f1f77bcf86cd799439012";
-    private const string TestPaymentId = "507f1f77bcf86cd799439013";
     private const string TestAttachmentId = "507f1f77bcf86cd799439014";
     private const string TestStoragePath = "uploads/2025/04/30/test.pdf";
     
@@ -33,7 +32,7 @@ public class AttachmentServiceTests
     {
         _mockAttachmentRepository = Substitute.For<IAttachmentRepository>();
         _mockPropertyRepository = Substitute.For<IPropertyRepository>();
-        _mockPaymentRepository = Substitute.For<IPaymentRepository>();
+        _mockTransactionRepository = Substitute.For<IPropertyTransactionRepository>();
         _mockStorageService = Substitute.For<IStorageService>();
         _mockClaimsPrincipalService = Substitute.For<IClaimsPrincipalService>();
         _mockLogger = Substitute.For<ILogger<AttachmentService>>();
@@ -43,7 +42,7 @@ public class AttachmentServiceTests
         _attachmentService = new AttachmentService(
             _mockAttachmentRepository,
             _mockPropertyRepository,
-            _mockPaymentRepository,
+            _mockTransactionRepository,
             _mockStorageService,
             _mockClaimsPrincipalService,
             _mockLogger);
@@ -82,7 +81,6 @@ public class AttachmentServiceTests
         Assert.Equal(tags, result.Tags);
         Assert.Equal(RentalAttachmentType.Property.ToString(), result.EntityType);
         Assert.Equal(TestPropertyId, result.RentalPropertyId);
-        Assert.Null(result.RentalPaymentId);
         Assert.Equal(TestTenantId, result.TenantId);
         
         await _mockPropertyRepository.Received(1).GetByIdAsync(TestTenantId, TestPropertyId);
@@ -90,35 +88,6 @@ public class AttachmentServiceTests
         await _mockAttachmentRepository.Received(1).CreateAsync(Arg.Any<Attachment>());
     }
     
-    [Fact]
-    public async Task SaveAttachmentAsync_WithPaymentAttachment_ValidFile_CreatesAttachment()
-    {
-        // Arrange
-        var mockFile = CreateMockFormFile("receipt.jpg", "image/jpeg", 2048);
-        var payment = new RentalPayment { Id = ObjectId.Parse(TestPaymentId), TenantId = TestTenantId };
-        
-        _mockPaymentRepository.GetByIdAsync(TestTenantId, TestPaymentId).Returns(payment);
-        _mockStorageService.ValidateFileType(mockFile.ContentType, mockFile.FileName).Returns(true);
-        _mockStorageService.UploadFileAsync(mockFile).Returns(TestStoragePath);
-        
-        // Act
-        var result = await _attachmentService.SaveAttachmentAsync(
-            mockFile, 
-            RentalAttachmentType.Payment, 
-            TestPaymentId);
-        
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(mockFile.FileName, result.FileName);
-        Assert.Equal(TestStoragePath, result.StoragePath);
-        Assert.Equal(RentalAttachmentType.Payment.ToString(), result.EntityType);
-        Assert.Equal(TestPaymentId, result.RentalPaymentId);
-        Assert.Null(result.RentalPropertyId);
-        
-        await _mockPaymentRepository.Received(1).GetByIdAsync(TestTenantId, TestPaymentId);
-        await _mockStorageService.Received(1).UploadFileAsync(mockFile);
-        await _mockAttachmentRepository.Received(1).CreateAsync(Arg.Any<Attachment>());
-    }
     
     [Fact]
     public async Task SaveAttachmentAsync_WithInvalidFileType_ThrowsException()
@@ -160,24 +129,6 @@ public class AttachmentServiceTests
         _ = _mockAttachmentRepository.DidNotReceive().CreateAsync(Arg.Any<Attachment>());
     }
     
-    [Fact]
-    public async Task SaveAttachmentAsync_WithNonExistentPayment_ThrowsException()
-    {
-        // Arrange
-        var mockFile = CreateMockFormFile("receipt.jpg", "image/jpeg", 2048);
-        
-        _mockPaymentRepository.GetByIdAsync(TestTenantId, TestPaymentId).Returns((RentalPayment)null!);
-        
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => 
-            _attachmentService.SaveAttachmentAsync(mockFile, RentalAttachmentType.Payment, TestPaymentId));
-        
-        Assert.Contains($"Payment with ID {TestPaymentId} not found", exception.Message);
-        
-        _ = _mockStorageService.DidNotReceive().ValidateFileType(Arg.Any<string>(), Arg.Any<string>());
-        _ = _mockStorageService.DidNotReceive().UploadFileAsync(Arg.Any<IFormFile>());
-        _ = _mockAttachmentRepository.DidNotReceive().CreateAsync(Arg.Any<Attachment>());
-    }
     
     [Fact]
     public async Task SaveAttachmentAsync_WithInvalidAttachmentType_ThrowsException()
@@ -193,7 +144,6 @@ public class AttachmentServiceTests
         Assert.Contains($"Invalid attachment type: {invalidType}", exception.Message);
         
         _ = _mockPropertyRepository.DidNotReceive().GetByIdAsync(Arg.Any<string>(), Arg.Any<string>());
-        _ = _mockPaymentRepository.DidNotReceive().GetByIdAsync(Arg.Any<string>(), Arg.Any<string>());
         _ = _mockStorageService.DidNotReceive().ValidateFileType(Arg.Any<string>(), Arg.Any<string>());
         _ = _mockStorageService.DidNotReceive().UploadFileAsync(Arg.Any<IFormFile>());
         _ = _mockAttachmentRepository.DidNotReceive().CreateAsync(Arg.Any<Attachment>());
@@ -343,6 +293,87 @@ public class AttachmentServiceTests
     
     #endregion
     
+    #region Transaction Attachment Tests
+
+    [Fact]
+    public async Task SaveAttachmentAsync_WithTransactionAttachment_ValidFile_CreatesAttachment()
+    {
+        // Arrange
+        var mockFile = CreateMockFormFile("test.pdf", "application/pdf", 1024);
+        var transactionId = TestPropertyId;  // Using TestPropertyId for consistent test data
+        var transaction = new PropertyTransaction { Id = ObjectId.Parse(transactionId), TenantId = TestTenantId };
+        var description = "Test transaction doc";
+        var tags = new[] { "transaction", "document" };
+        
+        _mockTransactionRepository.GetByIdAsync(TestTenantId, transactionId).Returns(transaction);
+        _mockStorageService.ValidateFileType(mockFile.ContentType, mockFile.FileName).Returns(true);
+        _mockStorageService.UploadFileAsync(mockFile).Returns(TestStoragePath);
+        
+        // Act
+        var result = await _attachmentService.SaveAttachmentAsync(
+            mockFile,
+            RentalAttachmentType.Transaction,
+            transactionId,
+            description,
+            tags);
+        
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(mockFile.FileName, result.FileName);
+        Assert.Equal(mockFile.ContentType, result.ContentType);
+        Assert.Equal(TestStoragePath, result.StoragePath);
+        Assert.Equal(mockFile.Length, result.FileSize);
+        Assert.Equal(description, result.Description);
+        Assert.Equal(tags, result.Tags);
+        Assert.Equal(RentalAttachmentType.Transaction.ToString(), result.EntityType);
+        Assert.Null(result.RentalPropertyId);
+        Assert.Equal(TestPropertyId, result.TransactionId);
+        Assert.Equal(TestTenantId, result.TenantId);
+        
+        await _mockTransactionRepository.Received(1).GetByIdAsync(TestTenantId, TestPropertyId);
+        await _mockStorageService.Received(1).UploadFileAsync(mockFile);
+        await _mockAttachmentRepository.Received(1).CreateAsync(Arg.Any<Attachment>());
+    }
+
+    [Fact]
+    public async Task GetAttachmentsForEntityAsync_ForTransaction_ReturnsAttachments()
+    {
+        // Arrange
+        var transactionId = "507f1f77bcf86cd799439013";
+        var expectedAttachments = new List<Attachment>
+        {
+            new Attachment {
+                Id = ObjectId.Parse("507f1f77bcf86cd799439015"),
+                FileName = "invoice.pdf",
+                RentalPropertyId = TestPropertyId,
+                TransactionId = transactionId
+            },
+            new Attachment {
+                Id = ObjectId.Parse("507f1f77bcf86cd799439016"),
+                FileName = "receipt.pdf",
+                RentalPropertyId = TestPropertyId,
+                TransactionId = transactionId
+            }
+        };
+        
+        _mockAttachmentRepository.GetAttachmentsByTransactionIdAsync(TestTenantId, transactionId)
+            .Returns(expectedAttachments);
+        
+        // Act
+        var result = await _attachmentService.GetAttachmentsForEntityAsync(
+            RentalAttachmentType.Transaction,
+            transactionId);
+        
+        // Assert
+        Assert.Equal(expectedAttachments.Count, result.Count());
+        Assert.Equal(expectedAttachments, result);
+        
+        await _mockAttachmentRepository.Received(1)
+            .GetAttachmentsByTransactionIdAsync(TestTenantId, transactionId);
+    }
+
+    #endregion
+
     #region GetAttachmentsForEntityAsync Tests
     
     [Fact]
@@ -366,31 +397,6 @@ public class AttachmentServiceTests
         Assert.Equal(expectedAttachments, result);
         
         _ = _mockAttachmentRepository.Received(1).GetAttachmentsByPropertyIdAsync(TestTenantId, TestPropertyId);
-        _ = _mockAttachmentRepository.DidNotReceive().GetAttachmentsByPaymentIdAsync(Arg.Any<string>(), Arg.Any<string>());
-    }
-    
-    [Fact]
-    public async Task GetAttachmentsForEntityAsync_ForPayment_ReturnsAttachments()
-    {
-        // Arrange
-        var expectedAttachments = new List<Attachment>
-        {
-            new Attachment { Id = ObjectId.Parse("507f1f77bcf86cd799439017"), FileName = "receipt.jpg", RentalPaymentId = TestPaymentId },
-            new Attachment { Id = ObjectId.Parse("507f1f77bcf86cd799439018"), FileName = "invoice.pdf", RentalPaymentId = TestPaymentId }
-        };
-        
-        _mockAttachmentRepository.GetAttachmentsByPaymentIdAsync(TestTenantId, TestPaymentId)
-            .Returns(expectedAttachments);
-        
-        // Act
-        var result = await _attachmentService.GetAttachmentsForEntityAsync(RentalAttachmentType.Payment, TestPaymentId);
-        
-        // Assert
-        Assert.Equal(expectedAttachments.Count, result.Count());
-        Assert.Equal(expectedAttachments, result);
-        
-        _ = _mockAttachmentRepository.Received(1).GetAttachmentsByPaymentIdAsync(TestTenantId, TestPaymentId);
-        _ = _mockAttachmentRepository.DidNotReceive().GetAttachmentsByPropertyIdAsync(Arg.Any<string>(), Arg.Any<string>());
     }
     
     [Fact]
