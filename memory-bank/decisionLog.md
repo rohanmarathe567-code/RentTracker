@@ -109,3 +109,26 @@ This file records architectural and implementation decisions using a list format
   * Services now have clearer responsibilities and implementation boundaries
 
 [2025-05-01 22:57:07] - Enhanced MongoDB repositories with improved type handling and added comprehensive unit tests for data access layer. This improves code quality and maintainability through better test coverage of database operations.
+
+[2025-05-18 17:04:10] - Documentation Consolidation
+
+## Decision
+Remove completed implementation plan files and consolidate core documentation within Memory Bank.
+
+## Rationale
+* Several features have been fully implemented with only minor enhancements pending
+* Multiple plan files were no longer actively used or updated
+* Documentation needed streamlining while preserving historical context
+
+## Files Removed
+* multi-tenancy-plan.md - Implementation complete
+* mongodb-migration-plan.md - Migration successful
+* auth-separation-analysis.md - Analysis complete
+* attachment-system-plan.md - Core implementation done
+* payment-attachments-plan.md - Integration complete
+
+## Impact
+* Improved documentation maintainability
+* Clearer active development focus
+* Preserved key decisions and patterns in remaining Memory Bank files
+* Simpler documentation structure for ongoing development

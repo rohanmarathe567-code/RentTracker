@@ -4,11 +4,11 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![build](https://github.com/rahulbedge/RentTracker/actions/workflows/pr-build.yml/badge.svg?branch=master)](https://github.com/rahulbedge/RentTracker/actions/workflows/pr-build.yml)
 
-A comprehensive multi-tenant rental property management system for tracking payments and managing property-related documents.
+A comprehensive multi-tenant property management system for tracking income, expenses, and managing property-related documents with advanced financial reporting capabilities.
 
 ## Overview
 
-RentTracker is a modern property management solution built with ASP.NET Core that helps landlords efficiently manage their rental properties, track payments, and handle property-related documents. The system provides a robust backend API for property management operations while maintaining secure data storage, multi-tenancy support, and file handling capabilities.
+RentTracker is a modern property management solution built with ASP.NET Core that helps property owners efficiently manage their rental properties and finances. The system provides robust transaction management with support for both income and expenses, comprehensive financial reporting, document management, and multi-tenant capabilities. Built on MongoDB for flexibility and Redis for performance, it offers secure data storage with advanced querying and real-time analytics features.
 
 ## Getting Started
 
@@ -67,11 +67,13 @@ dotnet run
   - Extensible property attributes through dynamic fields
   - Optimized MongoDB indexes for fast property lookups
   - Full-text search capabilities for property details
-* Enhanced Payment Tracking
-  - Embedded payment arrays for efficient retrieval
-  - Atomic payment operations using MongoDB operators
-  - Optimistic concurrency control for payment updates
-  - Rich payment history with document versioning
+* Advanced Transaction Management
+   - Support for both income and expenses
+   - Transaction categorization system
+   - Financial summaries with category breakdowns
+   - Date range filtering and reporting
+   - Optimistic concurrency control
+   - Rich transaction history with document versioning
 * Theme System Enhancements
   - Dark theme support
   - Theme customization interface
@@ -127,7 +129,6 @@ dotnet run
 - Implemented Redis caching layer
 - Enhanced data model with document-based design
 - Optimized MongoDB indexes and queries
-- Implemented GridFS for file storage
 - Updated tenant isolation using MongoDB features
 - Enhanced property attributes handling
 - Improved API performance with caching
@@ -150,7 +151,10 @@ The system uses MongoDB collections with a flexible, document-based data model:
     "tenantId": string,
     "createdAt": DateTime,
     "updatedAt": DateTime,
-    "version": long
+    "version": long,
+    "type": "income" | "expense",
+    "categoryId": ObjectId,
+    "attachments": [ObjectId]
 }
 ```
 
@@ -213,11 +217,14 @@ The system uses MongoDB collections with a flexible, document-based data model:
         "contact": string
     },
     "description": string,
-    "payments": [{
+    "transactions": [{
         "amount": decimal,
         "date": DateTime,
+        "type": "income" | "expense",
+        "categoryId": ObjectId,
         "method": string,
         "reference": string,
+        "notes": string,
         "attachments": [/* attachment refs */]
     }],
     "attachments": [{
@@ -327,12 +334,17 @@ classDiagram
         +string State
         +string ZipCode
     }
-    class Payment {
+    class PropertyTransaction {
+        +ObjectId Id
         +decimal Amount
-        +DateTime PaymentDate
-        +string Method
+        +DateTime TransactionDate
+        +string Type
+        +ObjectId CategoryId
+        +string PaymentMethod
         +string Reference
+        +string Notes
         +List~Attachment~ Attachments
+        +Dictionary~string,object~ Attributes
     }
     class Attachment {
         +string FileName
@@ -343,9 +355,9 @@ classDiagram
     BaseDocument <|-- User
     BaseDocument <|-- RentalProperty
     RentalProperty --> Address
-    RentalProperty --> "*" Payment
+    RentalProperty --> "*" PropertyTransaction
     RentalProperty --> "*" Attachment
-    Payment --> "*" Attachment
+    PropertyTransaction --> "*" Attachment
 ```
 
 ### Client Architecture
@@ -358,17 +370,21 @@ graph TD
     A --> E[Shared]
     
     B --> B1[RentalPropertyService]
-    B --> B2[PaymentService]
-    B --> B3[AttachmentService]
+    B --> B2[TransactionService]
+    B --> B3[CategoryService]
+    B --> B4[AttachmentService]
     
     C --> C1[Property Management]
-    C --> C2[Payment Management]
-    C --> C3[Document Management]
+    C --> C2[Transaction Management]
+    C --> C3[Financial Reports]
+    C --> C4[Document Management]
     
     C1 --> C1A[PropertyList]
     C1 --> C1B[PropertyEdit]
-    C2 --> C2A[PaymentList]
-    C2 --> C2B[PaymentEdit]
+    C2 --> C2A[TransactionList]
+    C2 --> C2B[TransactionEdit]
+    C3 --> C3A[FinancialSummary]
+    C3 --> C3B[CategoryBreakdown]
     
     D --> D1[DTOs]
     D --> D2[View Models]
@@ -382,12 +398,16 @@ graph TD
 - Pagination support with generic response types
 - Error handling and validation
 - State management for UI components
+- Real-time updates integration
+- Caching strategies with service workers
 
 #### Component Structure
 - Modular design with separate components per feature
 - Shared UI components for consistency
 - Full-screen layouts with efficient navigation
-- Property-specific payment context maintenance
+- Property-specific transaction context
+- Financial reporting components
+- Category management interfaces
 
 #### State Management
 - Local component state for UI interactions
@@ -491,7 +511,7 @@ sequenceDiagram
 | PUT | `/api/properties/{id}` | Update property | `Bearer JWT` Required, Owner Only |
 | DELETE | `/api/properties/{id}` | Delete property | `Bearer JWT` Required, Owner Only |
 
-### Payment Management
+### Transaction Management
 
 ```mermaid
 sequenceDiagram
@@ -500,43 +520,38 @@ sequenceDiagram
     participant Cache
     participant MongoDB
     
-    Client->>+API: GET /api/properties/{propertyId}/payments
+    Client->>+API: GET /api/properties/{propertyId}/transactions
     API->>+Cache: Check Cache
     Cache-->>-API: Cache Miss
-    API->>+MongoDB: Find Document & Project Payments
-    Note over API: Using array filters and projection
-    MongoDB-->>-API: Return Payments Array
+    API->>+MongoDB: Find Transactions
+    Note over API: Apply filtering and pagination
+    MongoDB-->>-API: Return Transactions
     API->>Cache: Store in Cache
-    API-->>-Client: Payments with Pagination Info
+    API-->>-Client: Transactions with Pagination Info
 
-    Client->>+API: POST /api/properties/{propertyId}/payments
-    API->>+MongoDB: Update Array with New Payment
-    Note over API: Using $push operator
-    MongoDB-->>-API: Payment Added
+    Client->>+API: POST /api/properties/{propertyId}/transactions
+    API->>+MongoDB: Create New Transaction
+    Note over API: With type and category
+    MongoDB-->>-API: Transaction Created
     API->>Cache: Invalidate Cache
-    API-->>-Client: 201 Created with Payment Details
+    API-->>-Client: 201 Created with Details
 
-    Client->>+API: PUT /api/properties/{propertyId}/payments/{paymentId}
-    API->>+MongoDB: Update Array Element
-    Note over API: Using $set with array filters
-    MongoDB-->>-API: Payment Updated
-    API->>Cache: Invalidate Cache
-    API-->>-Client: Success Response
-    
-    Client->>+API: DELETE /api/properties/{propertyId}/payments/{paymentId}
-    API->>+MongoDB: Update with $pull
-    MongoDB-->>-API: Payment Removed
-    API->>Cache: Invalidate Cache
-    API-->>-Client: Success Response
+    Client->>+API: GET /api/properties/{propertyId}/financial-summary
+    API->>+MongoDB: Aggregate Transactions
+    Note over API: Calculate totals by category
+    MongoDB-->>-API: Summary Data
+    API-->>-Client: Financial Summary Response
 ```
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | `/api/properties/{propertyId}/payments?page={page}&pageSize={size}` | List paginated payments for a property | `Bearer JWT` Required, Property Owner Only |
-| GET | `/api/properties/{propertyId}/payments/{paymentId}` | Get specific payment details | `Bearer JWT` Required, Property Owner Only |
-| POST | `/api/properties/{propertyId}/payments` | Record new payment | `Bearer JWT` Required, Property Owner Only |
-| PUT | `/api/properties/{propertyId}/payments/{paymentId}` | Update payment details | `Bearer JWT` Required, Property Owner Only |
-| DELETE | `/api/properties/{propertyId}/payments/{paymentId}` | Delete payment record | `Bearer JWT` Required, Property Owner Only |
+| GET | `/api/properties/{propertyId}/transactions` | List transactions with filtering | `Bearer JWT` Required, Owner Only |
+| GET | `/api/properties/{propertyId}/transactions/{id}` | Get transaction details | `Bearer JWT` Required, Owner Only |
+| POST | `/api/properties/{propertyId}/transactions` | Record new transaction | `Bearer JWT` Required, Owner Only |
+| PUT | `/api/properties/{propertyId}/transactions/{id}` | Update transaction | `Bearer JWT` Required, Owner Only |
+| DELETE | `/api/properties/{propertyId}/transactions/{id}` | Delete transaction | `Bearer JWT` Required, Owner Only |
+| GET | `/api/properties/{propertyId}/financial-summary` | Get financial summary | `Bearer JWT` Required, Owner Only |
+| GET | `/api/properties/{propertyId}/transaction-categories` | List transaction categories | `Bearer JWT` Required |
 
 ### Document Management
 
@@ -571,48 +586,44 @@ sequenceDiagram
 
 ### Prerequisites
 - .NET 8 SDK (latest version)
-- PostgreSQL database server (13.0 or higher)
-- Storage location for file uploads (with proper permissions)
+- Docker Desktop for running MongoDB and Redis
+- MongoDB Compass (optional, for database management)
 - Visual Studio Code (recommended) or Visual Studio 2022
 - Git for version control
-- Node.js and npm for frontend development tools
 
 ### Database Setup and Seeding
-The application uses Entity Framework Core for database management and includes automatic migrations and data seeding:
+MongoDB collections and indexes are automatically created on startup:
 
-#### Migrations
-Migrations are automatically applied when the application starts:
-```csharp
-// In Program.cs
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = services.GetRequiredService<ApplicationDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-```
-
-You can also manually apply migrations using:
-```bash
-cd RentTrackerBackend
-dotnet ef database update
-```
+#### Collections Setup
+The following collections are created with appropriate indexes:
+- Users
+- RentalProperties
+- TransactionCategories
+- PaymentMethods
+- Attachments
 
 #### Sample Data
-The application includes a `DatabaseSeeder` that automatically populates the database with sample data when it's empty:
+The application includes a data seeder that populates MongoDB with initial data:
 
-- **Rental Properties**:
-  * Sydney CBD apartment (2 bedrooms, $650/week)
-  * Bondi beach house (3 bedrooms, $950/week)
+- **Transaction Categories**:
+  * Income: Rent, Bond, Other Income
+  * Expenses: Maintenance, Insurance, Utilities, Other Expenses
 
-- **Rental Payments**:
-  * Initial payments including bonds
-  * Regular rent payments with references
+- **Properties with Transactions**:
+  * Sydney CBD apartment
+    - Monthly rent income
+    - Quarterly maintenance expenses
+  * Bondi beach house
+    - Weekly rent payments
+    - Annual insurance costs
 
-- **Sample Attachments**:
+- **Sample Documents**:
   * Lease agreements
+  * Insurance policies
   * Payment receipts
+  * Maintenance invoices
 
-The seeder only runs if the database is empty, making it safe for production environments.
+Data seeding runs only in development and can be triggered via API endpoint
 
 ### Development Environment Setup
 - Install Visual Studio Code and the C# Dev Kit extension
@@ -621,8 +632,8 @@ The seeder only runs if the database is empty, making it safe for production env
   * .NET Core Test Explorer for running tests
   * GitLens for enhanced Git integration
   * REST Client for testing API endpoints
-- Set up PostgreSQL and create a new database
-- Configure file storage permissions
+- Set up MongoDB and Redis using Docker Compose
+- Configure GridFS storage permissions
 
 ### Installation Steps
 
@@ -632,13 +643,22 @@ git clone https://github.com/yourusername/RentTracker.git
 cd RentTracker
 ```
 
-2. Configure the database connection:
+2. Start MongoDB and Redis:
+```bash
+docker-compose up -d
+```
+
+3. Configure the application settings:
 
 Create or update `RentTrackerBackend/appsettings.json`:
 ```json
 {
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=renttracker;Username=your_username;Password=your_password"
+  "MongoDb": {
+    "ConnectionString": "mongodb://root:example@localhost:27017",
+    "DatabaseName": "RentTracker"
+  },
+  "Redis": {
+    "ConnectionString": "localhost:6379"
   },
   "JwtSettings": {
     "SecretKey": "your-secret-key-here",
@@ -649,33 +669,20 @@ Create or update `RentTrackerBackend/appsettings.json`:
 }
 ```
 
-For development, you can use user secrets to store sensitive configuration:
+For development, you can use user secrets:
 ```bash
 cd RentTrackerBackend
 dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=renttracker;Username=your_username;Password=your_password"
+dotnet user-secrets set "MongoDb:ConnectionString" "mongodb://root:example@localhost:27017"
+dotnet user-secrets set "Redis:ConnectionString" "localhost:6379"
 dotnet user-secrets set "JwtSettings:SecretKey" "your-secret-key-here"
 ```
 
-3. Verify database setup:
-```bash
-# Check database connection and migrations status
-cd RentTrackerBackend
-dotnet ef migrations list
-dotnet ef database update --verbose
-```
-
 The application will automatically:
-- Apply any pending migrations
-- Create required directories for file uploads
-- Seed sample data if the database is empty
+- Create required MongoDB collections
+- Set up indexes for optimal performance
+- Initialize Redis cache
 - Create a default admin user if none exists
-
-3. Run database migrations:
-```bash
-cd RentTrackerBackend
-dotnet ef database update
-```
 
 4. Run the backend:
 ```bash
@@ -700,18 +707,18 @@ The backend API will be available at `https://localhost:5001`, and the frontend 
 
 ### Performance Considerations
 - Backend Optimizations:
-  * Lazy loading patterns for related data
-  * AsNoTracking for read-only operations
-  * Efficient query patterns with proper includes
-  * Pagination for all list operations
-  * Proper indexing on database tables
+  * MongoDB aggregation pipelines for analytics
+  * Redis caching for frequent queries
+  * Optimized MongoDB indexes
+  * Cursor-based pagination
+  * Bulk operations for better performance
 
 - Frontend Optimizations:
   * Component-level state management
   * Efficient API call patterns
-  * Proper caching strategies
+  * Client-side caching with service workers
   * Optimized rendering with proper component lifecycle
-  * Minimized re-renders using proper state management
+  * Real-time updates using SignalR when available
 
 ## Contributing
 

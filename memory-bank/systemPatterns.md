@@ -16,6 +16,15 @@ This file documents recurring patterns and standards used in the project.
   - Consistent location for all project knowledge
   - Easier tracking of project evolution
   - Simplified reference management
+[2025-05-18 17:04:23] - Documentation Maintenance Pattern:
+* Remove implementation plan files once features are fully implemented
+* Preserve key decisions and patterns in Memory Bank core files
+* Update relevant sections in remaining documentation
+* Benefits:
+  - Reduced documentation overhead
+  - Clearer active development focus
+  - Maintained historical context in core files
+  - Simplified documentation structure
 
 ## Coding Patterns
 
