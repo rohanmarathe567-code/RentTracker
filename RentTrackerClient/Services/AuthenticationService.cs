@@ -52,11 +52,9 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/auth/login", new
-            {
-                Email = email,
-                Password = password
-            });
+            var loginRequest = new { Email = email.Trim(), Password = password };
+            _logger.LogDebug($"Sending login request: {System.Text.Json.JsonSerializer.Serialize(loginRequest)}");
+            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/auth/login", loginRequest);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -97,16 +95,18 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/auth/register", new
+            var registerRequest = new
             {
                 FirstName = firstName,
                 MiddleName = middleName,
                 LastName = lastName,
-                Email = email,
+                Email = email.Trim(),
                 Password = password,
                 ConfirmPassword = confirmPassword,
                 UserType = "User"
-            });
+            };
+            _logger.LogDebug($"Sending register request: {System.Text.Json.JsonSerializer.Serialize(registerRequest)}");
+            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/auth/register", registerRequest);
 
             return response.IsSuccessStatusCode;
         }

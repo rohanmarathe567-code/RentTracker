@@ -118,3 +118,5 @@ This file tracks the project's current status, including recent changes, current
 * Rationale: Features fully implemented with only minor enhancements pending
 * Core documentation now centralized in remaining Memory Bank files
 * Preserves historical context while streamlining active documentation
+
+[2025-05-21 21:41:29] - Removed nginx from the deployment infrastructure. Updated Dockerfile to use ASP.NET runtime directly instead of nginx as the web server.

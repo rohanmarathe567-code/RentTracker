@@ -28,7 +28,7 @@ try
     {
         options.AddDefaultPolicy(policy =>
         {
-            policy.WithOrigins("http://localhost:5112", "http://localhost:5113", "http://localhost:7000")
+            policy.SetIsOriginAllowed(_ => true)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials()
@@ -97,7 +97,7 @@ try
         using (var scope = app.Services.CreateScope())
         {
             var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-            //await seeder.SeedAsync();
+            await seeder.SeedAsync();
             Console.WriteLine("Database seeded successfully");
         }
     }
@@ -108,11 +108,8 @@ try
     }
 
     // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 
     app.UseCors();
     app.UseAntiforgery();

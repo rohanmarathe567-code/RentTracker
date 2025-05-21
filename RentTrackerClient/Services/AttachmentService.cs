@@ -13,7 +13,7 @@ public class AttachmentService : HttpClientService
         HttpClient httpClient,
         ILogger<AttachmentService> logger,
         IAuthenticationService authService)
-        : base(httpClient, "/api", logger, authService)
+        : base(httpClient, "api", logger, authService)
     {
         _logger.LogInformation("AttachmentService initialized");
     }

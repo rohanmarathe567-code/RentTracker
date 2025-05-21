@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - renttracker-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: RentTrackerBackend/Dockerfile
+    container_name: renttracker-backend
+    ports:
+      - "7000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MongoDB__ConnectionString=mongodb://mongodb:27017
+      - MongoDB__DatabaseName=RentTracker
+    depends_on:
+      - mongodb
+    networks:
+      - renttracker-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: RentTrackerClient/Dockerfile
+    container_name: renttracker-frontend
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - BaseApiUrl=http://localhost:7000/api
+    depends_on:
+      - backend
+    networks:
+      - renttracker-network
+
+networks:
+  renttracker-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

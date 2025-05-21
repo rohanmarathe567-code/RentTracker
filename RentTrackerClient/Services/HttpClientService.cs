@@ -7,10 +7,10 @@ namespace RentTrackerClient.Services;
 public abstract class HttpClientService
 {
     protected readonly HttpClient _httpClient;
-    protected readonly string _baseUrl;
     protected readonly JsonSerializerOptions _jsonOptions;
     protected readonly ILogger _logger;
     protected readonly IAuthenticationService _authService;
+    protected readonly string _baseUrl;
 
     protected HttpClientService(
         HttpClient httpClient,
@@ -19,7 +19,7 @@ public abstract class HttpClientService
         IAuthenticationService authService)
     {
         _httpClient = httpClient;
-        _baseUrl = baseUrl.TrimEnd('/');
+        _baseUrl = baseUrl;
         _logger = logger;
         _authService = authService;
         _jsonOptions = new JsonSerializerOptions
@@ -37,7 +37,7 @@ public abstract class HttpClientService
         await SetAuthHeaderAsync();
         try
         {
-            var fullUrl = $"{_baseUrl}{(endpoint.StartsWith("?") ? "" : "/")}{endpoint}";
+            var fullUrl = $"{_baseUrl}/{endpoint}".TrimEnd('/');
             var startTime = DateTime.UtcNow;
             var response = await _httpClient.GetAsync(fullUrl);
             var duration = DateTime.UtcNow - startTime;
@@ -69,7 +69,7 @@ public abstract class HttpClientService
         await SetAuthHeaderAsync();
         try
         {
-            var fullUrl = $"{_baseUrl}/{endpoint}";
+            var fullUrl = $"{_baseUrl}/{endpoint}".TrimEnd('/');
             var startTime = DateTime.UtcNow;
             var response = await _httpClient.GetAsync(fullUrl);
             var duration = DateTime.UtcNow - startTime;
@@ -100,7 +100,7 @@ public abstract class HttpClientService
         try
         {
             await SetAuthHeaderAsync();
-            var fullUrl = $"{_baseUrl}/{endpoint}";
+            var fullUrl = $"{_baseUrl}/{endpoint}".TrimEnd('/');
             
             var startTime = DateTime.UtcNow;
             var response = await _httpClient.PostAsJsonAsync(fullUrl, data, _jsonOptions);
@@ -144,7 +144,7 @@ public abstract class HttpClientService
         try
         {
             await SetAuthHeaderAsync();
-            var fullUrl = $"{_baseUrl}/{endpoint}";
+            var fullUrl = $"{_baseUrl}/{endpoint}".TrimEnd('/');
             var startTime = DateTime.UtcNow;
             var response = await _httpClient.PutAsJsonAsync(fullUrl, data, _jsonOptions);
             var duration = DateTime.UtcNow - startTime;
@@ -182,7 +182,7 @@ public abstract class HttpClientService
         try
         {
             await SetAuthHeaderAsync();
-            var fullUrl = $"{_baseUrl}/{endpoint}";
+            var fullUrl = $"{_baseUrl}/{endpoint}".TrimEnd('/');
             var startTime = DateTime.UtcNow;
             var response = await _httpClient.DeleteAsync(fullUrl);
             var duration = DateTime.UtcNow - startTime;

@@ -23,9 +23,8 @@ public class AuthService : IAuthService
     private readonly IMongoCollection<User> _users;
     private readonly JwtConfig _jwtConfig;
     
-    public AuthService(IMongoClient client, JwtConfig jwtConfig)
+    public AuthService(IMongoDatabase database, JwtConfig jwtConfig)
     {
-        var database = client.GetDatabase("renttracker");
         _users = database.GetCollection<User>(nameof(User));
         _jwtConfig = jwtConfig;
     }
@@ -68,10 +67,21 @@ public class AuthService : IAuthService
     
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
+        Console.WriteLine($"Attempting login for email: {request.Email}");
         var user = await _users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
             
-        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
+        if (user == null)
         {
+            Console.WriteLine("User not found");
+            throw new InvalidOperationException("Invalid email or password");
+        }
+
+        var isPasswordValid = VerifyPassword(request.Password, user.PasswordHash);
+        Console.WriteLine($"Password verification result: {isPasswordValid}");
+
+        if (!isPasswordValid)
+        {
+            Console.WriteLine("Password verification failed");
             throw new InvalidOperationException("Invalid email or password");
         }
         

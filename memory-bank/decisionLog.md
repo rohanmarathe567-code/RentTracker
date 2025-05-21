@@ -132,3 +132,29 @@ Remove completed implementation plan files and consolidate core documentation wi
 * Clearer active development focus
 * Preserved key decisions and patterns in remaining Memory Bank files
 * Simpler documentation structure for ongoing development
+
+[2025-05-21 18:31:45] - Removed startup.sh script as database seeding is now directly enabled in Program.cs
+- Rationale: The startup.sh script was previously used to uncomment the database seeding line in Program.cs at container startup
+- Impact: Simplified deployment process by removing an unnecessary script since seeding is now permanently enabled in the code
+
+[2025-05-21 21:41:45] - INFRASTRUCTURE: Removed nginx reverse proxy
+* Decision: Removed nginx from the deployment stack
+* Rationale: Simplified deployment architecture by using ASP.NET's built-in Kestrel server directly
+* Changes: Updated Dockerfile to use ASP.NET runtime image instead of nginx
+* Implications: 
+  - Simplified container configuration
+  - Direct handling of HTTP requests by Kestrel server
+  - Reduced complexity in deployment and maintenance
+  - One less component to manage and configure
+
+[2025-05-21 21:56:24] - INFRASTRUCTURE: Updated client container to use node http-server
+* Decision: Replaced nginx with node http-server for serving Blazor WASM static files
+* Rationale: Simplified container setup while maintaining static file serving capability
+* Changes:
+  - Modified Dockerfile to use node:alpine base image
+  - Configured http-server to serve the wwwroot content
+  - Exposed port 80 and mapped to 8080 externally
+* Implications:
+  - Lighter container footprint
+  - Simpler configuration
+  - Direct static file serving without complex reverse proxy setup

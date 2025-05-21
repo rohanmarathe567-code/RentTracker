@@ -18,8 +18,8 @@ builder.Logging.AddProvider(new ClientLoggerProvider(LogLevel.Debug));
 // Configure HttpClient with JSON serialization options
 builder.Services.AddScoped(sp =>
 {
-    var client = new HttpClient { BaseAddress = new Uri("http://localhost:7000") };    
-    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));    
+    var client = new HttpClient { BaseAddress = new Uri(builder.Configuration["BaseApiUrl"] ?? "http://localhost:7000") };
+    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
     return client;
 });
 
@@ -40,7 +40,7 @@ builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddScoped(sp =>
     new AuthenticationService(
         sp.GetRequiredService<HttpClient>(),
-        "http://localhost:7000",
+        sp.GetRequiredService<HttpClient>().BaseAddress!.ToString(),
         sp.GetRequiredService<AuthenticationStateProvider>(),
         sp.GetRequiredService<ILogger<AuthenticationService>>(),
         sp.GetRequiredService<ILocalStorageService>()

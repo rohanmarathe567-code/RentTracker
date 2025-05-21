@@ -129,7 +129,7 @@ namespace RentTrackerClient.Services
         {
             try
             {
-                var category = await GetAsync<PropertyTransactionCategory>($"../categories/{categoryId}");
+                var category = await GetAsync<PropertyTransactionCategory>($"categories/{categoryId}");
                 var exists = category != null;
                 _logger.LogDebug($"Category {categoryId} exists: {exists}");
                 return exists;

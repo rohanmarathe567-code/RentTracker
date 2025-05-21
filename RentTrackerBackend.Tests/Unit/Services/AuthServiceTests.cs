@@ -34,7 +34,7 @@ public class AuthServiceTests
             TokenLifetimeMinutes = 60
         };
 
-        _authService = new AuthService(_mongoClient, _jwtConfig);
+        _authService = new AuthService(_database, _jwtConfig);
     }
 
     [Fact]
