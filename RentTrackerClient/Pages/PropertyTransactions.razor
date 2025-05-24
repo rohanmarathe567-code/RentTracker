@@ -15,10 +15,16 @@
         </button>
         <h5 class="mb-0">Property Transactions</h5>
     </div>
-    <a href="@($"properties/{PropertyId}/transactions/new")" class="btn btn-sm btn-primary">
-        <i class="bi bi-plus-lg"></i>
-        <span class="ms-1">Transaction</span>
-    </a>
+    <div class="d-flex gap-2">
+        <a href="@($"properties/{PropertyId}/transactions/bulk")" class="btn btn-sm btn-primary">
+            <i class="bi bi-file-earmark-spreadsheet"></i>
+            <span class="ms-1">Bulk Entry</span>
+        </a>
+        <a href="@($"properties/{PropertyId}/transactions/new")" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            <span class="ms-1">Transaction</span>
+        </a>
+    </div>
 </div>
 
 @if (loading)

@@ -151,7 +151,7 @@ public static class PropertyTransactionsController
         // Create a new transaction for a property
         app.MapPost("/api/properties/{propertyId}/transactions", async (
             string propertyId,
-            PropertyTransactionDto transactionDto,
+            List<PropertyTransactionDto> transactionDtos,
             IPropertyTransactionService transactionService,
             IPropertyService propertyService,
             IClaimsPrincipalService claimsPrincipalService) =>
@@ -168,13 +168,19 @@ public static class PropertyTransactionsController
                 if (property == null)
                     return Results.NotFound("Property not found");
 
-                var transaction = PropertyTransactionDto.ToEntity(transactionDto);
-                transaction.RentalPropertyId = propertyId;
-                transaction.TenantId = tenantId;
+                try
+                {
+                    var createdTransactions = await transactionService.CreateTransactionAsync(tenantId, propertyId, transactionDtos);
+                    if (createdTransactions == null)
+                        return Results.BadRequest("Failed to create transactions");
 
-                var createdTransaction = await transactionService.CreateTransactionAsync(transaction);
-                
-                return Results.Created($"/api/properties/{propertyId}/transactions/{createdTransaction.Id}", createdTransaction);
+                    // Always return a consistent response format
+                    return Results.Ok(createdTransactions);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(ex.Message);
+                }
             }
             catch (ArgumentException ex)
             {

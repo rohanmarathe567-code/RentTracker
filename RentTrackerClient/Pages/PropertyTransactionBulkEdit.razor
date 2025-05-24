@@ -1,0 +1,252 @@
+@page "/properties/{PropertyId}/transactions/bulk"
+@inject PropertyTransactionService TransactionService
+@inject PaymentMethodService PaymentMethodService
+@inject TransactionCategoryService CategoryService
+@inject NavigationManager NavigationManager
+@inject ILogger<PropertyTransactionBulkEdit> Logger
+@inject IAuthenticationService AuthService
+
+<PageTitle>Bulk Transaction Entry - Rent Tracker</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex gap-2 align-items-center mb-3">
+        <button class="btn btn-sm btn-outline-secondary" @onclick="NavigateBack" title="Back to Properties">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <h5 class="mb-0">Bulk Transactions Entry</h5>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mb-3">@errorMessage</div>
+    }
+
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Manual Entry</h5>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="@transactions" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Category</th>
+                                        <th>Payment Method</th>
+                                        <th>Reference</th>
+                                        <th>Notes</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var transaction in transactions)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <select class="form-select" value="@transaction.TransactionType" 
+                                                        @onchange="@(e => OnTransactionTypeChanged(transaction, e))">
+                                                    <option value="@TransactionType.Income">Income</option>
+                                                    <option value="@TransactionType.Expense">Expense</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <InputDate class="form-control" @bind-Value="transaction.TransactionDate" />
+                                            </td>
+                                            <td>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <InputNumber class="form-control" @bind-Value="transaction.Amount" />
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <InputSelect class="form-select" @bind-Value="transaction.CategoryId">
+                                                    @foreach (var category in GetCategoriesForType(transaction.TransactionType))
+                                                    {
+                                                        <option value="@category.Id">@category.Name</option>
+                                                    }
+                                                </InputSelect>
+                                            </td>
+                                            <td>
+                                                <InputSelect class="form-select" @bind-Value="transaction.PaymentMethodId">
+                                                    @foreach (var method in paymentMethods)
+                                                    {
+                                                        <option value="@method.Id">@method.Name</option>
+                                                    }
+                                                </InputSelect>
+                                            </td>
+                                            <td>
+                                                <InputText class="form-control" @bind-Value="transaction.Reference" />
+                                            </td>
+                                            <td>
+                                                <InputText class="form-control" @bind-Value="transaction.Notes" />
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-danger" @onclick="@(() => RemoveTransaction(transaction))">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-secondary me-2" @onclick="AddTransaction">
+                                <i class="bi bi-plus"></i>
+                                <span class="ms-1">Add Row</span>
+                            </button>
+                            <button type="submit" class="btn btn-primary" disabled="@(!transactions.Any())">
+                                <i class="bi bi-save"></i>
+                                <span class="ms-1">Save All</span>
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public string PropertyId { get; set; } = string.Empty;
+
+    private List<PropertyTransaction> transactions = new();
+    private List<PaymentMethod> paymentMethods = new();
+    private Dictionary<TransactionType, List<PropertyTransactionCategory>> categoriesByType = new();
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadPaymentMethods();
+            await LoadCategories();
+            AddTransaction(); // Add first empty row
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error initializing: {ex.Message}";
+            Logger.LogError(ex, "Error in OnInitializedAsync");
+        }
+    }
+
+    private async Task LoadPaymentMethods()
+    {
+        var methods = await PaymentMethodService.GetPaymentMethodsAsync();
+        if (methods != null)
+        {
+            paymentMethods = methods.ToList();
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        var incomeCategories = await CategoryService.GetAllCategoriesAsync(TransactionType.Income);
+        var expenseCategories = await CategoryService.GetAllCategoriesAsync(TransactionType.Expense);
+
+        categoriesByType[TransactionType.Income] = incomeCategories?.ToList() ?? new List<PropertyTransactionCategory>();
+        categoriesByType[TransactionType.Expense] = expenseCategories?.ToList() ?? new List<PropertyTransactionCategory>();
+    }
+
+    private List<PropertyTransactionCategory> GetCategoriesForType(TransactionType type)
+    {
+        return categoriesByType.TryGetValue(type, out var categories) ? categories : new List<PropertyTransactionCategory>();
+    }
+
+    private void AddTransaction()
+    {
+        var now = DateTime.UtcNow;
+        var transaction = new PropertyTransaction
+        {
+            RentalPropertyId = PropertyId,
+            TransactionType = TransactionType.Income,
+            TransactionDate = now,
+            CreatedAt = now,
+            UpdatedAt = now,
+            Version = 0,
+            CategoryId = GetCategoriesForType(TransactionType.Income).FirstOrDefault()?.Id ?? string.Empty,
+            PaymentMethodId = paymentMethods.FirstOrDefault()?.Id,
+            AttachmentIds = new List<string>()
+        };
+        transactions.Add(transaction);
+    }
+
+    private void RemoveTransaction(PropertyTransaction transaction)
+    {
+        transactions.Remove(transaction);
+        StateHasChanged();
+    }
+
+    private void OnTransactionTypeChanged(PropertyTransaction transaction, ChangeEventArgs e)
+    {
+        if (e.Value != null && Enum.TryParse<TransactionType>(e.Value.ToString(), out var newType))
+        {
+            transaction.TransactionType = newType;
+            var categories = GetCategoriesForType(newType);
+            if (categories.Any())
+            {
+                transaction.CategoryId = categories.First().Id;
+            }
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            errorMessage = null;
+            
+            if (!transactions.Any())
+            {
+                errorMessage = "Please add at least one transaction.";
+                return;
+            }
+
+            var tenantId = await AuthService.GetCurrentTenantIdAsync();
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                errorMessage = "Failed to get tenant ID. Please try again.";
+                return;
+            }
+
+            // Set tenant ID for all transactions
+            foreach (var transaction in transactions)
+            {
+                transaction.TenantId = tenantId;
+                transaction.Amount = Math.Abs(transaction.Amount);
+            }
+
+            var result = await TransactionService.CreateBulkTransactionsAsync(PropertyId, transactions);
+            if (result != null)
+            {
+                NavigateBack();
+            }
+            else
+            {
+                errorMessage = "Failed to create transactions. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving transactions: {ex.Message}";
+            Logger.LogError(ex, "Error in HandleValidSubmit");
+        }
+    }
+
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo($"/properties/{PropertyId}/transactions");
+    }
+}

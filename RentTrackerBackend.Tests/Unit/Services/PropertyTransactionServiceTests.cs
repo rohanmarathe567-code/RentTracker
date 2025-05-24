@@ -85,41 +85,48 @@ namespace RentTrackerBackend.Tests.Unit.Services
         }
 
         [Fact]
-        public async Task CreateTransactionAsync_ShouldCreateTransaction_WhenValidInputProvided()
+        public async Task CreateTransactionAsync_ShouldCreateSingleTransaction_WhenValidInputProvided()
         {
             // Arrange
             var tenantId = "tenant123";
             var propertyId = ObjectId.GenerateNewId().ToString();
             var categoryId = ObjectId.GenerateNewId().ToString();
-            var transaction = new PropertyTransaction
+            var now = DateTime.UtcNow;
+            var transactionDto = new PropertyTransactionDto
             {
-                TenantId = tenantId,
                 RentalPropertyId = propertyId,
                 CategoryId = categoryId,
                 Amount = 100,
-                TransactionDate = DateTime.UtcNow,
+                TransactionDate = now,
                 TransactionType = TransactionType.Income
             };
 
             var property = new RentalProperty { TenantId = tenantId };
-            var category = new PropertyTransactionCategory 
-            { 
-                TransactionType = TransactionType.Income 
+            var category = new PropertyTransactionCategory
+            {
+                TransactionType = TransactionType.Income
             };
+
+            var expectedTransaction = PropertyTransactionDto.ToEntity(transactionDto);
+            expectedTransaction.TenantId = tenantId;
 
             _propertyRepository.GetByIdAsync(tenantId, propertyId)
                 .Returns(property);
             _categoryRepository.GetSharedByIdAsync(categoryId)
                 .Returns(category);
-            _transactionRepository.CreateAsync(transaction)
-                .Returns(transaction);
+            _transactionRepository.CreateAsync(Arg.Any<PropertyTransaction>())
+                .Returns(expectedTransaction);
 
             // Act
-            var result = await _service.CreateTransactionAsync(transaction);
+            var result = await _service.CreateTransactionAsync(expectedTransaction);
 
             // Assert
-            result.Should().BeEquivalentTo(transaction);
-            await _transactionRepository.Received(1).CreateAsync(transaction);
+            result.Should().BeEquivalentTo(expectedTransaction);
+            await _transactionRepository.Received(1).CreateAsync(Arg.Is<PropertyTransaction>(t =>
+                t.TenantId == tenantId &&
+                t.RentalPropertyId == propertyId &&
+                t.Amount == 100 &&
+                t.TransactionDate == now));
         }
 
         [Fact]
@@ -177,6 +184,338 @@ namespace RentTrackerBackend.Tests.Unit.Services
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => 
                 _service.CreateTransactionAsync(transaction));
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldCreateMultipleTransactions_WhenValidListProvided()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var categoryId = ObjectId.GenerateNewId().ToString();
+            var transactionDtos = new List<PropertyTransactionDto>
+            {
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = categoryId,
+                    Amount = 100,
+                    TransactionDate = DateTime.UtcNow,
+                    TransactionType = TransactionType.Income
+                },
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = categoryId,
+                    Amount = 200,
+                    TransactionDate = DateTime.UtcNow,
+                    TransactionType = TransactionType.Income
+                }
+            };
+
+            var property = new RentalProperty { TenantId = tenantId };
+            var category = new PropertyTransactionCategory
+            {
+                TransactionType = TransactionType.Income
+            };
+
+            _propertyRepository.GetByIdAsync(tenantId, propertyId)
+                .Returns(property);
+            _categoryRepository.GetSharedByIdAsync(categoryId)
+                .Returns(category);
+            _transactionRepository.CreateAsync(Arg.Any<PropertyTransaction>())
+                .Returns(x => x.Arg<PropertyTransaction>());
+
+            // Act
+            var result = await _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos);
+
+            // Assert
+            result.Should().HaveCount(2);
+            result.Sum(t => t.Amount).Should().Be(300);
+            await _transactionRepository.Received(2).CreateAsync(Arg.Any<PropertyTransaction>());
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldStopOnFirstFailure_WhenBulkCreating()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var categoryId = ObjectId.GenerateNewId().ToString();
+            var transactionDtos = new List<PropertyTransactionDto>
+            {
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = categoryId,
+                    TransactionType = TransactionType.Income,
+                    Amount = 100,
+                    TransactionDate = DateTime.UtcNow
+                },
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = "invalid-category",
+                    TransactionType = TransactionType.Income,
+                    Amount = 200,
+                    TransactionDate = DateTime.UtcNow
+                }
+            };
+
+            var property = new RentalProperty { TenantId = tenantId };
+            var category = new PropertyTransactionCategory
+            {
+                TransactionType = TransactionType.Income
+            };
+
+            _propertyRepository.GetByIdAsync(tenantId, propertyId)
+                .Returns(property);
+            _categoryRepository.GetSharedByIdAsync(categoryId)
+                .Returns(category);
+            _categoryRepository.GetSharedByIdAsync("invalid-category")
+                .Returns((PropertyTransactionCategory)null!);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos));
+            await _transactionRepository.Received(1).CreateAsync(Arg.Any<PropertyTransaction>());
+            await _transactionRepository.Received(1).CreateAsync(Arg.Any<PropertyTransaction>());
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldThrowArgumentException_WhenEmptyList()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var transactionDtos = new List<PropertyTransactionDto>();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos));
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldValidateAllTransactionTypes_InBulkOperation()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var categoryId = ObjectId.GenerateNewId().ToString();
+            var property = new RentalProperty { TenantId = tenantId };
+            var category = new PropertyTransactionCategory { TransactionType = TransactionType.Income };
+
+            var transactionDtos = new List<PropertyTransactionDto>
+            {
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = categoryId,
+                    TransactionType = TransactionType.Expense, // Mismatched type
+                    Amount = 100,
+                    TransactionDate = DateTime.UtcNow
+                }
+            };
+
+            _propertyRepository.GetByIdAsync(tenantId, propertyId)
+                .Returns(property);
+            _categoryRepository.GetSharedByIdAsync(categoryId)
+                .Returns(category);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos));
+            ex.Message.Should().Contain("Transaction type must match category type");
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldValidateRequiredFields_InBulkOperation()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var property = new RentalProperty { TenantId = tenantId };
+
+            var transactionDtos = new List<PropertyTransactionDto>
+            {
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = "", // Missing category
+                    TransactionType = TransactionType.Income,
+                    Amount = 100,
+                    TransactionDate = DateTime.UtcNow
+                }
+            };
+
+            _propertyRepository.GetByIdAsync(tenantId, propertyId)
+                .Returns(property);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos));
+            ex.Message.Should().Contain("Category");
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldValidatePropertyExists_ForAllTransactions()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var categoryId = ObjectId.GenerateNewId().ToString();
+            var category = new PropertyTransactionCategory { TransactionType = TransactionType.Income };
+
+            var transactionDtos = new List<PropertyTransactionDto>
+            {
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = categoryId,
+                    TransactionType = TransactionType.Income,
+                    Amount = 100,
+                    TransactionDate = DateTime.UtcNow
+                }
+            };
+
+            _propertyRepository.GetByIdAsync(tenantId, propertyId)
+                .Returns((RentalProperty)null!);
+            _categoryRepository.GetSharedByIdAsync(categoryId)
+                .Returns(category);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos));
+            ex.Message.Should().Contain($"Property with ID {propertyId} not found");
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldHandleMultipleCategories_InBulkOperation()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var rentCategoryId = ObjectId.GenerateNewId().ToString();
+            var depositCategoryId = ObjectId.GenerateNewId().ToString();
+            var property = new RentalProperty { TenantId = tenantId };
+            
+            var rentCategory = new PropertyTransactionCategory
+            {
+                TransactionType = TransactionType.Income,
+                Name = "Rent"
+            };
+            var depositCategory = new PropertyTransactionCategory
+            {
+                TransactionType = TransactionType.Income,
+                Name = "Deposit"
+            };
+
+            var transactionDtos = new List<PropertyTransactionDto>
+            {
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = rentCategoryId,
+                    TransactionType = TransactionType.Income,
+                    Amount = 1000,
+                    TransactionDate = DateTime.UtcNow
+                },
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = depositCategoryId,
+                    TransactionType = TransactionType.Income,
+                    Amount = 2000,
+                    TransactionDate = DateTime.UtcNow
+                }
+            };
+
+            _propertyRepository.GetByIdAsync(tenantId, propertyId)
+                .Returns(property);
+            _categoryRepository.GetSharedByIdAsync(rentCategoryId)
+                .Returns(rentCategory);
+            _categoryRepository.GetSharedByIdAsync(depositCategoryId)
+                .Returns(depositCategory);
+            _transactionRepository.CreateAsync(Arg.Any<PropertyTransaction>())
+                .Returns(x => x.Arg<PropertyTransaction>());
+
+            // Act
+            var result = await _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos);
+
+            // Assert
+            result.Should().HaveCount(2);
+            result.Sum(t => t.Amount).Should().Be(3000);
+            await _transactionRepository.Received(2).CreateAsync(Arg.Any<PropertyTransaction>());
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldValidateAmount_InBulkOperation()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var categoryId = ObjectId.GenerateNewId().ToString();
+            var property = new RentalProperty { TenantId = tenantId };
+            var category = new PropertyTransactionCategory { TransactionType = TransactionType.Income };
+
+            var transactionDtos = new List<PropertyTransactionDto>
+            {
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = categoryId,
+                    TransactionType = TransactionType.Income,
+                    Amount = -100, // Invalid negative amount
+                    TransactionDate = DateTime.UtcNow
+                }
+            };
+
+            _propertyRepository.GetByIdAsync(tenantId, propertyId)
+                .Returns(property);
+            _categoryRepository.GetSharedByIdAsync(categoryId)
+                .Returns(category);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos));
+            var message = ex.Message;
+            message.Should().Contain("Amount must be positive");
+            await _transactionRepository.DidNotReceive().CreateAsync(Arg.Any<PropertyTransaction>());
+        }
+
+        [Fact]
+        public async Task CreateTransactionAsync_ShouldValidateTransactionDate_InBulkOperation()
+        {
+            // Arrange
+            var tenantId = "tenant123";
+            var propertyId = ObjectId.GenerateNewId().ToString();
+            var categoryId = ObjectId.GenerateNewId().ToString();
+            var property = new RentalProperty { TenantId = tenantId };
+            var category = new PropertyTransactionCategory { TransactionType = TransactionType.Income };
+
+            var transactionDtos = new List<PropertyTransactionDto>
+            {
+                new PropertyTransactionDto
+                {
+                    RentalPropertyId = propertyId,
+                    CategoryId = categoryId,
+                    TransactionType = TransactionType.Income,
+                    Amount = 100,
+                    TransactionDate = DateTime.MinValue // Invalid date
+                }
+            };
+
+            _propertyRepository.GetByIdAsync(tenantId, propertyId)
+                .Returns(property);
+            _categoryRepository.GetSharedByIdAsync(categoryId)
+                .Returns(category);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.CreateTransactionAsync(tenantId, propertyId, transactionDtos));
+            var message = ex.Message;
+            message.Should().Contain("Transaction date is required and must be valid");
+            await _transactionRepository.DidNotReceive().CreateAsync(Arg.Any<PropertyTransaction>());
         }
 
         [Fact]

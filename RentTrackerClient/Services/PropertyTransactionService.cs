@@ -82,11 +82,26 @@ namespace RentTrackerClient.Services
         {
             try
             {
-                return await PostAsync<PropertyTransaction>($"{propertyId}/transactions", transaction);
+                var response = await PostAsync<List<PropertyTransaction>>($"{propertyId}/transactions", new[] { transaction });
+                return response?.FirstOrDefault();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating transaction for property {PropertyId}", propertyId);
+                throw; // Re-throw to preserve the original error message
+            }
+        }
+
+        public async Task<List<PropertyTransaction>?> CreateBulkTransactionsAsync(string propertyId, IEnumerable<PropertyTransaction> transactions)
+        {
+            try
+            {
+                _logger.LogDebug($"Creating bulk transactions for property {propertyId}");
+                return await PostAsync<List<PropertyTransaction>>($"{propertyId}/transactions", transactions.ToList());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating bulk transactions for property {PropertyId}", propertyId);
                 throw; // Re-throw to preserve the original error message
             }
         }

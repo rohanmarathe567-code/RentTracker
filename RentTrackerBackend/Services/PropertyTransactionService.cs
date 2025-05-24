@@ -10,6 +10,8 @@ namespace RentTrackerBackend.Services
         Task<PropertyTransaction?> UpdateTransactionAsync(string tenantId, string transactionId, PropertyTransaction updatedTransaction);
         Task<bool> DeleteTransactionAsync(string tenantId, string transactionId);
         Task<PropertyTransaction> CreateTransactionAsync(PropertyTransaction transaction);
+        Task<List<PropertyTransaction>> CreateTransactionAsync(List<PropertyTransaction> transactions);
+        Task<List<PropertyTransaction>> CreateTransactionAsync(string tenantId, string propertyId, List<PropertyTransactionDto> transactionDtos);
         Task<decimal> GetTotalIncomeByPropertyAsync(string tenantId, string propertyId, DateTime? startDate = null, DateTime? endDate = null);
         Task<decimal> GetTotalExpensesByPropertyAsync(string tenantId, string propertyId, DateTime? startDate = null, DateTime? endDate = null);
         Task<IEnumerable<PropertyTransaction>> GetTransactionsByTypeAsync(string tenantId, string propertyId, TransactionType type, DateTime? startDate = null, DateTime? endDate = null);
@@ -91,30 +93,91 @@ namespace RentTrackerBackend.Services
             }
         }
 
+        private void ValidateTransactions(List<PropertyTransaction> transactions)
+        {
+            if (transactions == null || !transactions.Any())
+            {
+                throw new ArgumentException("At least one transaction is required.");
+            }
+
+            foreach (var transaction in transactions)
+            {
+                if (transaction.Amount <= 0)
+                {
+                    throw new ArgumentException("Amount must be positive.");
+                }
+
+                if (transaction.TransactionDate == DateTime.MinValue ||
+                    transaction.TransactionDate == DateTime.MaxValue)
+                {
+                    throw new ArgumentException("Transaction date is required and must be valid.");
+                }
+
+                if (string.IsNullOrEmpty(transaction.CategoryId))
+                {
+                    throw new ArgumentException("Category is required.");
+                }
+            }
+        }
+
+        public async Task<List<PropertyTransaction>> CreateTransactionAsync(string tenantId, string propertyId, List<PropertyTransactionDto> transactionDtos)
+        {
+            if (transactionDtos == null || !transactionDtos.Any())
+            {
+                throw new ArgumentException("At least one transaction is required.");
+            }
+
+            var transactions = transactionDtos.Select(dto =>
+            {
+                var t = PropertyTransactionDto.ToEntity(dto);
+                t.RentalPropertyId = propertyId;
+                t.TenantId = tenantId;
+                return t;
+            }).ToList();
+
+            ValidateTransactions(transactions);
+            return await CreateTransactionAsync(transactions);
+        }
+
         public async Task<PropertyTransaction> CreateTransactionAsync(PropertyTransaction transaction)
         {
-            await ValidatePropertyExistsAsync(transaction.TenantId, transaction.RentalPropertyId);
-            
-            // Try to get category from tenant's categories first, then from shared categories
-            var category = await _categoryRepository.GetSharedByIdAsync(transaction.CategoryId);
-            
-            if (category == null)
+            var result = await CreateTransactionAsync(new List<PropertyTransaction> { transaction });
+            return result.First();
+        }
+
+        public async Task<List<PropertyTransaction>> CreateTransactionAsync(List<PropertyTransaction> transactions)
+        {
+            ValidateTransactions(transactions);
+            var createdTransactions = new List<PropertyTransaction>();
+
+            foreach (var transaction in transactions)
             {
-                throw new ArgumentException($"Category with ID {transaction.CategoryId} not found.");
-            }
-            
-            // Ensure the transaction type matches the category type
-            if (transaction.TransactionType != category.TransactionType)
-            {
-                throw new ArgumentException($"Transaction type must match category type.");
+                await ValidatePropertyExistsAsync(transaction.TenantId, transaction.RentalPropertyId);
+                
+                // Try to get category from tenant's categories first, then from shared categories
+                var category = await _categoryRepository.GetSharedByIdAsync(transaction.CategoryId);
+                
+                if (category == null)
+                {
+                    throw new ArgumentException($"Category with ID {transaction.CategoryId} not found.");
+                }
+                
+                // Ensure the transaction type matches the category type
+                if (transaction.TransactionType != category.TransactionType)
+                {
+                    throw new ArgumentException($"Transaction type must match category type.");
+                }
+
+                // Ensure TransactionDate is in UTC
+                transaction.TransactionDate = transaction.TransactionDate.Kind == DateTimeKind.Utc
+                    ? transaction.TransactionDate
+                    : DateTime.SpecifyKind(transaction.TransactionDate, DateTimeKind.Utc);
+
+                var createdTransaction = await _transactionRepository.CreateAsync(transaction);
+                createdTransactions.Add(createdTransaction);
             }
 
-            // Ensure TransactionDate is in UTC
-            transaction.TransactionDate = transaction.TransactionDate.Kind == DateTimeKind.Utc
-                ? transaction.TransactionDate
-                : DateTime.SpecifyKind(transaction.TransactionDate, DateTimeKind.Utc);
-
-            return await _transactionRepository.CreateAsync(transaction);
+            return createdTransactions;
         }
         
         public async Task<decimal> GetTotalIncomeByPropertyAsync(string tenantId, string propertyId, DateTime? startDate = null, DateTime? endDate = null)
