@@ -1,12 +1,9 @@
-using Microsoft.Extensions.Hosting;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Services;
 using RentTrackerBackend.Endpoints;
 using RentTrackerBackend.Extensions;
 using Serilog;
-using Serilog.Events;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Server.IIS;
 using System.Text.Json.Serialization;
 
 // Configure Serilog early

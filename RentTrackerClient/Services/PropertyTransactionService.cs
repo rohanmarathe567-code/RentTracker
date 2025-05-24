@@ -1,5 +1,3 @@
-using System.Net.Http.Json;
-using Microsoft.Extensions.Logging;
 using RentTrackerClient.Models;
 using RentTrackerClient.Models.Pagination;
 

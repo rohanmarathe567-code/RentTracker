@@ -1,9 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
-using MongoDB.Driver;
 
 namespace RentTrackerBackend.Endpoints;
 

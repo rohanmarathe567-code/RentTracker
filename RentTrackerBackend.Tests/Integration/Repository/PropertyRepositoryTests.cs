@@ -1,16 +1,8 @@
 ﻿using FluentAssertions;
-using Microsoft.Extensions.Options;
 using MongoDB.Bson;
-using MongoDB.Driver;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Tests.Integration.Fixtures;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using Mongo2Go;
 
 namespace RentTrackerBackend.Tests.Integration.Repository
 {

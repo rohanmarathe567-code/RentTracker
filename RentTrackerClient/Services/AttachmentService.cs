@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using RentTrackerClient.Models;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;

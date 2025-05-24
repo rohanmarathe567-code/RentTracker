@@ -1,10 +1,6 @@
-using Microsoft.Extensions.Logging;
 using RentTrackerClient.Models;
 using RentTrackerClient.Models.Pagination;
-using System.Net.Http.Json;
-using System.Text.Json;
 using System.Web;
-using System;
 
 namespace RentTrackerClient.Services;
 

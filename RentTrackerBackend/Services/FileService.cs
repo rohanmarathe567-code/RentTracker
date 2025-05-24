@@ -1,7 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Hosting;
-
 namespace RentTrackerBackend.Services;
 
 public interface IStorageService

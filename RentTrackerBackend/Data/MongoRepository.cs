@@ -1,5 +1,4 @@
 using MongoDB.Driver;
-using Microsoft.Extensions.Options;
 using RentTrackerBackend.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;

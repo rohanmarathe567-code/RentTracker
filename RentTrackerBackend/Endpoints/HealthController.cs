@@ -1,5 +1,4 @@
 using MongoDB.Driver;
-using RentTrackerBackend.Data;
 
 namespace RentTrackerBackend.Endpoints;
 

@@ -2,7 +2,6 @@ using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Extensions;
-using System.Linq;
 
 namespace RentTrackerBackend.Services
 {

@@ -1,9 +1,7 @@
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Services;
-using MongoDB.Driver;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 
 namespace RentTrackerBackend.Endpoints;
 

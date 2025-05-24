@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
-using System.Security.Claims;
 using RentTrackerClient.Shared;
 
 namespace RentTrackerClient.Attributes;

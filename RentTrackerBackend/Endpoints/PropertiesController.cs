@@ -1,7 +1,6 @@
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace RentTrackerBackend.Endpoints;
 

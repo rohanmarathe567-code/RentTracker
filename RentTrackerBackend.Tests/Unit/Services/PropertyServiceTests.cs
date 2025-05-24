@@ -5,8 +5,6 @@ using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Pagination;
 using RentTrackerBackend.Services;
-using System.Linq.Expressions;
-using Xunit;
 
 namespace RentTrackerBackend.Tests.Unit.Services;
 

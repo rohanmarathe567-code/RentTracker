@@ -1,9 +1,5 @@
-using Microsoft.Extensions.Logging;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
-using Microsoft.AspNetCore.Http;
-using System.IO;
-using RentTrackerBackend.Endpoints;
 
 namespace RentTrackerBackend.Services
 {

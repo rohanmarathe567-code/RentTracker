@@ -1,9 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using NSubstitute;
-using RentTrackerBackend.Data;
 using RentTrackerBackend.Models.Auth;
 using RentTrackerBackend.Services;
 

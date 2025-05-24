@@ -1,16 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
-using Xunit;
 
 namespace RentTrackerBackend.Tests.Unit.Repositories
 {

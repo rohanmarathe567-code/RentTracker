@@ -1,10 +1,7 @@
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using Mongo2Go;
 using RentTrackerBackend.Models;
-using System;
-using Xunit;
 
 namespace RentTrackerBackend.Tests.Integration.Fixtures
 {

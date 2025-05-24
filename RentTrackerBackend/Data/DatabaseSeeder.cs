@@ -1,7 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
-using BCrypt.Net;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Models.Auth;
 

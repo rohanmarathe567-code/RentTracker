@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Text.Json;
 using System.Text.Json.Serialization;

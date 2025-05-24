@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using RentTrackerBackend.Models.Auth;
 using RentTrackerBackend.Services;
 

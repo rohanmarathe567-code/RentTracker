@@ -1,6 +1,5 @@
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
-using MongoDB.Driver;
 
 namespace RentTrackerBackend.Services
 {

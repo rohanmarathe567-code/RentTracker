@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using FluentAssertions;
 using MongoDB.Bson;
 using NSubstitute;
@@ -8,7 +5,6 @@ using NSubstitute.ExceptionExtensions;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
-using Xunit;
 
 namespace RentTrackerBackend.Tests.Unit.Services
 {

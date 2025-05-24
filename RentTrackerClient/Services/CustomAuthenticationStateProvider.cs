@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.JSInterop;
 
 namespace RentTrackerClient.Services;
 

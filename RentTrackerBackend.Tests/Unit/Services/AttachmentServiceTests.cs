@@ -7,9 +7,7 @@ using NSubstitute.ExceptionExtensions;
 using RentTrackerBackend.Data;
 using RentTrackerBackend.Models;
 using RentTrackerBackend.Services;
-using System.IO;
 using System.Text;
-using Xunit;
 
 namespace RentTrackerBackend.Tests.Unit.Services;
 

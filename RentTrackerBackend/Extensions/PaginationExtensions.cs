@@ -1,4 +1,3 @@
-using System.Linq;
 using RentTrackerBackend.Models.Pagination;
 
 namespace RentTrackerBackend.Extensions;
