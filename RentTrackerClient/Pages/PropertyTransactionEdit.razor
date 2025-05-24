@@ -14,9 +14,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    @(string.IsNullOrEmpty(Id) ? 
-                        (TransactionType == TransactionType.Income ? "Add Income" : "Add Expense") 
-                        : "Edit Transaction")
+                    @(string.IsNullOrEmpty(Id) ? "Add Transaction" : "Edit Transaction")
                 </h5>
                 <button type="button" class="btn-close" @onclick="NavigateBack"></button>
             </div>
@@ -44,10 +42,20 @@
             }
             else if (transaction != null)
             {
-                <EditForm Model="@transaction" OnValidSubmit="@(async () => await HandleValidSubmit())">
+                <EditForm Model="@transaction" OnValidSubmit="HandleValidSubmit">
                     <div class="modal-body">
                         <DataAnnotationsValidator />
                         <ValidationSummary />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="transactionType" class="form-label">Transaction Type</label>
+                                <select id="transactionType" class="form-select" value="@transaction.TransactionType" @onchange="OnTransactionTypeChanged" disabled="@(!string.IsNullOrEmpty(Id))">
+                                    <option value="@TransactionType.Income">Income</option>
+                                    <option value="@TransactionType.Expense">Expense</option>
+                                </select>
+                            </div>
+                        </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -57,7 +65,7 @@
                                     <InputNumber id="amount" class="form-control" @bind-Value="displayAmount" />
                                 </div>
                                 <ValidationMessage For="@(() => transaction.Amount)" />
-                                @if (TransactionType == TransactionType.Expense)
+                                @if (transaction.TransactionType == TransactionType.Expense)
                                 {
                                     <small class="text-muted">Enter amount as positive value</small>
                                 }
@@ -106,7 +114,6 @@
                                 <ValidationMessage For="@(() => transaction.PaymentMethodId)" />
                             </div>
                         </div>
-
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-sm btn-secondary" @onclick="NavigateBack">
@@ -149,7 +156,6 @@
     private string? errorMessage;
     private List<PaymentMethod> paymentMethods = new();
     private List<PropertyTransactionCategory> categories = new();
-    private TransactionType TransactionType;
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,48 +166,33 @@
             Console.WriteLine($"PropertyId: {PropertyId}");
             Console.WriteLine($"Transaction Id: {Id ?? "new"}");
 
-            // Get transaction type from query parameter
-            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-            Console.WriteLine($"Current URI: {uri}");
-            var typeParam = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("type");
-            Console.WriteLine($"Type parameter from query: {typeParam}");
-            
-            TransactionType = !string.IsNullOrEmpty(typeParam) ?
-                Enum.Parse<TransactionType>(typeParam) :
-                TransactionType.Income;
-            Console.WriteLine($"Resolved TransactionType: {TransactionType}");
-
-            // Load payment methods and categories
-            Console.WriteLine("Loading payment methods and categories...");
+            // Load payment methods
+            Console.WriteLine("Loading payment methods...");
             paymentMethods = (await PaymentMethodService.GetPaymentMethodsAsync()).ToList();
             Console.WriteLine($"Loaded {paymentMethods.Count} payment methods");
-            
-            Console.WriteLine($"Loading categories for transaction type: {TransactionType}...");
-            // Load categories for the specific transaction type
-            var loadedCategories = await CategoryService.GetAllCategoriesAsync(TransactionType);
-            if (loadedCategories == null || !loadedCategories.Any())
-            {
-                errorMessage = $"No categories available for {TransactionType}. Please create a category first.";
-                return;
-            }
-            
-            categories = loadedCategories.ToList();
-            Console.WriteLine($"Loaded {categories.Count} categories for {TransactionType}:");
-            foreach (var category in categories)
-            {
-                Console.WriteLine($"- Category: {category.Name} (ID: {category.Id})");
-            }
 
             if (!string.IsNullOrEmpty(Id))
             {
+                // Edit mode
                 transaction = await TransactionService.GetTransactionByIdAsync(PropertyId, Id);
                 if (transaction == null)
                 {
                     errorMessage = $"Transaction with ID {Id} not found.";
+                    return;
                 }
+                
+                // Load categories specific to this transaction type
+                var loadedCategories = await CategoryService.GetAllCategoriesAsync(transaction.TransactionType);
+                if (loadedCategories == null || !loadedCategories.Any())
+                {
+                    errorMessage = $"No categories available for {transaction.TransactionType}. Please create a category first.";
+                    return;
+                }
+                categories = loadedCategories.ToList();
             }
             else
             {
+                // New transaction mode
                 Console.WriteLine($"Creating new transaction for PropertyId: {PropertyId}");
                 
                 var tenantId = await AuthService.GetCurrentTenantIdAsync();
@@ -216,7 +207,7 @@
                 transaction = new PropertyTransaction
                 {
                     RentalPropertyId = PropertyId,
-                    TransactionType = TransactionType,
+                    TransactionType = TransactionType.Income, // Default to Income
                     TransactionDate = now,
                     TenantId = tenantId,
                     CreatedAt = now,
@@ -224,17 +215,18 @@
                     Version = 0,
                     AttachmentIds = new List<string>()
                 };
-                
-                // Set default category
-                var defaultCategory = categories.FirstOrDefault();
-                if (defaultCategory == null)
+
+                // Load categories for initial transaction type
+                var loadedCategories = await CategoryService.GetAllCategoriesAsync(transaction.TransactionType);
+                if (loadedCategories == null || !loadedCategories.Any())
                 {
-                    errorMessage = $"No categories available for {TransactionType}. Please create a category first.";
+                    errorMessage = $"No categories available for {transaction.TransactionType}. Please create a category first.";
                     return;
                 }
-                transaction.CategoryId = defaultCategory.Id;
+                categories = loadedCategories.ToList();
 
-                // Set payment method if available
+                // Set default category and payment method
+                transaction.CategoryId = categories.First().Id;
                 if (paymentMethods.Any())
                 {
                     transaction.PaymentMethodId = paymentMethods.First().Id;
@@ -252,6 +244,51 @@
         }
     }
 
+    private async Task OnTransactionTypeChanged(ChangeEventArgs e)
+    {
+        try
+        {
+            if (transaction == null || e.Value == null) return;
+
+            if (Enum.TryParse<TransactionType>(e.Value.ToString(), out var newType))
+            {
+                errorMessage = null;
+                
+                // Update transaction type
+                transaction.TransactionType = newType;
+                Console.WriteLine($"Transaction type changed to: {newType}");
+
+                // Clear categories and trigger UI update
+                categories = new List<PropertyTransactionCategory>();
+                await InvokeAsync(StateHasChanged);
+
+                // Load new categories
+                Console.WriteLine($"Loading categories for {newType}...");
+                var loadedCategories = await CategoryService.GetAllCategoriesAsync(newType);
+                
+                if (loadedCategories != null && loadedCategories.Any())
+                {
+                    categories = loadedCategories.ToList();
+                    transaction.CategoryId = categories.First().Id;
+                    Console.WriteLine($"Set category to: {categories.First().Name}");
+                }
+                else
+                {
+                    errorMessage = $"No categories available for {newType}. Please create a category first.";
+                    Console.WriteLine(errorMessage);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading categories: {ex.Message}";
+            Console.WriteLine($"Error in OnTransactionTypeChanged: {ex}");
+        }
+
+        // Always ensure UI is updated
+        await InvokeAsync(StateHasChanged);
+    }
+
     private async Task HandleValidSubmit()
     {
         if (transaction == null)
@@ -261,30 +298,10 @@
         {
             errorMessage = null;
             Console.WriteLine("Starting transaction submission...");
-            
-            // Validate transaction object
-            if (transaction == null)
-            {
-                errorMessage = "Transaction object is null";
-                return;
-            }
 
-            Console.WriteLine($"Validating transaction: PropertyId={PropertyId}");
-            Console.WriteLine($"Amount: {transaction.Amount}");
-            Console.WriteLine($"TransactionDate: {transaction.TransactionDate}");
-            Console.WriteLine($"CategoryId: {transaction.CategoryId}");
-            Console.WriteLine($"PaymentMethodId: {transaction.PaymentMethodId}");
-
-            // Validate amount is greater than 0
-            if (transaction.Amount <= 0)
-            {
-                errorMessage = "Amount must be greater than 0";
-                return;
-            }
-            
             // Keep amount positive in storage, negative values handled in UI
             transaction.Amount = Math.Abs(transaction.Amount);
-
+            
             var now = DateTime.UtcNow;
             transaction.TransactionDate = DateTime.SpecifyKind(transaction.TransactionDate, DateTimeKind.Utc);
             transaction.UpdatedAt = now;
@@ -300,7 +317,7 @@
 
             if (!string.IsNullOrEmpty(Id))
             {
-                // For updates, preserve creation info
+                // Update existing transaction
                 var existingTransaction = await TransactionService.GetTransactionByIdAsync(PropertyId, Id);
                 if (existingTransaction == null)
                 {
@@ -315,39 +332,36 @@
                 var result = await TransactionService.UpdateTransactionAsync(PropertyId, Id, transaction);
                 if (result)
                 {
-                    Console.WriteLine($"Transaction updated successfully");
                     NavigateBack();
                 }
                 else
                 {
-                    throw new Exception("Failed to update transaction on the server");
+                    errorMessage = "Failed to update transaction on the server";
                 }
             }
             else
             {
-                // Validate required fields
+                // Create new transaction
                 if (string.IsNullOrEmpty(transaction.CategoryId))
                 {
                     errorMessage = "Category is required.";
                     return;
                 }
 
-                // Re-validate category exists on server
+                // Validate category exists
                 try
                 {
                     var serverCategory = await CategoryService.GetCategoryByIdAsync(transaction.CategoryId);
                     if (serverCategory == null)
                     {
                         errorMessage = "Selected category no longer exists. Please select a different category.";
-                        // Reload categories to get current list
-                        var updatedCategories = await CategoryService.GetAllCategoriesAsync(TransactionType);
+                        var updatedCategories = await CategoryService.GetAllCategoriesAsync(transaction.TransactionType);
                         if (updatedCategories != null)
                         {
                             categories = updatedCategories.ToList();
                         }
                         return;
                     }
-                    Console.WriteLine($"Verified category on server: {serverCategory.Name} (ID: {serverCategory.Id})");
                 }
                 catch (Exception ex)
                 {
@@ -355,34 +369,13 @@
                     Console.WriteLine($"Error validating category: {ex.Message}");
                     return;
                 }
-                
-                // Validate amount is greater than 0
-                if (transaction.Amount <= 0)
-                {
-                    errorMessage = "Amount must be greater than 0.";
-                    return;
-                }
 
-                // Keep amount positive in storage, negative values handled in UI
-                transaction.Amount = Math.Abs(transaction.Amount);
-
-                // Set creation info
                 transaction.CreatedAt = now;
-                transaction.UpdatedAt = now;
                 transaction.Version = 0;
-                transaction.RentalPropertyId = PropertyId;
-                
-                // Clear navigation properties
-                transaction.Category = null;
-                transaction.PaymentMethod = null;
-                transaction.Id = string.Empty;
                 
                 var createdTransaction = await TransactionService.CreateTransactionAsync(PropertyId, transaction);
                 if (createdTransaction != null)
                 {
-                    Console.WriteLine($"Transaction created successfully: {createdTransaction.Id}");
-                    Id = createdTransaction.Id;
-                    transaction.Id = createdTransaction.Id;
                     NavigateBack();
                 }
                 else
@@ -393,33 +386,7 @@
         }
         catch (Exception ex)
         {
-            if (ex.Message.Contains("Category not found"))
-            {
-                errorMessage = "Selected category is no longer available. Please reload the page to get the latest categories.";
-                
-                // Reload categories
-                try
-                {
-                    var updatedCategories = await CategoryService.GetAllCategoriesAsync(TransactionType);
-                    if (updatedCategories != null)
-                    {
-                        categories = updatedCategories.ToList();
-                        Console.WriteLine($"Reloaded categories after error. Found {categories.Count} categories.");
-                        foreach (var category in categories)
-                        {
-                            Console.WriteLine($"- {category.Name} (Id: {category.Id})");
-                        }
-                    }
-                }
-                catch
-                {
-                    errorMessage = "Failed to reload categories. Please refresh the page and try again.";
-                }
-            }
-            else
-            {
-                errorMessage = $"Error saving transaction: {ex.Message}";
-            }
+            errorMessage = $"Error saving transaction: {ex.Message}";
             Console.WriteLine($"Exception details: {ex}");
         }
     }
@@ -428,5 +395,4 @@
     {
         NavigationManager.NavigateTo($"/properties/{PropertyId}/transactions");
     }
-
 }

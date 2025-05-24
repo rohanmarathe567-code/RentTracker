@@ -15,16 +15,10 @@
         </button>
         <h5 class="mb-0">Property Transactions</h5>
     </div>
-    <div class="btn-group">
-        <a href="@($"properties/{PropertyId}/transactions/new?type=Income")" class="btn btn-sm btn-success">
-            <i class="bi bi-plus-lg"></i>
-            <span class="ms-1">Income</span>
-        </a>
-        <a href="@($"properties/{PropertyId}/transactions/new?type=Expense")" class="btn btn-sm btn-danger">
-            <i class="bi bi-plus-lg"></i>
-            <span class="ms-1">Expense</span>
-        </a>
-    </div>
+    <a href="@($"properties/{PropertyId}/transactions/new")" class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-lg"></i>
+        <span class="ms-1">Transaction</span>
+    </a>
 </div>
 
 @if (loading)
