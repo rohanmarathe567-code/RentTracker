@@ -22,6 +22,8 @@ cd RentTracker
 # Start MongoDB and Redis using Docker
 docker-compose up -d
 
+# Optional: Enable host networking (see Docker Configuration section below)
+
 # Configure connection strings in appsettings.json
 {
   "MongoDb": {
@@ -47,6 +49,118 @@ dotnet run
 - .NET 8 SDK
 - Docker Desktop
 - MongoDB Compass (optional, for database management)
+
+### Docker Configuration
+
+#### Host Networking Mode
+
+Host networking allows Docker containers to use the host's network stack directly, enabling containers to access services on `localhost` without port mapping complexities.
+
+**Benefits:**
+- Containers can connect to services running on the host using `localhost`
+- Simplified networking for local development
+- Better performance by bypassing Docker's network translation layer
+- Automatic access to all host ports
+
+**To enable host networking:**
+
+1. **Enable in Docker Desktop Settings:**
+   - Open Docker Desktop
+   - Navigate to Settings → Resources → Network
+   - Check the "Enable host networking" checkbox
+   - Click "Apply & Restart"
+
+2. **Run docker-compose normally:**
+   
+   Once host networking is enabled in Docker Desktop, your existing `docker-compose.yml` works without any modifications:
+
+   ```bash
+   # Start all services with host networking enabled
+   docker-compose up -d
+   ```
+
+   The existing configuration in `docker-compose.yml` works as-is without any modifications:
+   ```yaml
+   services:
+     mongodb:
+       image: mongo:latest
+       ports:
+         - "27017:27017"
+       networks:
+         - renttracker-network
+     
+     backend:
+       ports:
+         - "7000:8080"
+       environment:
+         - MongoDB__ConnectionString=mongodb://mongodb:27017
+       networks:
+         - renttracker-network
+     
+     frontend:
+       ports:
+         - "8080:80"
+       networks:
+         - renttracker-network
+   ```
+
+**How it works:**
+- When host networking is enabled in Docker Desktop, containers can access services on the host using `localhost`
+- The existing bridge network configuration continues to work for inter-container communication using container names
+- The MongoDB connection string **must use the container name** (`mongodb://mongodb:27017`) not `localhost`
+- Port mappings remain functional and services are accessible on the specified ports
+- Host networking allows containers to also access services running directly on the host machine via `localhost`
+
+**Why use container name instead of localhost?**
+- When containers communicate with each other (backend → mongodb), they must use the container name through the bridge network
+- Using `mongodb://localhost:27017` in the backend container would try to connect to MongoDB on the backend container itself, not the mongodb container
+- `localhost` inside a container refers to that specific container, not the host machine or other containers
+- The container name (`mongodb`) is resolved by Docker's internal DNS to the correct container IP address
+- Host networking in Docker Desktop allows containers to access the **host machine's** services via `localhost`, but not other containers
+
+**Important Notes:**
+- Host networking in Docker Desktop allows containers to access host services via `localhost` while maintaining container-to-container communication through the bridge network
+- This is different from Linux's native `network_mode: "host"` which completely bypasses Docker networking
+- The feature is particularly useful for development when containers need to access services running directly on the host machine
+- Production deployments should use standard bridge networking for better isolation
+
+**Running with Host Networking:**
+
+Once you've configured host networking in your docker-compose.yml, start the services normally:
+
+```bash
+# Start all services with host networking
+docker-compose up -d
+
+# View logs to verify services are running
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+**Verification:**
+
+After starting with host networking enabled, verify the services are accessible:
+
+```bash
+# Check MongoDB connection (should connect to localhost:27017)
+mongosh mongodb://localhost:27017
+
+# Check backend API (adjust port based on your appsettings.json)
+curl http://localhost:7000/api/health
+
+# Check frontend (adjust port based on your configuration)
+curl http://localhost:8080
+```
+
+**Troubleshooting:**
+
+If services aren't accessible after enabling host networking:
+1. Ensure Docker Desktop has host networking enabled in Settings
+2. Check that no other services are using the required ports
+3. Verify the application is configured to bind to the correct ports
+4. On Windows/macOS, consider using bridge networking instead as host mode has limitations
 
 ### Initial Setup
 1. MongoDB will automatically create required collections
